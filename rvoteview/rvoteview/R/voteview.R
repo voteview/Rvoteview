@@ -18,6 +18,7 @@ read.voteview.json <- function(json) {
 # Take the JSON from voteview and translate it in to a PSCL rollcall object
 voteview2rollcall <- function(json) {
   data <- read.voteview.json(json)
+  print( data )
   dat  <- data$votematrix[,grep("^V\\d+",names(data$votematrix))]
   rnames <- sprintf("%s %s - %s",trim(data$votematrix$name),
                                  data$votematrix$cqlabel,
@@ -46,7 +47,9 @@ vlist2df <- function(rcs) {
   }
   for (i in 1:length(rcs)) {
      for (f in flds) {
-       df[[f]][i] <- rcs[[i]][[f]]
+       if (!is.null(rcs[[i]][[f]])) {
+       	  df[[f]][i] <- rcs[[i]][[f]]
+       }
      }
   }
   return( as.data.frame(df,stringsAsFactors=FALSE) )
@@ -84,7 +87,7 @@ voteview.download <- function(ids) {
 
 # Test function
 test <- function() {
-  res <- voteview.search("abortion")
+  res <- voteview.search("Iraq")
   json <- voteview.download(res$id)
 #  return( read.voteview.json(json) )
   return( voteview2rollcall(json) )
