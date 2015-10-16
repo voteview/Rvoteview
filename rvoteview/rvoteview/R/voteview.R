@@ -1,5 +1,5 @@
-library(rjson)
-library(pscl)
+#library(rjson)
+#library(pscl)
 
 # Trim white space off of strings
 trim <- function (x) gsub("^\\s+|\\s+$", "", x)
@@ -93,10 +93,10 @@ voteview.download <- function(ids) {
 }
 
 # Test function
-test <- function() {
-  res <- voteview.search("Iraq")
-  json <- voteview.download(res$id)
+#test <- function() {
+#  res <- voteview.search("Iraq")
+#  json <- voteview.download(res$id)
 #  return( read.voteview.json(json) )
-  return( voteview2rollcall(json) )
-}
+#  return( voteview2rollcall(json) )
+#}
 
