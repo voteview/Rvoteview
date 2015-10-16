@@ -1,0 +1,33 @@
+\name{vlist2df}
+\alias{vlist2df}
+\title{
+  Transform vector of lists to data frame
+  }
+\description{
+  This is a helper function to transform the vector of lists that were constructed by \code{voteview.search} in to a data frame that \code{voteview.search} returns. This function should probably not be called by itself.
+}
+\usage{
+  vlist2df(rcs)
+}
+\arguments{
+  \item{rcs}{
+    A vector of lists that is built within \code{voteview.search}, where each list corresponds to a roll call.
+  }
+}
+\value{
+  A data.frame with the following columns:
+  \itemize{
+    \item{\code{descriptionShort}}{A short description of the bill.}
+    \item{\code{description}}{Official description of the bill.}
+    \item{\code{no}}{The total number of 'Nay' votes}
+    \item{\code{yea}}{The total number of 'Yea' votes}
+    \item{\code{chamber}}{The chamber the roll call was held in. Either "House" or "Senate"}
+    \item{\code{session}}{The session of congress the roll call was held in.}
+    \item{\code{rollnumber}}{The roll call number of the vote}
+    \item{\code{date}}{The date the roll call was held, in string "yyyy-mm-dd" format.}
+    \item{\code{id}}{Unique identifier for the roll call that allows \code{voteview} to query the individual congress people's votes and other details.}
+  }
+}
+\seealso{
+  '\link{voteview.search}'.
+}

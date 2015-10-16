@@ -1,0 +1,41 @@
+\name{read.voteview.json}
+\alias{read.voteview.json}
+\title{
+  Read Voteview JSON String
+  }
+\description{
+  Takes JSON that has been downloaded using \code{voteview.download} and creates a rollcall vote data frame and a rollcall description data frame. This is used by \code{voteview2rollcall} to generate the data frames that are turned in to \code{rollcall} objects in \code{pscl}.
+}
+\usage{
+  read.voteview.json(json)
+}
+\arguments{
+  \item{json}{
+    A string of JSON downloaded from the voteview server using \code{voteview.download}.
+  }
+}
+\value{
+  A list of two data frames:
+  \item{votematrix }{A data frame of roll call votes with unique legislators as rows and ICPSR number, state, district, name, and votes among the columns.}
+  \item{rollcalls }{A data frame of information about the roll calls including the vote number that matches the bove matrix, the chamber, session of congress, date, and a description..}
+}
+\seealso{
+  '\link{voteview.download}','\link{voteview2rollcall}'.
+}
+\examples{
+  ## Search for sample roll calls
+  res <- voteview.search("Iraq")
+  
+  ## Use the ids from that search to create a json string
+  json <- voteview.download(res$ids)
+  
+  ## Get these data frames from the JSON
+  data <- read.voteview.json(json)
+  
+  ## Not run:
+  ## NOTE: This function is generally meant to be called within the
+  ## voteview2rollcall function.
+  rollcalls <- voteview2rollcall(json)
+  
+  ## End(Not run)
+}

@@ -40,28 +40,22 @@
     \item{\code{id}}{Unique identifier for the roll call that allows \code{voteview} to query the individual congress people's votes and other details.}
   }
 }
-\references{
-%% ~put references to the literature/web site here ~
-}
-\author{
-%%  ~~who you are~~
-}
-
 \seealso{
-  '\link{voteview.download}','\link{voteview2rollcall}'.
+  '\link{voteview.download}','\link{voteview2rollcall}','\link{vlist2df}'.
 }
 \examples{
-  # Search for sample roll calls
+  ## Search for example roll calls
   res <- voteview.search("Iraq")
   res
-  # Search for votes with an end date
-  res <- voteview.search("Iraq", enddate = "2008-01-01")
+  
+  ## Not run:
+  ## Search for votes with a start date
+  res <- voteview.search("Iraq", startdate = "2005-01-01")
   res
-  # Search for votes with an end date in just the house
-  res <- voteview.search("Iraq", enddate = "2008-01-01", chamber = "House")
+  
+  ## Search for votes with an end date in just the house
+  res <- voteview.search("Iraq", startdate = "2005-01-01", chamber = "House")
   res
+  
+  ## End(Not run)
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory.
-%\keyword{ ~kwd1 }
-%\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
