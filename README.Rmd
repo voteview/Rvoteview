@@ -20,34 +20,34 @@ knitr::opts_chunk$set(
 This is a package that enables you to query the Voteview database for roll calls and work with data frames or a `pscl` `rollcall` object.
 
 To install this package, ensure you have `devtools` installed. If you do not run `install.packages("devtools")` before doing the following:
-  ```R
-  devtools::install_github("JeffreyBLewis/Rvoteview")
-  ```
+```R
+devtools::install_github("JeffreyBLewis/Rvoteview")
+```
   
 ## Using Rvoteview
 
 To use `Rvoteview`, you generally want to query the database to get a list of vote ids and then use those to return the individual votes. We query the database with a search term like so:
-  ```{r}
-  library(Rvoteview)
+```{r search}
+library(Rvoteview)
   
-  res <- voteview.search("Iraq")
-  names(res)
+res <- voteview.search("Iraq")
+names(res)
   
-  ## I will drop description since it is a very long field
-  head(res[, -2])
-  ```
+## I will drop description since it is a very long field
+head(res[, -2])
+```
 Using `res$id` we can get the JSON that contains the full set of votes and data for each roll call and then turn that JSON in to a `pscl` `rollcall` object.
- ```{r}
- ## Get the JSON using the ids from the previous search
- ## Note I drop most recent sessions where errors are occurring
- json <- voteview.download(res[res$session < 113, ]$id)
- 
- ## Turn the JSON in to a rollcall object
- rc <- voteview2rollcall(json)
- 
- ## Now this object can be used in many 'pscl' methods
- summary(rc)
- ```
+```{r download}
+## Get the JSON using the ids from the previous search
+## Note I drop most recent sessions where errors are occurring
+json <- voteview.download(res[res$session < 113, ]$id)
+
+## Turn the JSON in to a rollcall object
+rc <- voteview2rollcall(json)
+
+## Now this object can be used in many 'pscl' methods
+summary(rc)
+```
 
 Please see the help files for each function after you install the package to see a little more about how they work.
 
@@ -55,19 +55,20 @@ Please see the help files for each function after you install the package to see
 ## Simple Example
 
 Search for roll calls with the keyword "University."
- ```{r uni, eval=FALSE}
- res <- voteview.search("University")
- print(res$id)
- json <- voteview.download(res[res$session < 113, ]$id)
- rc <- voteview2rollcall(json)
- summary(rc)
- ```
+```{r uni, eval=FALSE}
+res <- voteview.search("University")
+print(res$id)
+json <- voteview.download(res[res$session < 113, ]$id)
+rc <- voteview2rollcall(json)
+summary(rc)
+```
  
 Search for roll calls with the keyword "University" since 2009. **For now, all searches that specify a start date will automatically drop roll calls from sessions 113 and 114.**
 
- ```{r uninew, eval=FALSE}
- res <- voteview.search("University", startdate = "2009-01-01")
- json <- voteview.download(res$id)
- rc <- voteview2rollcall(json)
- summary(rc)
- ```-->
+```{r uninew, eval=FALSE}
+res <- voteview.search("University", startdate = "2009-01-01")
+json <- voteview.download(res$id)
+rc <- voteview2rollcall(json)
+summary(rc)
+```
+-->
