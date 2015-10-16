@@ -1,3 +1,6 @@
+#' @import pscl
+#' @import rjson
+
 # Trim white space off of strings
 trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 

@@ -5,7 +5,8 @@ Version: 0.1
 Date: 2015-10-16
 Authors@R: c(
     person("Lewis", "Jeff", role = "aut"),
-    person("Nunes", "Felipe", role = "ctb"),
+    person("Boche", "Adam", role = "ctb"),
+    person("Rudkin", "Aaron", role = "ctb"),
     person("Sonnet", "Luke", email = "luke.sonnet@gmail.com", role = c("cre", "ctb")))
 Description: Package provides functions to query Voteview database by search term or by house bill and return basic metadata or a detailed PSCL rollcall object.
 License: GPL (>= 3)
