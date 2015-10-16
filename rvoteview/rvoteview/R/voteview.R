@@ -38,7 +38,7 @@ voteview2rollcall <- function(json) {
   return(rc)
 }
 
-# Helper function that takes a vector of lists into a dataframe
+# Helper function that transforms a vector of lists into a dataframe
 vlist2df <- function(rcs) {
   df <- list()
   flds <- names(rcs[[1]])
@@ -50,13 +50,14 @@ vlist2df <- function(rcs) {
   
   for (i in 1:length(rcs)) {
      for (f in flds) {
+       # There are some missing fields for votes in the  113 or 114 congresses
        if (!is.null(rcs[[i]][[f]])) {
          df[[f]][i] <- rcs[[i]][[f]]
        }
      }
   }
   
-  return( as.data.frame(df,stringsAsFactors=FALSE) )
+  return( as.data.frame(df, stringsAsFactors = FALSE) )
 }
 
 # Function to run a voteview query, returning a dataframe of matching votes and
