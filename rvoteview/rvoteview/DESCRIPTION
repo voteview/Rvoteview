@@ -1,0 +1,16 @@
+Package: voteview
+Type: Package
+Title: Voteview Data in R
+Version: 0.1
+Date: 2014-05-21
+Authors@R: c(
+    person("Lewis", "Jeff", role = c("cre", "aut")),
+    person("Nunes", "Felipe", role = "ctb"),
+    person("Sonnet", "Luke", email = "luke.sonnet@gmail.com", role = "ctb"))
+Maintainer: Luke Sonnet <luke.sonnet@gmail.com>
+Description: Package provides functions to query Voteview database by search term or by house bill and return basic metadata or a detailed PSCL rollcall object.
+License: GPL (>= 3)
+Imports:
+    pscl,
+    rjson
+URL: http://www.r-project.org, http://voteview.com/
