@@ -1,8 +1,8 @@
-Package: voteview
+Package: Rvoteview
 Type: Package
 Title: Voteview Data in R
 Version: 0.1
-Date: 2014-05-21
+Date: 2015-10-16
 Authors@R: c(
     person("Lewis", "Jeff", role = c("cre", "aut")),
     person("Nunes", "Felipe", role = "ctb"),
@@ -13,4 +13,4 @@ License: GPL (>= 3)
 Imports:
     pscl,
     rjson
-URL: http://www.r-project.org, http://voteview.com/
+URL: https://github.com/JeffreyBLewis/Rvoteview, http://voteview.com/
