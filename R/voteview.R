@@ -82,7 +82,7 @@ read.voteview.json <- function(json) {
 #' 
 voteview2rollcall <- function(json) {
   data <- read.voteview.json(json)
-  print( data )
+  #print( data )
   dat  <- data$votematrix[,grep("^V\\d+", names(data$votematrix))]
   rnames <- sprintf("%s %s - %s", trim(data$votematrix$name),
                                   data$votematrix$cqlabel,

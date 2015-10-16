@@ -51,11 +51,13 @@ Using `res$id` we can get the JSON that contains the full set of votes and data 
 
 Please see the help files for each function after you install the package to see a little more about how they work.
 
+<!--  THIS IS NOT WORKING RIGHT NOW BECAUSE OF SOME ERROR in voteview.download. It seems that having too many queries or something is causing it to bug out. If I breakdown res$id in to chunks it works....
 ## Simple Example
 
 Search for roll calls with the keyword "University."
- ```{r}
+ ```{r uni, eval=FALSE}
  res <- voteview.search("University")
+ print(res$id)
  json <- voteview.download(res[res$session < 113, ]$id)
  rc <- voteview2rollcall(json)
  summary(rc)
@@ -63,9 +65,9 @@ Search for roll calls with the keyword "University."
  
 Search for roll calls with the keyword "University" since 2009. **For now, all searches that specify a start date will automatically drop roll calls from sessions 113 and 114.**
 
- ```{r}
+ ```{r uninew, eval=FALSE}
  res <- voteview.search("University", startdate = "2009-01-01")
- json <- voteview.download(re$sid)
+ json <- voteview.download(res$id)
  rc <- voteview2rollcall(json)
  summary(rc)
- ```
+ ```-->
