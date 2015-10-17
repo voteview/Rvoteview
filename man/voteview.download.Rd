@@ -21,10 +21,10 @@ call.
 }
 \examples{
 ## Search for sample roll calls
-  res <- voteview.search("Iraq")
+res <- voteview.search("Iraq")
 
-  ## Use the ids from that search to create a json string
-  json <- voteview.download(res$ids)
+## Use the ids from that search to create a json string
+json <- voteview.download(res$ids)
 }
 \seealso{
 '\link{voteview.search}','\link{voteview2rollcall}'.

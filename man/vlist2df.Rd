@@ -11,17 +11,22 @@ vlist2df(rcs)
 where each list corresponds to a roll call.}
 }
 \value{
-A data.frame with the following columns: \itemize{
-\item\code{descriptionShort}A short description of the bill.
-\item\code{description}Official description of the bill.  \item\code{no}The
-total number of 'Nay' votes \item\code{yea}The total number of 'Yea' votes
-\item\code{chamber}The chamber the roll call was held in. Either "House" or
-"Senate" \item\code{session}The session of congress the roll call was held
-in.  \item\code{rollnumber}The roll call number of the vote
-\item\code{date}The date the roll call was held, in string "yyyy-mm-dd"
-format.  \item\code{id}Unique identifier for the roll call that allows
+A data.frame with the following columns:
+\itemize{
+\item{\code{descriptionShort} }{A short description of the bill.}
+\item{\code{description} }{Official description of the bill.}
+\item{\code{no} }{The total number of 'Nay' votes }
+\item{\code{yea} }{The total number of 'Yea' votes }
+\item{\code{chamber} }{The chamber the roll call was held in. Either "House"
+or "Senate"}
+\item{\code{session} }{The session of congress the roll call was held in.}
+\item{\code{rollnumber} }{The roll call number of the vote.}
+\item{\code{date} }{The date the roll call was held, in string "yyyy-mm-dd"
+format.}
+\item{\code{id} }{Unique identifier for the roll call that allows
 \code{voteview} to query the individual congress people's votes and other
-details.  }
+details.}
+}
 }
 \description{
 This is a helper function to transform the vector of lists that were

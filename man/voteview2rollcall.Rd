@@ -20,17 +20,17 @@ methods in the \code{pscl} package.
 }
 \examples{
 ## Search for example roll calls
-  res <- voteview.search("Iraq")
+res <- voteview.search("Iraq")
 
-  ## Use the ids from that search to create a json string
-  json <- voteview.download(res$ids)
+## Use the ids from that search to create a json string
+json <- voteview.download(res$ids)
 
-  ## Get roll call object
-  rc <- voteview2rollcall(json)
+## Get roll call object
+rc <- voteview2rollcall(json)
 
-  ## Summarize the roll call object
-  summary(rc)
-  summary(rc, verbose = T)
+## Summarize the roll call object
+summary(rc)
+summary(rc, verbose = T)
 }
 \seealso{
 '\link{voteview.search}','\link{voteview.download}','\link{read.voteview.json}'.

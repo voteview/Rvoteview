@@ -11,12 +11,13 @@ read.voteview.json(json)
 \code{voteview.download}.}
 }
 \value{
-A list of two data frames: \item{votematrix }{A data frame of roll
-call votes with unique legislators as rows and ICPSR number, state,
-district, name, and votes among the columns.} \item{rollcalls }{A data frame
-of information about the roll calls including the vote number that matches
-the bove matrix, the chamber, session of congress, date, and a
-description..}
+A list of two data frames:
+\item{votematrix }{A data frame of roll call votes with unique legislators
+ as rows and ICPSR number, state, district, name, and votes among the
+ columns.}
+\item{rollcalls }{A data frame of information about the roll calls including
+the vote number that matches the bove matrix, the chamber, session of
+congress, date, and a description.}
 }
 \description{
 Takes JSON that has been downloaded using \code{voteview.download} and
@@ -26,20 +27,19 @@ are turned in to \code{rollcall} objects in \code{pscl}.
 }
 \examples{
 ## Search for sample roll calls
-  res <- voteview.search("Iraq")
+res <- voteview.search("Iraq")
 
-  ## Use the ids from that search to create a json string
-  json <- voteview.download(res$ids)
+## Use the ids from that search to create a json string
+json <- voteview.download(res$ids)
 
-  ## Get these data frames from the JSON
-  data <- read.voteview.json(json)
+## Get these data frames from the JSON
+data <- read.voteview.json(json)
 
-  ## Not run:
-  ## NOTE: This function is generally meant to be called within the
-  ## voteview2rollcall function.
-  rollcalls <- voteview2rollcall(json)
-
-  ## End(Not run)
+\dontrun{
+## NOTE: This function is generally meant to be called within the
+## voteview2rollcall function.
+rollcalls <- voteview2rollcall(json)
+}
 }
 \seealso{
 '\link{voteview.download}','\link{voteview2rollcall}'.
