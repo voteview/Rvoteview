@@ -48,6 +48,7 @@ read.voteview.json <- function(json) {
   data$rollcalls <- as.data.frame(data$rollcalls, stringsAsFactors = F)[, data$rcNames]
   data$vmNames <- NULL
   data$rcNames <- NULL
+  class(data) <- "voteview"
   return( data )
 }
 
@@ -80,8 +81,8 @@ read.voteview.json <- function(json) {
 #' summary(rc, verbose = T)
 #' @export
 #' 
-voteview2rollcall <- function(json) {
-  data <- read.voteview.json(json)
+voteview2rollcall <- function(data) {
+  #check type of obj
   #print( data )
   dat  <- data$votematrix[,grep("^V\\d+", names(data$votematrix))]
   rnames <- sprintf("%s %s - %s", trim(data$votematrix$name),
@@ -211,22 +212,28 @@ vlist2df <- function(rcs) {
 voteview.search <- function(query,
                             startdate = NULL, enddate = NULL,
                             chamber = NULL) {
-   theurl <- sprintf("http://leela.sscnet.ucla.edu/voteview/search?q=%s",
-                     URLencode(query))
-   if (!(is.null(startdate))) {
-     theurl <- sprintf("%s&startdate=%s", theurl, startdate)
-   }
-   if (!(is.null(enddate))) {
-     theurl <- sprintf("%s&enddate=%s", theurl, enddate)
-   }
-   if (!(is.null(chamber))) {
-     theurl <- sprintf("%s&chamber=%s", theurl, chamber)
-   }   
-   conn <- url(theurl)
-   suppressWarnings(resjson <- fromJSON(readLines(conn)))
-   cat(sprintf("Query '%s' returned %i votes...\n", query, resjson$recordcount))
-   close(conn)
-   return( vlist2df(resjson$rollcalls) )
+  
+  #Need to add input validation
+  
+  theurl <- sprintf("http://leela.sscnet.ucla.edu/voteview/search?q=%s",
+                    URLencode(query))
+   
+ if (!(is.null(startdate))) {
+   theurl <- sprintf("%s&startdate=%s", theurl, startdate)
+ }
+ if (!(is.null(enddate))) {
+   theurl <- sprintf("%s&enddate=%s", theurl, enddate)
+ }
+ if (!(is.null(chamber))) {
+   theurl <- sprintf("%s&chamber=%s", theurl, chamber)
+ }   
+   
+ conn <- url(theurl)
+ suppressWarnings(resjson <- fromJSON(readLines(conn)))
+ cat(sprintf("Query '%s' returned %i votes...\n", query, resjson$recordcount))
+ close(conn)
+ if(resjson$recordcount == 0) stop("No votes found")
+ return( vlist2df(resjson$rollcalls) )
 }
 
 # Function to download voteview rollcall data in JSON format
@@ -252,19 +259,22 @@ voteview.search <- function(query,
 #' @export
 #' 
 voteview.download <- function(ids) {
+  
+  # Input validation goes here
+  
+  vv.json <- voteview.download.json(ids)
+  vv.data <- read.voteview.json(vv.json)
+  return( vv.data )
+}
+
+voteview.download.json <- function(ids) {
   theurl <- sprintf("http://leela.sscnet.ucla.edu/voteview/download?ids=%s&xls=F",
                      paste(ids , collapse = ","))
   conn <- url(theurl)
+  print(theurl)
   suppressWarnings(resjson <- readLines(conn))
   close(conn)
   return( resjson )
 }
 
-# Test function
-#test <- function() {
-#  res <- voteview.search("Iraq")
-#  json <- voteview.download(res$id)
-#  return( read.voteview.json(json) )
-#  return( voteview2rollcall(json) )
-#}
-
+# Perhaps new function called voteview, which can do any of these
