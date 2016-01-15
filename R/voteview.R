@@ -211,9 +211,17 @@ vlist2df <- function(rcs) {
 #' 
 voteview.search <- function(query,
                             startdate = NULL, enddate = NULL,
-                            chamber = NULL) {
+                            chamber = NULL) { # Add a "session" argument
   
-  #Need to add input validation
+  # To character for input validation
+  dates <- c(as.character(startdate), as.character(enddate))
+  
+  # Input validation
+  if (!is.character(query)) stop("Query must be a character vector")
+  if (length(grep("^[0-9]{4}($|-(0[0-9]|1[0-2])($|-([0-2][0-9]|3[0-1])))",
+                 c(startdate, enddate))) != length(dates)){
+    stop("A date is formatted incorrectly. Please use yyyy, yyyy-mm, or yyyy-mm-dd format")
+  }
   
   theurl <- sprintf("http://leela.sscnet.ucla.edu/voteview/search?q=%s",
                     URLencode(query))
@@ -225,6 +233,7 @@ voteview.search <- function(query,
    theurl <- sprintf("%s&enddate=%s", theurl, enddate)
  }
  if (!(is.null(chamber))) {
+   if (!(tolower(chamber) %in% c("house", "senate"))) stop("Chamber must be either 'House' or 'Senate'")
    theurl <- sprintf("%s&chamber=%s", theurl, chamber)
  }   
    
