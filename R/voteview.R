@@ -1,5 +1,6 @@
 #' @import pscl
 #' @import rjson
+#' @import httr
 
 # Trim white space off of strings
 trim <- function (x) gsub("^\\s+|\\s+$", "", x)
@@ -223,11 +224,13 @@ voteview.search <- function(query,
     stop("A date is formatted incorrectly. Please use yyyy, yyyy-mm, or yyyy-mm-dd format")
   }
   
+  # search by session between 1 and 9999 and create a string of csvs
+  
   theurl <- sprintf("http://leela.sscnet.ucla.edu/voteview/search?q=%s",
                     URLencode(query))
    
  if (!(is.null(startdate))) {
-   theurl <- sprintf("%s&startdate=%s", theurl, startdate)
+   theurl <- sprintf("%s&startdate=%s", theurl, startdate) # check if end date is before start date
  }
  if (!(is.null(enddate))) {
    theurl <- sprintf("%s&enddate=%s", theurl, enddate)
@@ -236,11 +239,11 @@ voteview.search <- function(query,
    if (!(tolower(chamber) %in% c("house", "senate"))) stop("Chamber must be either 'House' or 'Senate'")
    theurl <- sprintf("%s&chamber=%s", theurl, chamber)
  }   
-   
- conn <- url(theurl)
- suppressWarnings(resjson <- fromJSON(readLines(conn)))
+
+ print(theurl)
+ resp <- GET(theurl)
+ suppressWarnings(resjson <- fromJSON(content(resp, "text")))
  cat(sprintf("Query '%s' returned %i votes...\n", query, resjson$recordcount))
- close(conn)
  if(resjson$recordcount == 0) stop("No votes found")
  return( vlist2df(resjson$rollcalls) )
 }
@@ -268,21 +271,23 @@ voteview.search <- function(query,
 #' @export
 #' 
 voteview.download <- function(ids) {
-  
-  # Input validation goes here
-  
+
   vv.json <- voteview.download.json(ids)
   vv.data <- read.voteview.json(vv.json)
-  return( vv.data )
+  rc.data <- voteview2rollcall(vv.data)
+  
+  return( rc.data )
 }
 
 voteview.download.json <- function(ids) {
+  
+  # Input validation goes here
+  
   theurl <- sprintf("http://leela.sscnet.ucla.edu/voteview/download?ids=%s&xls=F",
                      paste(ids , collapse = ","))
-  conn <- url(theurl)
   print(theurl)
-  suppressWarnings(resjson <- readLines(conn))
-  close(conn)
+  resp <- GET(theurl)
+  suppressWarnings(resjson <- content(resp, "text"))
   return( resjson )
 }
 
