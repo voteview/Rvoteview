@@ -2,11 +2,11 @@
 Rvoteview
 =========
 
-**NOTE: This package is in beta. Furthermore, much of the database has been rewritten so some things are still not working perfectly. In particular, there are issues with roll calls from the 113rd and 114th sessions of Congress. Therefore we recommend you omit any roll call ids from those sessions of Congress for now. See usage below.**
+**WARNING: This package is in flux, as is the server and data. Please limit the number of roll calls you request at a time and be prepared for queries to break or behave strangely. See usage below.**
 
 This is a package that enables you to query the Voteview database for roll calls and work with data frames or a `pscl` `rollcall` object.
 
-To install this package, ensure you have `devtools` installed. If you do not run `install.packages("devtools")` before doing the following:
+To install this package, ensure you have `devtools` installed. If you do not, run `install.packages("devtools")` before doing the following:
 
 ``` r
 devtools::install_github("JeffreyBLewis/Rvoteview")
@@ -21,7 +21,8 @@ To use `Rvoteview`, you generally want to query the database to get a list of vo
 library(Rvoteview)
   
 res <- voteview.search("Iraq")
-#> Query 'Iraq' returned 316 votes...
+#> [1] "http://leela.sscnet.ucla.edu/voteview/search?q=Iraq"
+#> Query 'Iraq' returned 318 votes...
 names(res)
 #> [1] "descriptionShort" "description"      "no"              
 #> [4] "yea"              "chamber"          "session"         
@@ -45,22 +46,25 @@ head(res[, -2])
 #> 6     100        850 1988-09-30 H1000850
 ```
 
-Using `res$id` we can get the JSON that contains the full set of votes and data for each roll call and then turn that JSON in to a `pscl` `rollcall` object.
+Using `res$id` we can get a voteview object that contains the full set of votes and data for each roll call. Eventually we will either develop methods for the voteview object or we can turn the voteview object in to a `pscl` `rollcall` object.
 
 ``` r
-## Get the JSON using the ids from the previous search
-## Note I drop most recent sessions where errors are occurring
-json <- voteview.download(res[res$session < 113, ]$id)
+## Get a voteview object using the ids, please limit to a few ids for now!
+vv <- voteview.download(res$id[1:10])
+#> [1] "http://leela.sscnet.ucla.edu/voteview/download?ids=S1000189,S1000231,S1000621,S1000678,H1000828,H1000850,S1000784,S1010492,S1010493,S1010491&xls=F"
 
-## Turn the JSON in to a rollcall object
-rc <- voteview2rollcall(json)
+## Eventually, we will add methods for voteview and rollcall objects, and perhaps
+## only return rollcall objects.
+
+## Turn the voteview object in to a rollcall object
+rc <- voteview2rollcall(vv)
 
 ## Now this object can be used in many 'pscl' methods
 summary(rc)
 #> Source:       Download from VoteView 
 #> 
-#> Number of Legislators:        1327
-#> Number of Roll Call Votes:    313
+#> Number of Legislators:        540
+#> Number of Roll Call Votes:    10
 #> 
 #> 
 #> Using the following codes to represent roll call votes:
@@ -70,45 +74,19 @@ summary(rc)
 #> Not In Legislature:   0 
 #> 
 #> Party Composition:
-#>  100  200  328 <NA> 
-#>  699  625    3    0 
+#>  100  200  328  329 <NA> 
+#>  311  227    1    1    0 
 #> 
 #> Vote Summary:
-#>                 Count Percent
-#> 0 (notInLegis) 332123    80.0
-#> 1 (yea)         50986    12.3
-#> 3 (yea)             7     0.0
-#> 4 (nay)             5     0.0
-#> 6 (nay)         28920     7.0
-#> 7 (missing)       117     0.0
-#> 8 (missing)         3     0.0
-#> 9 (missing)      3190     0.8
+#>                Count Percent
+#> 0 (notInLegis)  3728    69.0
+#> 1 (yea)         1055    19.5
+#> 3 (yea)            2     0.0
+#> 4 (nay)            5     0.1
+#> 6 (nay)          358     6.6
+#> 9 (missing)      252     4.7
 #> 
 #> Use summary(rc,verbose=TRUE) for more detailed information.
 ```
 
 Please see the help files for each function after you install the package to see a little more about how they work.
-
-<!--  THIS IS NOT WORKING RIGHT NOW BECAUSE OF SOME ERROR in voteview.download. It seems that having too many queries or something is causing it to bug out. If I breakdown res$id in to chunks it works....
-## Simple Example
-
-Search for roll calls with the keyword "University."
-
-```r
-res <- voteview.search("University")
-print(res$id)
-json <- voteview.download(res[res$session < 113, ]$id)
-rc <- voteview2rollcall(json)
-summary(rc)
-```
- 
-Search for roll calls with the keyword "University" since 2009. **For now, all searches that specify a start date will automatically drop roll calls from sessions 113 and 114.**
-
-
-```r
-res <- voteview.search("University", startdate = "2009-01-01")
-json <- voteview.download(res$id)
-rc <- voteview2rollcall(json)
-summary(rc)
-```
--->
