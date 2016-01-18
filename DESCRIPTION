@@ -14,7 +14,8 @@ Description: Package provides functions to query Voteview database by search
 License: GPL (>= 3)
 Imports:
     pscl,
-    rjson
+    rjson,
+    httr
 URL: https://github.com/JeffreyBLewis/Rvoteview, http://voteview.com/
 Suggests:
     testthat

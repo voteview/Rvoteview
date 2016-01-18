@@ -2,7 +2,7 @@
 % Please edit documentation in R/voteview.R
 \name{voteview2rollcall}
 \alias{voteview2rollcall}
-\title{Transforms Voteview JSON to a rollcall object}
+\title{Transforms Voteview object to a rollcall object}
 \usage{
 voteview2rollcall(data)
 }
@@ -14,7 +14,7 @@ voteview2rollcall(data)
 A \code{rollcall} object from the \code{pscl} package.
 }
 \description{
-Takes JSON that has been downloaded using \code{voteview.download} and
+Takes a voteview object that has been using \code{voteview.download} and
 creates a \code{pscl} \code{rollcall} object that can then be analyzed using
 methods in the \code{pscl} package.
 }

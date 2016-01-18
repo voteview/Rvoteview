@@ -11,7 +11,7 @@ read.voteview.json(json)
 \code{voteview.download}.}
 }
 \value{
-A list of two data frames: 
+A voteview object with two data frames: 
 \item{votematrix }{A data frame of roll call votes with unique legislators
  as rows and ICPSR number, state, district, name, and votes among the 
  columns.} 

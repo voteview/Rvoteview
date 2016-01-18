@@ -17,7 +17,7 @@ trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 #' 
 #' @param json A string of JSON downloaded from the voteview server using
 #' \code{voteview.download}.
-#' @return A list of two data frames: 
+#' @return A voteview object with two data frames: 
 #' \item{votematrix }{A data frame of roll call votes with unique legislators
 #'  as rows and ICPSR number, state, district, name, and votes among the 
 #'  columns.} 
@@ -53,10 +53,10 @@ read.voteview.json <- function(json) {
   return( data )
 }
 
-# Take the JSON from voteview and translate it in to a PSCL rollcall object
-#' Transforms Voteview JSON to a rollcall object
+# Takes a voteview object and translate it in to a PSCL rollcall object
+#' Transforms Voteview object to a rollcall object
 #' 
-#' Takes JSON that has been downloaded using \code{voteview.download} and
+#' Takes a voteview object that has been using \code{voteview.download} and
 #' creates a \code{pscl} \code{rollcall} object that can then be analyzed using
 #' methods in the \code{pscl} package.
 #' 
@@ -84,7 +84,7 @@ read.voteview.json <- function(json) {
 #' 
 voteview2rollcall <- function(data) {
   #check type of obj
-  #print( data )
+
   dat  <- data$votematrix[,grep("^V\\d+", names(data$votematrix))]
   rnames <- sprintf("%s %s - %s", trim(data$votematrix$name),
                                   data$votematrix$cqlabel,
@@ -164,15 +164,10 @@ vlist2df <- function(rcs) {
 #' 
 #' @param query A string that will search the voteview database.
 #' @param startdate A string of the format \code{"yyyy-mm-dd"} that is the
-#' earliest possible date to search for a roll call. Please note for now that
-#' dates are not available for roll calls from the 113 and 114 sessions of
-#' congress and those results will be ommitted if you include a start or end
-#' date in the query.
-#' @param enddate CURRENTLY NOT FUNCTIONAL. A string of the format
+#' earliest possible date to search for a roll call.
+#' @param enddate A string of the format
 #' "yyyy-mm-dd" that is the earliest possible date to search for a roll
-#' call. Please note for now that dates are not available for roll calls from
-#' the 113 and 114 sessions of congress and those results will be ommitted if
-#' you include a start or end date in the query.
+#' call.
 #' @param chamber Can be a string in \code{c("House", "Senate")}. The default
 #' NULL value returns results from both chambers of congress.
 #' @return A data.frame with the following columns: 
@@ -248,8 +243,37 @@ voteview.search <- function(query,
  return( vlist2df(resjson$rollcalls) )
 }
 
-# Function to download voteview rollcall data in JSON format
-#' Download JSON from voteview server
+# Function to download voteview rollcall data as voteview object
+#' Download voteview object from voteview server
+#' 
+#' Takes roll call IDs and returns a votthat contains data on the
+#' description, date, all individual legislator's votes, and more on each roll
+#' call.
+#' 
+#' 
+#' @param ids A string or vector of strings, where each string is a roll call
+#' ID, such as "S1110326". These ids can be found using the
+#' \code{voteview.search} function, if they are not already known.
+#' @return A voteview object
+#' @seealso '\link{read.voteview.json}','\link{voteview.search}','\link{voteview2rollcall}'.
+#' @examples
+#' 
+#' ## Search for sample roll calls
+#' res <- voteview.search("Iraq")
+#'   
+#' ## Use the ids from that search to create a voteview object
+#' vv <- voteview.download(res$ids[1:50])
+#' @export
+#' 
+voteview.download <- function(ids) {
+
+  vv.json <- voteview.download.json(ids)
+  vv.data <- read.voteview.json(vv.json)
+
+  return( vv.data )
+}
+
+#' Download voteview object from voteview server
 #' 
 #' Takes roll call IDs and returns a JSON string that contains data on the
 #' description, date, all individual legislator's votes, and more on each roll
@@ -267,21 +291,12 @@ voteview.search <- function(query,
 #' res <- voteview.search("Iraq")
 #'   
 #' ## Use the ids from that search to create a json string
-#' json <- voteview.download(res$ids)
+#' json <- voteview.download.json(res$ids)
 #' @export
 #' 
-voteview.download <- function(ids) {
-
-  vv.json <- voteview.download.json(ids)
-  vv.data <- read.voteview.json(vv.json)
-  rc.data <- voteview2rollcall(vv.data)
-  
-  return( rc.data )
-}
-
 voteview.download.json <- function(ids) {
   
-  # Input validation goes here
+  # todo: Input validation
   
   theurl <- sprintf("http://leela.sscnet.ucla.edu/voteview/download?ids=%s&xls=F",
                      paste(ids , collapse = ","))
@@ -291,4 +306,5 @@ voteview.download.json <- function(ids) {
   return( resjson )
 }
 
-# Perhaps new function called voteview, which can do any of these
+# Eventually this function will properly merge RC files
+#"%+%" <- function(x, y) cbind(x$legis.data, y$legis.data)

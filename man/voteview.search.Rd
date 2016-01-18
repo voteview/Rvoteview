@@ -10,16 +10,11 @@ voteview.search(query, startdate = NULL, enddate = NULL, chamber = NULL)
 \item{query}{A string that will search the voteview database.}
 
 \item{startdate}{A string of the format \code{"yyyy-mm-dd"} that is the
-earliest possible date to search for a roll call. Please note for now that
-dates are not available for roll calls from the 113 and 114 sessions of
-congress and those results will be ommitted if you include a start or end
-date in the query.}
+earliest possible date to search for a roll call.}
 
-\item{enddate}{CURRENTLY NOT FUNCTIONAL. A string of the format
+\item{enddate}{A string of the format
 "yyyy-mm-dd" that is the earliest possible date to search for a roll
-call. Please note for now that dates are not available for roll calls from
-the 113 and 114 sessions of congress and those results will be ommitted if
-you include a start or end date in the query.}
+call.}
 
 \item{chamber}{Can be a string in \code{c("House", "Senate")}. The default
 NULL value returns results from both chambers of congress.}

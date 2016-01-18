@@ -3,6 +3,7 @@
 export(read.voteview.json)
 export(vlist2df)
 export(voteview.download)
+export(voteview.download.json)
 export(voteview.search)
 export(voteview2rollcall)
 import(httr)
