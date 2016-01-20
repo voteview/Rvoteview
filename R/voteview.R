@@ -91,14 +91,14 @@ voteview2rollcall <- function(data) {
                                   data$votematrix$icpsr)
   rownames(dat) <- rnames
   legis.data <- data$votematrix[, -grep("^V\\d+", names(data$votematrix))]
-  rownames(legis.data) <- rnames
-  
+
   rc <- rollcall(data = dat,
                  yea = c(1, 2, 3),
                  nay = c(4, 5, 6),
                  missing = c(NA, 7, 8, 9),
                  notInLegis = 0,
                  legis.data = legis.data,
+                 legis.names = rnames,
                  vote.data = data$rollcalls,
                  source = "Download from VoteView")
   return(rc)
