@@ -307,4 +307,46 @@ voteview.download.json <- function(ids) {
 }
 
 # Eventually this function will properly merge RC files
-#"%+%" <- function(x, y) cbind(x$legis.data, y$legis.data)
+"%+%" <- function(rc1, rc2) {
+  
+  # todo: input validation
+  # todo: naming votes V1, V2, ...
+  
+  # Identifying vectors
+  votes.ids1 <- paste0(rc1$vote.data$chamber, rc1$vote.data$rollnumber)
+  votes.ids2 <- paste0(rc2$vote.data$chamber, rc2$vote.data$rollnumber)
+  legis.inrc1 <- rc2$legis.data$icpsr %in% rc1$legis.data$icpsr
+  new.votes <- !(votes.ids2 %in% votes.ids1)
+  
+  # Building the new vote matrix
+  old.votedat <- data.frame(rc1$votes, icpsr = rc1$legis.data$icpsr)
+  new.votedat <- data.frame(rc2$votes[, new.votes], icpsr = rc2$legis.data$icpsr)
+  allvote <- merge(old.votedat, new.votedat, by = "icpsr", all = T) # important so that legis merge works well, if not can add check that icpsr are in the same place, if not then sort
+  allvote[is.na(allvote)] <-  rc1$codes$notInLegis # is this a reasonable choice? Yes right?
+  # What about those who switch parties or any other changes in legis.data, what does that look like in the db?
+  
+  # Building metadata matrices
+  allvote.data <- rbind(rc1$vote.data, rc2$vote.data[new.votes, ])
+  allvote.data$vote <- paste0("V", 1:nrow(allvote.data))
+  
+  alllegis.data <- rbind(rc1$legis.data, rc2$legis.data[!legis.inrc1, ])
+  alllegis.data <- alllegis.data[match(allvote$icpsr, alllegis.data$icpsr), ]
+  
+  # Clean up new vote matrix
+  allvote <- allvote[, colnames(allvote) != "icpsr"]
+  
+  rnames <- sprintf("%s %s - %s", alllegis.data$name,
+                    alllegis.data$cqlabel,
+                    alllegis.data$icpsr)
+  rownames(allvote) <- rnames
+  
+  rollcall(data = as.matrix(allvote),
+                  yea = rc1$codes$yea,
+                  nay = rc1$codes$nay,
+                  missing = rc1$codes$missing,
+                  notInLegis = rc1$codes$notInLegis,
+                  legis.data = alllegis.data,
+                  legis.names = rnames,
+                  vote.data = allvote.data,
+                  source = "Download from VoteView")
+}
