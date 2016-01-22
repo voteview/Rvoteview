@@ -218,29 +218,24 @@ voteview.search <- function(query,
                  c(startdate, enddate))) != length(dates)){
     stop("A date is formatted incorrectly. Please use yyyy, yyyy-mm, or yyyy-mm-dd format")
   }
-  
-  # search by session between 1 and 9999 and create a string of csvs
-  
-  theurl <- sprintf("http://leela.sscnet.ucla.edu/voteview/search?q=%s",
-                    URLencode(query))
-   
- if (!(is.null(startdate))) {
-   theurl <- sprintf("%s&startdate=%s", theurl, startdate) # check if end date is before start date
- }
- if (!(is.null(enddate))) {
-   theurl <- sprintf("%s&enddate=%s", theurl, enddate)
- }
- if (!(is.null(chamber))) {
-   if (!(tolower(chamber) %in% c("house", "senate"))) stop("Chamber must be either 'House' or 'Senate'")
-   theurl <- sprintf("%s&chamber=%s", theurl, chamber)
- }   
+  if (!is.null(chamber)) {
+    if (!(tolower(chamber) %in% c("house", "senate"))) stop("Chamber must be either 'House' or 'Senate'")
+  }
+  # todo: check if end date is before start date
+  # todo: allow search by session between 1 and 9999 and create a string of csvs
 
- print(theurl)
- resp <- GET(theurl)
- suppressWarnings(resjson <- fromJSON(content(resp, "text")))
- cat(sprintf("Query '%s' returned %i votes...\n", query, resjson$recordcount))
- if(resjson$recordcount == 0) stop("No votes found")
- return( vlist2df(resjson$rollcalls) )
+  theurl <- "http://leela.sscnet.ucla.edu/voteview/search"
+   
+  resp <- POST(theurl,
+               body = list(q = URLencode(query),
+                           startdate = startdate,
+                           enddate = enddate,
+                           chamber = chamber))
+  
+  suppressWarnings(resjson <- fromJSON(content(resp, "text")))
+  cat(sprintf("Query '%s' returned %i votes...\n", query, resjson$recordcount))
+  if(resjson$recordcount == 0) stop("No votes found")
+  return( vlist2df(resjson$rollcalls) )
 }
 
 # Function to download voteview rollcall data as voteview object
@@ -296,12 +291,14 @@ voteview.download <- function(ids) {
 #' 
 voteview.download.json <- function(ids) {
   
-  # todo: Input validation
+  # todo: input validation
   
-  theurl <- sprintf("http://leela.sscnet.ucla.edu/voteview/download?ids=%s&xls=F",
-                     paste(ids , collapse = ","))
-  print(theurl)
-  resp <- GET(theurl)
+  theurl <- "http://leela.sscnet.ucla.edu/voteview/download"
+  
+  resp <- POST(theurl,
+               body = list(ids = paste(ids, collapse = ","),
+                           xls = F))
+  
   suppressWarnings(resjson <- content(resp, "text"))
   return( resjson )
 }
@@ -321,9 +318,10 @@ voteview.download.json <- function(ids) {
   # Building the new vote matrix
   old.votedat <- data.frame(rc1$votes, icpsr = rc1$legis.data$icpsr)
   new.votedat <- data.frame(rc2$votes[, new.votes], icpsr = rc2$legis.data$icpsr)
-  allvote <- merge(old.votedat, new.votedat, by = "icpsr", all = T) # important so that legis merge works well, if not can add check that icpsr are in the same place, if not then sort
-  allvote[is.na(allvote)] <-  rc1$codes$notInLegis # is this a reasonable choice? Yes right?
-  # What about those who switch parties or any other changes in legis.data, what does that look like in the db?
+  allvote <- merge(old.votedat, new.votedat, by = "icpsr", all = T)
+  allvote[is.na(allvote)] <-  rc1$codes$notInLegis 
+  # todo: What about those who switch parties or any other changes in legis.data
+  # what does that look like in the db?
   
   # Building metadata matrices
   allvote.data <- rbind(rc1$vote.data, rc2$vote.data[new.votes, ])
