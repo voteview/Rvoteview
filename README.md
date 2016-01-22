@@ -21,7 +21,6 @@ To use `Rvoteview`, you generally want to query the database to get a list of vo
 library(Rvoteview)
   
 res <- voteview.search("Iraq")
-#> [1] "http://leela.sscnet.ucla.edu/voteview/search?q=Iraq"
 #> Query 'Iraq' returned 318 votes...
 names(res)
 #> [1] "descriptionShort" "description"      "no"              
@@ -46,18 +45,11 @@ head(res[, -2])
 #> 6     100        850 1988-09-30 H1000850
 ```
 
-Using `res$id` we can get a voteview object that contains the full set of votes and data for each roll call. Eventually we will either develop methods for the voteview object or we can turn the voteview object in to a `pscl` `rollcall` object.
+Using `res$id` we can get a `rollcall` object (from the [`pscl` package](https://cran.r-project.org/web/packages/pscl/index.html)) that contains the full set of votes and data for each roll call. Eventually we will either develop additional methods for the `pscl` `rollcall` object.
 
 ``` r
-## Get a voteview object using the ids, please limit to a few ids for now!
-vv <- voteview.download(res$id[1:10])
-#> [1] "http://leela.sscnet.ucla.edu/voteview/download?ids=S1000189,S1000231,S1000621,S1000678,H1000828,H1000850,S1000784,S1010492,S1010493,S1010491&xls=F"
-
-## Eventually, we will add methods for voteview and rollcall objects, and perhaps
-## only return rollcall objects.
-
-## Turn the voteview object in to a rollcall object
-rc <- voteview2rollcall(vv)
+## Get a rollcall object using the ids, please limit to a few ids for now!
+rc <- voteview.download(res$id[1:10])
 
 ## Now this object can be used in many 'pscl' methods
 summary(rc)
