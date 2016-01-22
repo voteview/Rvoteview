@@ -2,7 +2,7 @@
 % Please edit documentation in R/voteview.R
 \name{voteview.download}
 \alias{voteview.download}
-\title{Download voteview object from voteview server}
+\title{Download rollcall object from voteview server}
 \usage{
 voteview.download(ids)
 }
@@ -12,10 +12,10 @@ ID, such as "S1110326". These ids can be found using the
 \code{voteview.search} function, if they are not already known.}
 }
 \value{
-A voteview object
+A rollcall object
 }
 \description{
-Takes roll call IDs and returns a votthat contains data on the
+Takes roll call IDs and returns a rollcall object that contains data on the
 description, date, all individual legislator's votes, and more on each roll
 call.
 }
@@ -24,10 +24,10 @@ call.
 ## Search for sample roll calls
 res <- voteview.search("Iraq")
   
-## Use the ids from that search to create a voteview object
+## Use the ids from that search to create a rollcall object
 vv <- voteview.download(res$ids[1:50])
 }
 \seealso{
-'\link{read.voteview.json}','\link{voteview.search}','\link{voteview2rollcall}'.
+\link{voteview.search}','\link[pscl]{rollcall}'.
 }
 

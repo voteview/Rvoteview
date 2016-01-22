@@ -21,6 +21,6 @@ test_that('download converts to voteview', {
 
 test_that('query works for many ids', {
   res <- voteview.search("Iraq")
-  expect_that(vv_big <- voteview.download(ids = res$id), not(throws_error()))
-  expect_equal(nrow(vv_big$rollcalls), length(res$id))
+  expect_that(rc_big <- voteview.download(ids = res$id), not(throws_error()))
+  expect_equal(rc_big$m, length(res$id))
 })

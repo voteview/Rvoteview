@@ -14,17 +14,18 @@ voteview2rollcall(data)
 A \code{rollcall} object from the \code{pscl} package.
 }
 \description{
-Takes a voteview object that has been using \code{voteview.download} and
+Takes a voteview object that has been using \code{voteview.download.json} and
 creates a \code{pscl} \code{rollcall} object that can then be analyzed using
 methods in the \code{pscl} package.
 }
 \examples{
 
+## NOTE: SIMPLY USE voteview.download INSTEAD
 ## Search for example roll calls
 res <- voteview.search("Iraq")
   
 ## Use the ids from that search to create a json string
-json <- voteview.download(res$ids)
+json <- voteview.download.json(res$ids)
   
 ## Get roll call object
 rc <- voteview2rollcall(json)

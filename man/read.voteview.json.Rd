@@ -20,7 +20,7 @@ the vote number that matches the bove matrix, the chamber, session of
 congress, date, and a description.}
 }
 \description{
-Takes JSON that has been downloaded using \code{voteview.download} and
+This internal function takes JSON that has been downloaded using \code{voteview.download} and
 creates a rollcall vote data frame and a rollcall description data frame.
 This is used by \code{voteview2rollcall} to generate the data frames that
 are turned in to \code{rollcall} objects in \code{pscl}.

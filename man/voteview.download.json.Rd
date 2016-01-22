@@ -15,7 +15,7 @@ ID, such as "S1110326". These ids can be found using the
 A single string of JSON code.
 }
 \description{
-Takes roll call IDs and returns a JSON string that contains data on the
+This internal function takes roll call IDs and returns a JSON string that contains data on the
 description, date, all individual legislator's votes, and more on each roll
 call.
 }
@@ -28,6 +28,6 @@ res <- voteview.search("Iraq")
 json <- voteview.download.json(res$ids)
 }
 \seealso{
-'\link{voteview.search}','\link{voteview2rollcall}'.
+'\link{voteview.download}','\link{voteview.search}'.
 }
 

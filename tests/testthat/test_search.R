@@ -6,10 +6,11 @@ test_that('search function hits database', {
 })
 
 test_that('search function options query leela correctly', {
-  expect_that(voteview.search('Iraq', startdate = 2014), not(throws_error("cannot open the connection")))
-  expect_that(voteview.search('Iraq', startdate = '2014-10-01'), not(throws_error("cannot open the connection")))
-  expect_that(voteview.search('Iraq', enddate = '2014-10-01'), not(throws_error("cannot open the connection")))
-  expect_that(voteview.search('Iraq', chamber = "House"), not(throws_error("cannot open the connection")))
+  expect_that(voteview.search('Iraq', startdate = 2014), not(throws_error()))
+  expect_that(voteview.search('Iraq', startdate = '2014-10-01'), not(throws_error()))
+  expect_that(voteview.search('Iraq', enddate = '2014-10-01'), not(throws_error()))
+  expect_that(voteview.search('Iraq', chamber = "House"), not(throws_error()))
+  #expect_that(voteview.search('Iraq', chamber = "House", session = c(113, 110)), not(throws_error()))
 })
 
 test_that('search function input validation works', {
