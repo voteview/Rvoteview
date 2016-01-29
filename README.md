@@ -86,27 +86,13 @@ You can also search by start and end date, session, and chamber. Please see the 
 ``` r
 ## Voteview search with options
 res <- voteview.search("Iraq", chamber = "House", session = 110,
-                       startdate = 2008, enddate = "2018-04-20")
-#> Query 'alltext:Iraq session:110' returned 5 votes...
+                       startdate = 2008, enddate = "2008-04-20")
+#> Query 'alltext:Iraq session:110' returned 1 votes...
 head(res[, -1])
 #>                                                  shortdescription
 #> 1 IRAQ & AFGHAN. FALLEN MILITARY HEROES POST OFFICE LOUISVILLE KY
-#> 2                             WITHDRAW FROM IRAQ BY DECEMBER 2009
-#> 3                 SUPPLEMENTAL APPS -- $165.4B IRAQ & AFGHANISTAN
-#> 4                      LONG TERM COSTS OF IRAQ & AFGHANISTAN WARS
-#> 5            IRAQ DEFENSE AGREEMENT MUST BE SUBMITTED TO CONGRESS
-#>         date     bill chamber session rollnumber yea nay   support
-#> 1 2008-02-28 H R 4454   House     110       1263 404   0 100.00000
-#> 2 2008-05-15 H R 2642   House     110       1504 227 197  53.53774
-#> 3 2008-06-19 H R 2642   House     110       1606 269 155  63.44340
-#> 4 2008-05-22 H R 5658   House     110       1535 242 168  59.02439
-#> 5 2008-05-22 H R 5658   House     110       1534 231 184  55.66265
-#>         id
-#> 1 H1101263
-#> 2 H1101504
-#> 3 H1101606
-#> 4 H1101535
-#> 5 H1101534
+#>         date     bill chamber session rollnumber yea nay support       id
+#> 1 2008-02-28 H R 4454   House     110       1263 404   0     100 H1101263
 
 res <- voteview.search("Iraq", session = 109:112)
 #> Query 'alltext:Iraq session:109 and 110 and 111 and 112' returned 165 votes...

@@ -50,7 +50,7 @@ You can also search by start and end date, session, and chamber. Please see the 
 ```{r search-options}
 ## Voteview search with options
 res <- voteview.search("Iraq", chamber = "House", session = 110,
-                       startdate = 2008, enddate = "2018-04-20")
+                       startdate = 2008, enddate = "2008-04-20")
 head(res[, -1])
 
 res <- voteview.search("Iraq", session = 109:112)
