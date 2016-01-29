@@ -312,7 +312,9 @@ vlist2df <- function(rcs) {
   
   for (i in 1:length(rcs)) {
      for (f in flds) {
-       df[[f]][i] <- rcs[[i]][[f]]
+       if(!is.null(rcs[[i]][[f]])) {
+         df[[f]][i] <- rcs[[i]][[f]]
+       }
      }
   }
   
