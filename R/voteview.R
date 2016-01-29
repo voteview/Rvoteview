@@ -61,7 +61,7 @@ voteview.search <- function(alltext,
                             session = NULL,
                             chamber = NULL) {
   
-  # todo: allow search by query
+  # todo: allow or, and and allow "phrase"
   
   # Start query
   query <- paste0("alltext:", alltext)
@@ -86,30 +86,27 @@ voteview.search <- function(alltext,
       stop("Session must be a positive number or vector of positive numbers greater than 0 and less than 1000")
     }
     
-    # Add session to query
-    if (length(session) == 1){
-      query <- paste0(query, " session:", session)
-    } else {
-      query <- paste0(query, " session:[", session[1], " to ", session[length(session)], "]")
-      
-    }
+    # Add session to query (if session is one number, ignores second paste)
+    query <- paste0(query, " session:", paste(session, collapse = " and "))
   }
   
   theurl <- "http://leela.sscnet.ucla.edu/voteview/search"
   
-  resp <- POST(theurl, body = list(q = URLencode(query),
+  resp <- POST(theurl, body = list(q = query,
                                    startdate = startdate,
                                    enddate = enddate,
                                    chamber = chamber))
-  
+
   suppressWarnings(resjson <- fromJSON(content(resp,
                                                as = "text",
                                                encoding = "utf-8")))
   
   cat(sprintf("Query '%s' returned %i votes...\n", query, resjson$recordcount))
+  
+  if(!is.null(resjson$errormessage)) warning(resjson$errormessage)
   if(resjson$recordcount == 0) stop("No votes found")
   
-  return(resjson)
+  # todo: add ability to store the final mongo query string
   return( vlist2df(resjson$rollcalls) )
 }
 
@@ -310,23 +307,26 @@ voteview2rollcall <- function(data) {
 #' 
 vlist2df <- function(rcs) {
   df <- list()
-  flds <- names(rcs[[1]])
-  
-  for (f in flds) {
+  # drop lists from return for now
+  notlists <- sapply(rcs[[1]], function(x) class(x) != "list")
+  flds <- names(rcs[[1]][notlists])
+
+    for (f in flds) {
     md <- ifelse(class(rcs[[1]][[f]]) == "character", "character", "integer")
     df[[f]] <- vector(mode = md,length = length(rcs))
   }
   
   for (i in 1:length(rcs)) {
      for (f in flds) {
-       # There are some missing fields for votes in the  113 or 114 congresses
-       if (!is.null(rcs[[i]][[f]])) {
-         df[[f]][i] <- rcs[[i]][[f]]
-       }
+       df[[f]][i] <- rcs[[i]][[f]]
      }
   }
   
-  return( as.data.frame(df, stringsAsFactors = FALSE) )
+  # reorder columns explicitly
+  df <- as.data.frame(df, stringsAsFactors = FALSE)
+  
+  return( df[, c("description", "shortdescription", "date", "bill", "chamber",
+                 "session",  "rollnumber", "yea", "nay", "support", "id")])
 }
 
 # Eventually this function will properly merge RC files

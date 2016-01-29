@@ -7,14 +7,10 @@ test_that('search function hits database', {
 
 test_that('search function options query leela correctly', {
   expect_that(voteview.search('Iraq', startdate = 2014), not(throws_error()))
-  expect_that(voteview.search('Iraq', startdate = '2014-10-01'), not(throws_error()))
+  expect_that(voteview.search('Iraq', startdate = '2013-10-01'), not(throws_error()))
   expect_that(voteview.search('Iraq', enddate = '2014-10-01'), not(throws_error()))
   expect_that(voteview.search('Iraq', chamber = "House"), not(throws_error()))
-  #expect_that(voteview.search('Iraq', chamber = "House", session = c(113, 110)), not(throws_error()))
-})
-
-test_that('search function input validation works', {
-  expect_that(voteview.search(''), throws_error('No votes found'))
+  expect_that(voteview.search('Iraq', chamber = "House", session = 110:113), not(throws_error()))
 })
 
 test_that('search function returns example dataframe with correct number of votes', {
@@ -23,8 +19,8 @@ test_that('search function returns example dataframe with correct number of vote
   
   expect_is(df, 'data.frame')
   expect_is(df_sub, 'data.frame')
-  expect_equal(nrow(df), 32)
-  expect_equal(nrow(df_sub), 31)
+  expect_equal(nrow(df), 142)
+  expect_equal(nrow(df_sub), 136)
   expect_is(df_sub$id, "character")
   expect_identical(length(unique(df_sub$id)), nrow(df_sub))
 })
