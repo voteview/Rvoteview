@@ -34,7 +34,7 @@ res <- voteview.search("Iraq")
 names(res)
   
 ## I will drop description since it is a very long field
-head(res[, -2])
+head(res[, -1])
 ```
 Using `res$id` we can get a `rollcall` object (from the [`pscl` package](https://cran.r-project.org/web/packages/pscl/index.html)) that contains the full set of votes and data for each roll call. Eventually we will either develop additional methods for the `pscl` `rollcall` object.
 ```{r download}
@@ -45,4 +45,15 @@ rc <- voteview.download(res$id[1:10])
 summary(rc)
 ```
 
-Please see the help files for each function after you install the package to see a little more about how they work.
+You can also search by start and end date, session, and chamber. Please see the help files for each function after you install the package to see a little more about how they work.
+
+```{r search-options}
+## Voteview search with options
+res <- voteview.search("Iraq", chamber = "House", session = 110,
+                       startdate = 2008, enddate = "2018-04-20")
+head(res[, -1])
+
+res <- voteview.search("Iraq", session = 109:112)
+head(res[, -1])
+```
+

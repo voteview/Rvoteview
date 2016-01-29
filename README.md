@@ -21,28 +21,29 @@ To use `Rvoteview`, you generally want to query the database to get a list of vo
 library(Rvoteview)
   
 res <- voteview.search("Iraq")
-#> Query 'Iraq' returned 318 votes...
+#> Query 'alltext:Iraq' returned 334 votes...
 names(res)
-#> [1] "descriptionShort" "description"      "no"              
-#> [4] "yea"              "chamber"          "session"         
-#> [7] "rollnumber"       "date"             "id"
+#>  [1] "description"      "shortdescription" "date"            
+#>  [4] "bill"             "chamber"          "session"         
+#>  [7] "rollnumber"       "yea"              "nay"             
+#> [10] "support"          "id"
   
 ## I will drop description since it is a very long field
-head(res[, -2])
-#>                                       descriptionShort  no yea chamber
-#> 1 INVOKE CLOTURE ON OMNIBUS TRADE BILL KUWAITI TANKERS  41  53  Senate
-#> 2    SUPPORT A CEASEFIRE & SETTLEMENT IN IRAN-IRAQ WAR   0  96  Senate
-#> 3               CONDEMN IRAQ CHEM WEAPONS AGAINST IRAN   0  91  Senate
-#> 4              CHINA STOP SELLING MISSILES IRAN & IRAQ   0  97  Senate
-#> 5        IRAQ SANCTIONS B/C USE OF CHEM WEAPONS (PASS)  16 389   House
-#> 6   FOREIGN AID--US ASST CHINA MISSILE PROG ON CERT. C 237  23   House
-#>   session rollnumber       date       id
-#> 1     100        189 1987-07-14 S1000189
-#> 2     100        231 1987-08-07 S1000231
-#> 3     100        621 1988-06-24 S1000621
-#> 4     100        678 1988-07-27 S1000678
-#> 5     100        828 1988-09-27 H1000828
-#> 6     100        850 1988-09-30 H1000850
+head(res[, -1])
+#>                             shortdescription       date          bill
+#> 1         WITHDRAW FROM IRAQ BY JUNE 30 2008 2007-10-03     H.R. 3222
+#> 2                         REDUCE SDI FUNDING 1992-09-17              
+#> 3                   INCREASES TAXES FOR IRAQ 2004-06-17          2400
+#> 4    CAMPAIGN MEDAL FOR IRAQ AND AFGHANISTAN 2004-05-18       R. 3104
+#> 5                   OPPOSE THE SURGE IN IRAQ 2007-02-17        S. 574
+#> 6 BUDGET RESOLUTION -- INTERNATIONAL AFFAIRS 2008-03-14 S.Con.Res. 70
+#>   chamber session rollnumber yea nay   support       id
+#> 1  Senate     110        362  28  69  28.86598 S1100362
+#> 2  Senate     102        494  48  51  48.48485 S1020494
+#> 3  Senate     108        589  44  53  45.36082 S1080589
+#> 4  Senate     108        555  98   0 100.00000 S1080555
+#> 5  Senate     110         51  56  35  61.53846 S1100051
+#> 6  Senate     110        525  73  23  76.04167 S1100525
 ```
 
 Using `res$id` we can get a `rollcall` object (from the [`pscl` package](https://cran.r-project.org/web/packages/pscl/index.html)) that contains the full set of votes and data for each roll call. Eventually we will either develop additional methods for the `pscl` `rollcall` object.
@@ -50,12 +51,13 @@ Using `res$id` we can get a `rollcall` object (from the [`pscl` package](https:/
 ``` r
 ## Get a rollcall object using the ids, please limit to a few ids for now!
 rc <- voteview.download(res$id[1:10])
+#> No encoding supplied: defaulting to UTF-8.
 
 ## Now this object can be used in many 'pscl' methods
 summary(rc)
 #> Source:       Download from VoteView 
 #> 
-#> Number of Legislators:        540
+#> Number of Legislators:        194
 #> Number of Roll Call Votes:    10
 #> 
 #> 
@@ -66,19 +68,68 @@ summary(rc)
 #> Not In Legislature:   0 
 #> 
 #> Party Composition:
-#>  100  200  328  329 <NA> 
-#>  311  227    1    1    0 
+#>  100  200  328 <NA> 
+#>   94   98    2    0 
 #> 
 #> Vote Summary:
 #>                Count Percent
-#> 0 (notInLegis)  3728    69.0
-#> 1 (yea)         1055    19.5
-#> 3 (yea)            2     0.0
-#> 4 (nay)            5     0.1
-#> 6 (nay)          358     6.6
-#> 9 (missing)      252     4.7
+#> 0 (notInLegis)   930    47.9
+#> 1 (yea)          664    34.2
+#> 6 (nay)          301    15.5
+#> 9 (missing)       45     2.3
 #> 
 #> Use summary(rc,verbose=TRUE) for more detailed information.
 ```
 
-Please see the help files for each function after you install the package to see a little more about how they work.
+You can also search by start and end date, session, and chamber. Please see the help files for each function after you install the package to see a little more about how they work.
+
+``` r
+## Voteview search with options
+res <- voteview.search("Iraq", chamber = "House", session = 110,
+                       startdate = 2008, enddate = "2018-04-20")
+#> Query 'alltext:Iraq session:110' returned 5 votes...
+head(res[, -1])
+#>                                                  shortdescription
+#> 1 IRAQ & AFGHAN. FALLEN MILITARY HEROES POST OFFICE LOUISVILLE KY
+#> 2                             WITHDRAW FROM IRAQ BY DECEMBER 2009
+#> 3                 SUPPLEMENTAL APPS -- $165.4B IRAQ & AFGHANISTAN
+#> 4                      LONG TERM COSTS OF IRAQ & AFGHANISTAN WARS
+#> 5            IRAQ DEFENSE AGREEMENT MUST BE SUBMITTED TO CONGRESS
+#>         date     bill chamber session rollnumber yea nay   support
+#> 1 2008-02-28 H R 4454   House     110       1263 404   0 100.00000
+#> 2 2008-05-15 H R 2642   House     110       1504 227 197  53.53774
+#> 3 2008-06-19 H R 2642   House     110       1606 269 155  63.44340
+#> 4 2008-05-22 H R 5658   House     110       1535 242 168  59.02439
+#> 5 2008-05-22 H R 5658   House     110       1534 231 184  55.66265
+#>         id
+#> 1 H1101263
+#> 2 H1101504
+#> 3 H1101606
+#> 4 H1101535
+#> 5 H1101534
+
+res <- voteview.search("Iraq", session = 109:112)
+#> Query 'alltext:Iraq session:109 and 110 and 111 and 112' returned 165 votes...
+head(res[, -1])
+#>                                                         shortdescription
+#> 1                        SUPPLEMENTAL APPS FOR IRAQ & AFGHANISTAN (PROC)
+#> 2                   SUPPLEMENTAL APPS FOR IRAQ & AFGHANISTAN -- RECOMMIT
+#> 3          SUPPLEMENTAL APPS IRAQ & AFGHANISTAN & KATRINA -- COAST GUARD
+#> 4    SUPPLEMENTAL APPS IRAQ & AFGHANISTAN & KATRINA -- ELECTION INFRAST.
+#> 5 SUPPLEMENTAL APPS IRAQ & AFGHANISTAN & KATRINA -- COMMUN. BLOCK GRANTS
+#> 6 SUPPLEMENTAL APPS IRAQ & AFGHANISTAN & KATRINA -- COMMUN. BLOCK GRANTS
+#>         date      bill chamber session rollnumber yea nay  support
+#> 1 2005-05-05 H RES 258   House     109        158 224 196 53.33333
+#> 2 2005-05-05  H R 1268   House     109        159 201 225 47.18310
+#> 3 2006-03-16  H R 4939   House     109        724 208 210 49.76077
+#> 4 2006-03-16  H R 4939   House     109        726 194 227 46.08076
+#> 5 2006-03-16  H R 4939   House     109        721 210 212 49.76303
+#> 6 2006-03-16  H R 4939   House     109        720 174 248 41.23223
+#>         id
+#> 1 H1090158
+#> 2 H1090159
+#> 3 H1090724
+#> 4 H1090726
+#> 5 H1090721
+#> 6 H1090720
+```

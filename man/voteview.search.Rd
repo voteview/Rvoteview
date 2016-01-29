@@ -4,11 +4,10 @@
 \alias{voteview.search}
 \title{Query the Voteview Database with a String}
 \usage{
-voteview.search(query, startdate = NULL, enddate = NULL, chamber = NULL)
+voteview.search(alltext, startdate = NULL, enddate = NULL, session = NULL,
+  chamber = NULL)
 }
 \arguments{
-\item{query}{A string that will search the voteview database.}
-
 \item{startdate}{A string of the format \code{"yyyy-mm-dd"} that is the
 earliest possible date to search for a roll call.}
 
@@ -16,22 +15,30 @@ earliest possible date to search for a roll call.}
 "yyyy-mm-dd" that is the earliest possible date to search for a roll
 call.}
 
+\item{session}{A numeric vector. Constrains search to sessions in the numeric
+vector.}
+
 \item{chamber}{Can be a string in \code{c("House", "Senate")}. The default
 NULL value returns results from both chambers of congress.}
+
+\item{query}{A string that will search the voteview database.}
 }
 \value{
 A data.frame with the following columns: 
 \itemize{
-\item{\code{descriptionShort} }{A short description of the bill.}
 \item{\code{description} }{Official description of the bill.}
-\item{\code{no} }{The total number of 'Nay' votes }
-\item{\code{yea} }{The total number of 'Yea' votes }
+\item{\code{shortdescription} }{A short description of the bill.}
+\item{\code{date} }{The date the roll call was held, in string "yyyy-mm-dd"
+format.}
+\item{\code{bill} }{Bill name abbreviation.}
 \item{\code{chamber} }{The chamber the roll call was held in. Either "House"
 or "Senate"} 
 \item{\code{session} }{The session of congress the roll call was held in.}
 \item{\code{rollnumber} }{The roll call number of the vote.}
-\item{\code{date} }{The date the roll call was held, in string "yyyy-mm-dd"
-format.}
+\item{\code{yea} }{The total number of 'Yea' votes.}
+\item{\code{nay} }{The total number of 'Nay' votes.}
+\item{\code{support} }{Percent of 'Yea' votes out of all 'Yea' or 'Nay' 
+votes (excludes absent).}
 \item{\code{id} }{Unique identifier for the roll call that allows
 \code{voteview} to query the individual congress people's votes and other
 details.}
@@ -54,6 +61,10 @@ res
  
 ## Search for votes with an end date in just the house
 res <- voteview.search("Iraq", startdate = "2005-01-01", chamber = "House")
+res
+
+#' ## Search for votes with an end date in just the house in 112 session
+res <- voteview.search("Iraq", startdate = "2005-01-01", session = 112, chamber = "House")
 res
 }
 }

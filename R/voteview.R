@@ -18,20 +18,25 @@ trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 #' @param enddate A string of the format
 #' "yyyy-mm-dd" that is the earliest possible date to search for a roll
 #' call.
+#' @param session A numeric vector. Constrains search to sessions in the numeric
+#' vector. 
 #' @param chamber Can be a string in \code{c("House", "Senate")}. The default
 #' NULL value returns results from both chambers of congress.
 #' @return A data.frame with the following columns: 
 #' \itemize{
-#' \item{\code{descriptionShort} }{A short description of the bill.}
 #' \item{\code{description} }{Official description of the bill.}
-#' \item{\code{no} }{The total number of 'Nay' votes }
-#' \item{\code{yea} }{The total number of 'Yea' votes }
+#' \item{\code{shortdescription} }{A short description of the bill.}
+#' \item{\code{date} }{The date the roll call was held, in string "yyyy-mm-dd"
+#' format.}
+#' \item{\code{bill} }{Bill name abbreviation.}
 #' \item{\code{chamber} }{The chamber the roll call was held in. Either "House"
 #' or "Senate"} 
 #' \item{\code{session} }{The session of congress the roll call was held in.}
 #' \item{\code{rollnumber} }{The roll call number of the vote.}
-#' \item{\code{date} }{The date the roll call was held, in string "yyyy-mm-dd"
-#' format.}
+#' \item{\code{yea} }{The total number of 'Yea' votes.}
+#' \item{\code{nay} }{The total number of 'Nay' votes.}
+#' \item{\code{support} }{Percent of 'Yea' votes out of all 'Yea' or 'Nay' 
+#' votes (excludes absent).}
 #' \item{\code{id} }{Unique identifier for the roll call that allows
 #' \code{voteview} to query the individual congress people's votes and other
 #' details.}
@@ -51,6 +56,10 @@ trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 #'  
 #' ## Search for votes with an end date in just the house
 #' res <- voteview.search("Iraq", startdate = "2005-01-01", chamber = "House")
+#' res
+#' 
+#' #' ## Search for votes with an end date in just the house in 112 session
+#' res <- voteview.search("Iraq", startdate = "2005-01-01", session = 112, chamber = "House")
 #' res
 #' }
 #' @export
@@ -281,27 +290,12 @@ voteview2rollcall <- function(data) {
 #' This is a helper function to transform the vector of lists that were
 #' constructed by \code{voteview.search} in to a data frame that
 #' \code{voteview.search} returns. This function should probably not be called
-#' by itself.
+#' by itself. See \code{voteview.search} for more information.
 #' 
 #' 
 #' @param rcs A vector of lists that is built within \code{voteview.search},
 #' where each list corresponds to a roll call.
-#' @return A data.frame with the following columns: 
-#' \itemize{
-#' \item{\code{descriptionShort} }{A short description of the bill.}
-#' \item{\code{description} }{Official description of the bill.}
-#' \item{\code{no} }{The total number of 'Nay' votes }
-#' \item{\code{yea} }{The total number of 'Yea' votes }
-#' \item{\code{chamber} }{The chamber the roll call was held in. Either "House"
-#' or "Senate"} 
-#' \item{\code{session} }{The session of congress the roll call was held in.}
-#' \item{\code{rollnumber} }{The roll call number of the vote.}
-#' \item{\code{date} }{The date the roll call was held, in string "yyyy-mm-dd"
-#' format.}
-#' \item{\code{id} }{Unique identifier for the roll call that allows
-#' \code{voteview} to query the individual congress people's votes and other
-#' details.}
-#' }
+#'
 #' @seealso '\link{voteview.search}'.
 #' @export
 #' 
