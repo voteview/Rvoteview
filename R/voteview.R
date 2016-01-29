@@ -55,42 +55,61 @@ trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 #' }
 #' @export
 #' 
-voteview.search <- function(query,
+voteview.search <- function(alltext,
                             startdate = NULL,
                             enddate = NULL,
-                            #session = NULL,
+                            session = NULL,
                             chamber = NULL) {
   
-  # To character for input validation
-  dates <- c(as.character(startdate), as.character(enddate))
+  # todo: allow search by query
+  
+  # Start query
+  query <- paste0("alltext:", alltext)
   
   # Input validation
-  if (!is.character(query)) stop("Query must be a character vector")
+  if (!is.character(alltext)) stop("Query must be a character vector")
+  
+  dates <- c(as.character(startdate), as.character(enddate))
   if (length(grep("^[0-9]{4}($|-(0[0-9]|1[0-2])($|-([0-2][0-9]|3[0-1])))",
                   c(startdate, enddate))) != length(dates)){
     stop("A date is formatted incorrectly. Please use yyyy, yyyy-mm, or yyyy-mm-dd format")
   }
+  
   if (!is.null(chamber)) {
     if (!(tolower(chamber) %in% c("house", "senate"))) stop("Chamber must be either 'House' or 'Senate'")
   }
-  # todo: check if end date is before start date
-  # todo: make whooshq accept session
-  #if (!is.null(session)) {
-  #  if (any(session < 0 | session > 999)) stop("Session must be a positive number or vector of positive numbers greater than 0 and less than 1000")
-  #}
+  
+  # todo: check to make sure just vector
+  if (!is.null(session)) {
+
+    if (any(session < 0 | session > 999)) {
+      stop("Session must be a positive number or vector of positive numbers greater than 0 and less than 1000")
+    }
+    
+    # Add session to query
+    if (length(session) == 1){
+      query <- paste0(query, " session:", session)
+    } else {
+      query <- paste0(query, " session:[", session[1], " to ", session[length(session)], "]")
+      
+    }
+  }
   
   theurl <- "http://leela.sscnet.ucla.edu/voteview/search"
   
-  resp <- POST(theurl,
-               body = list(q = URLencode(query),
-                           startdate = startdate,
-                           enddate = enddate,
-                           #session = paste(session, collapse = ","),
-                           chamber = chamber))
+  resp <- POST(theurl, body = list(q = URLencode(query),
+                                   startdate = startdate,
+                                   enddate = enddate,
+                                   chamber = chamber))
   
-  suppressWarnings(resjson <- fromJSON(content(resp, "text")))
+  suppressWarnings(resjson <- fromJSON(content(resp,
+                                               as = "text",
+                                               encoding = "utf-8")))
+  
   cat(sprintf("Query '%s' returned %i votes...\n", query, resjson$recordcount))
   if(resjson$recordcount == 0) stop("No votes found")
+  
+  return(resjson)
   return( vlist2df(resjson$rollcalls) )
 }
 
