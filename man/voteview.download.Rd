@@ -2,32 +2,11 @@
 % Please edit documentation in R/voteview.R
 \name{voteview.download}
 \alias{voteview.download}
-\title{Download rollcall object from voteview server}
+\title{Download rollcalls as voteview object}
 \usage{
 voteview.download(ids)
 }
-\arguments{
-\item{ids}{A string or vector of strings, where each string is a roll call
-ID, such as "S1110326". These ids can be found using the
-\code{voteview.search} function, if they are not already known.}
-}
-\value{
-A rollcall object
-}
 \description{
-Takes roll call IDs and returns a rollcall object that contains data on the
-description, date, all individual legislator's votes, and more on each roll
-call.
-}
-\examples{
-
-## Search for sample roll calls
-res <- voteview.search("Iraq")
-  
-## Use the ids from that search to create a rollcall object
-vv <- voteview.download(res$ids[1:50])
-}
-\seealso{
-\link{voteview.search}','\link[pscl]{rollcall}'.
+Download rollcalls as voteview object
 }
 

@@ -1,6 +1,7 @@
 #' @import pscl
 #' @import rjson
 #' @import httr
+#' @import fastmatch
 
 # Trim white space off of strings
 trim <- function (x) gsub("^\\s+|\\s+$", "", x)
@@ -119,116 +120,86 @@ voteview.search <- function(alltext,
   return( vlist2df(resjson$rollcalls) )
 }
 
-# Function to download voteview rollcall data as rollcall object
-#' Download rollcall object from voteview server
-#' 
-#' Takes roll call IDs and returns a rollcall object that contains data on the
-#' description, date, all individual legislator's votes, and more on each roll
-#' call.
-#' 
-#' 
-#' @param ids A string or vector of strings, where each string is a roll call
-#' ID, such as "S1110326". These ids can be found using the
-#' \code{voteview.search} function, if they are not already known.
-#' @return A rollcall object
-#' @seealso \link{voteview.search}','\link[pscl]{rollcall}'.
-#' @examples
-#' 
-#' ## Search for sample roll calls
-#' res <- voteview.search("Iraq")
-#'   
-#' ## Use the ids from that search to create a rollcall object
-#' vv <- voteview.download(res$ids[1:50])
+# Internal function to get a roll call from the web api
+voteview.getvote <- function(id) {
+  theurl <- "http://leela.sscnet.ucla.edu/webvoteview/api/getvote/"
+  resp <- GET(paste0(theurl, id, "/R"))
+  data <- fromJSON(content(resp, "text"))
+}
+
+# Function to download roll calls and turn them in to a voteview object
+#' Download rollcalls as voteview object
 #' @export
 #' 
 voteview.download <- function(ids) {
   
-  vv.json <- voteview.download.json(ids)
-  rc <- voteview2rollcall(read.voteview.json(vv.json))
+  print(paste("Downloading", length(ids), "votes"))
+  pb <- txtProgressBar(min = 0, max = length(ids), style = 3)
   
-  return( rc )
-}
-
-#' Download voteview object from voteview server
-#' 
-#' This internal function takes roll call IDs and returns a JSON string that contains data on the
-#' description, date, all individual legislator's votes, and more on each roll
-#' call.
-#' 
-#' 
-#' @param ids A string or vector of strings, where each string is a roll call
-#' ID, such as "S1110326". These ids can be found using the
-#' \code{voteview.search} function, if they are not already known.
-#' @return A single string of JSON code.
-#' @seealso '\link{voteview.download}','\link{voteview.search}'.
-#' @examples
-#' 
-#' ## Search for sample roll calls
-#' res <- voteview.search("Iraq")
-#'   
-#' ## Use the ids from that search to create a json string
-#' json <- voteview.download.json(res$ids)
-#' @export
-#' 
-voteview.download.json <- function(ids) {
+  # Download votes
+  votelist <- vector("list", length(ids))
+  for (i in 1:length(ids)) {
+    vote <- voteview.getvote(ids[i]) #Add try catch
+    votelist[[i]] <- vote
+    setTxtProgressBar(pb, i)
+  }
   
-  # todo: input validation
+  # Get unique list of members
+  # 'unlist' because if voters are not all the same, then sapply returns list
+  # 'c' in case voters ARE all the same, then sapply returns array
+  members <- unique(c(unlist(sapply( votelist, function(vote) sapply(vote$votes, function(member) member$icpsr)))))
   
-  theurl <- "http://leela.sscnet.ucla.edu/voteview/download"
+  # Data to keep from return
+  # todo: add option to keep nominate data for plot method
+  rollcalldatanames <- setdiff(names(votelist[[i]]),
+                               c("votes", "apitype", "nominate"))
+  votedatanames <- setdiff(names(votelist[[1]]$votes[[1]]),
+                           c("y", "x", "vote", "icpsr"))
   
-  resp <- POST(theurl,
-               body = list(ids = paste(ids, collapse = ","),
-                           xls = F))
+  # Generic vote names, i.e. V1, V2
+  votenames <- paste0(rep("V", times = length(votelist)), 1:length(votelist))
   
-  suppressWarnings(resjson <- content(resp, "text"))
-  return( resjson )
-}
-
-# Take the JSON from voteview an roll a rollcall vote data frame and
-# rollcall description data frame
-#' Read Voteview JSON String
-#' 
-#' This internal function takes JSON that has been downloaded using \code{voteview.download} and
-#' creates a rollcall vote data frame and a rollcall description data frame.
-#' This is used by \code{voteview2rollcall} to generate the data frames that
-#' are turned in to \code{rollcall} objects in \code{pscl}.
-#' 
-#' 
-#' @param json A string of JSON downloaded from the voteview server using
-#' \code{voteview.download}.
-#' @return A voteview object with two data frames: 
-#' \item{votematrix }{A data frame of roll call votes with unique legislators
-#'  as rows and ICPSR number, state, district, name, and votes among the 
-#'  columns.} 
-#' \item{rollcalls }{A data frame of information about the roll calls including
-#' the vote number that matches the bove matrix, the chamber, session of 
-#' congress, date, and a description.}
-#' @seealso '\link{voteview.download}','\link{voteview2rollcall}'.
-#' @examples
-#' 
-#' ## Search for sample roll calls
-#' res <- voteview.search("Iraq")
-#'   
-#' ## Use the ids from that search to create a json string
-#' json <- voteview.download(res$ids)
-#'   
-#' ## Get these data frames from the JSON
-#' data <- read.voteview.json(json)
-#'   
-#' \dontrun{
-#' ## NOTE: This function is generally meant to be called within the
-#' ## voteview2rollcall function.
-#' rollcalls <- voteview2rollcall(json)
-#' }
-#' @export
-#' 
-read.voteview.json <- function(json) { 
-  suppressWarnings(data <- fromJSON(json)) # readLines gives missing end of line warning
-  data$votematrix <- as.data.frame(data$votematrix, stringsAsFactors = F)[, data$vmNames]
-  data$rollcalls <- as.data.frame(data$rollcalls, stringsAsFactors = F)[, data$rcNames]
+  data <- list()
+  data$votematrix <- data.frame(icpsr = as.numeric(members))
+  data$votematrix[, c(votedatanames, votenames)] <- NA
+  data$rollcalls <- data.frame(vote = votenames)
+  data$rollcalls[, rollcalldatanames] <- NA
+  
+  print("Building the voteview object")
+  pb <- txtProgressBar(min = 0, max = length(ids), style = 3)
+  
+  # option to replace any that are Missing with newer passes
+  
+  
+  for (i in 1:length(votelist)) {
+    for (member in votelist[[i]]$votes) {
+      vname <- paste0("V", i)
+      # Find member from roll call in output data
+      memberpos <- fmatch(member$icpsr, data$votematrix$icpsr)
+      # If the legislator data is not entered yet, enter it as well as the vote
+      if (is.na(data$votematrix$name[memberpos])) {
+        vdat <- member[votedatanames]
+        vdat[sapply(vdat, is.null)] <- NA
+        data$votematrix[memberpos, c(votedatanames, vname)] <- c(unlist(vdat), member$vote)
+      } else { # else, just enter the vote
+        data$votematrix[memberpos, vname] <- member$vote
+      }
+    }
+    
+    # If vote is NA, replace it with 0 for not in legislature
+    data$votematrix[, paste0("V", i)] <- ifelse(is.na(data$votematrix[, vname]),
+                                                0,
+                                                data$votematrix[, vname])
+    
+    # Add rollcall data
+    data$rollcalls[i, rollcalldatanames] <- c(votelist[[i]][rollcalldatanames])
+    setTxtProgressBar(pb, i)
+  }
+  
   data$vmNames <- NULL
   data$rcNames <- NULL
   class(data) <- "voteview"
+  
   return( data )
 }
 
