@@ -139,7 +139,18 @@ voteview.download <- function(ids) {
   # Download votes
   votelist <- vector("list", length(ids))
   for (i in 1:length(ids)) {
-    vote <- voteview.getvote(ids[i]) #Add try catch
+    attempts <- 1
+    vote <- "ERROR"
+    
+    suppressWarnings({ # because vote is sometimes of length > 1
+    while (vote == "ERROR" & attempts < 5) {
+      vote <- tryCatch({voteview.getvote(ids[i])},
+                        error = function(e) {attempts <<- attempts + 1; return("ERROR")})
+    }
+    
+    if (vote == "ERROR") stop(paste("Cannot find vote with id:", ids[i]))
+    })
+    
     votelist[[i]] <- vote
     setTxtProgressBar(pb, i)
   }

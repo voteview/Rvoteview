@@ -22,3 +22,4 @@ test_that('query works for many ids', {
   expect_that(rc_big <- voteview2rollcall(vv_big), not(throws_error()))
   expect_equal(rc_big$m, length(res$id))
 })
+
