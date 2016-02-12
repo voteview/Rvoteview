@@ -139,24 +139,28 @@ voteview_search <- function(alltext = NULL,
                                    enddate = enddate,
                                    chamber = chamber))
 
+  if (substr(content(resp, as = "text"), 1, 1) != "{") {
+    stop(content(resp, as = "text"))
+  }
+  
   suppressWarnings(resjson <- fromJSON(content(resp,
                                                as = "text",
                                                encoding = "utf-8")))
   
-  message(sprintf("Query '%s' returned %i votes...\n", query_string, resjson$recordcount))
+  message(sprintf("Query '%s' returned %i rollcalls...\n", query_string, resjson$recordcount))
   # todo: also return in printout the date and chamber parameters
   if(!is.null(resjson$errormessage)) warning(resjson$errormessage)
-  if(resjson$recordcount == 0) stop("No votes found")
+  if(resjson$recordcount == 0) stop("No rollcalls found")
   
   # todo: add ability to store the final mongo query string
   return( vlist2df(resjson$rollcalls) )
 }
 
 # Internal function to get a roll call from the web api
+#' @export
 voteview_getvote <- function(id) {
   theurl <- "http://leela.sscnet.ucla.edu/webvoteview/api/getvote/"
-  resp <- GET(paste0(theurl, id, "/R"))
-  data <- fromJSON(content(resp, "text"))
+  resp <- GET(paste0(theurl, id, "/R"), timeout(1))
 }
 
 # Function to download roll calls and turn them in to a voteview object
@@ -165,10 +169,14 @@ voteview_getvote <- function(id) {
 #' 
 voteview_download <- function(ids) {
   
-  votelist <- vector("list", length(ids))
-  votelist <- build_votelist(votelist, ids)
+  uniqueids <- unique(ids)
 
-  return( votelist2voteview(votelist) )
+  if (length(uniqueids) < length(ids)) message("Duplicated ids dropped")
+  
+  dat <- vector("list", length(uniqueids))
+  dat <- build_votelist(dat, uniqueids)
+
+  return( votelist2voteview(dat) )
 }
 
 # Function to build voteview object from voteview list
@@ -177,65 +185,91 @@ voteview_download <- function(ids) {
 #' 
 build_votelist <- function(votelist, ids, startindex = 1) {
   
-  message(sprintf("Downloading %d votes", length(ids) - startindex + 1))
+  message(sprintf("Downloading %d rollcalls", length(ids) - startindex + 1))
   pb <- txtProgressBar(min = startindex - 1, max = length(ids), style = 3)
+  
+  unretrievedcount <- 0
+  unretrievedids <- NULL
   
   # Download votes
   for (i in startindex:length(ids)) {
     attempts <- 1
     vote <- "ERROR"
     
-    suppressWarnings({ # because vote is sometimes of length > 1
-      while (vote == "ERROR" & attempts < 5) {
-        vote <- tryCatch({voteview_getvote(ids[i])},
-                         error = function(e) {
-                           attempts <<- attempts + 1
-                           Sys.sleep(0.5)
-                           return("ERROR")
-                         },
-                         interrupt = function(x) {
-                           
-                           unfinished <- list(ids = ids,
-                                              position = i,
-                                              votelist = votelist)
-                           class(unfinished) <- "unfinished_voteview"
-                           
-                           assign("unfinished", unfinished, envir = .GlobalEnv)
-                           
-                           line1 <- paste("Interrupted before vote:", ids[i])
-                           line2 <- paste("The first", i-1, "votes have been logged in the 'unfinished' object.")
-                           line3 <- ("You can run restart_download(unfinished) to restart your download where it was interrupted.")
-                           stop(paste(line1, line2, line3, sep = "\n"))
-                         })
-      }
+    while (vote[1] == "ERROR" & attempts < 5) {
       
-      if (vote == "ERROR") {
-        unfinished <- list(ids = ids,
-                           position = i,
-                           votelist = votelist)
-        class(unfinished) <- "unfinished_voteview"
+      vote <- tryCatch( {
+        resp <- voteview_getvote(ids[i])
+        fromJSON(content(resp, as = "text"))
+      },
+      error = function(e) {
+        attempts <<- attempts + 1
+        Sys.sleep(0.5)
+        return("ERROR")
+      },
+      warning = function(w) {
+        lastwarning <<- w
         
-        assign("unfinished", unfinished, envir = .GlobalEnv)
-        
-        line1 <- paste("Cannot find vote with id:", ids[i])
-        line2 <- paste("The first", i-1, "votes have been logged in the 'unfinished' object.")
-        line3 <- ("As this may have been caused by connectivity, you can run restart_download(unfinished) to restart your download where it cut off.")
-        stop(paste(line1, line2, line3, sep = "\n"))
-      }
-    })  
+        attempts <<- attempts + 1
+        Sys.sleep(0.5)
+        return("ERROR")
+      },
+      interrupt = function(x) {
+        message(sprintf("Process interrupted, using completed %d rollcalls", i-1))
+        return("INTERRUPT")
+      })
+    }
     
-    votelist[[i]] <- vote
+    if (vote[1] == "INTERRUPT") {
+      return(list(votelist = votelist,
+                  unretrievedids = c(unretrievedids, ids[i:length(ids)])))
+    }
+    
+    if (vote[1] == "ERROR") {
+      
+      errmess <- geterrmessage()
+
+      if ("unexpected character" == substr(errmess, 1, 20)) {
+         message(sprintf("Rollcall %s could not be found, continuing with remaining rollcalls.", ids[i]))
+         unretrievedcount <- unretrievedcount + 1
+         unretrievedids[unretrievedcount] <- ids[i]
+       } else {
+         if (i == 1) {
+           stop(sprintf("Cannot connect to server. No downloads possible."))
+         }
+         if ("Couldn't resolve host name" == errmess) {
+           warning(sprintf("Cannot connect to server. Will output the %d completed downloads.", i-1-unretrievedcount))
+         } else {
+           warning("Unexpected warning: ", errmess)
+           warning(sprintf("Cannot connect to server. Will output the %d completed downloads.", i-1-unretrievedcount))
+         }
+         return(list(votelist = votelist,
+                     unretrievedids = c(unretrievedids, ids[i:length(ids)])))
+       }
+    } else {
+      votelist[[i]] <- vote
+    }
+    
     setTxtProgressBar(pb, i)
   }
   
-  return(votelist)
+  return(list(votelist = votelist,
+              unretrievedids = unretrievedids))
 }
 
 # Function to build voteview object from voteview list
 #' BUild voteview object from downloaded votelist
 #' @export
 #' 
-votelist2voteview <- function(votelist) {
+votelist2voteview <- function(dat) {
+  
+  if(is.null(dat$unretrievedids)) {
+    votelist <- dat$votelist
+  } else{
+    warning("Not all ids were able to be downloaded. Check 'unretrievedids' in your rollcall object. You can use complete_download to try and retrieve these again.")
+    votelist <- dat$votelist[!sapply(dat$votelist, is.null)]
+  }
+  
   # Get unique list of members
   # 'unlist' because if voters are not all the same, then sapply returns list
   # 'c' in case voters ARE all the same, then sapply returns array
@@ -257,7 +291,7 @@ votelist2voteview <- function(votelist) {
   data$rollcalls <- data.frame(vote = votenames)
   data$rollcalls[, rollcalldatanames] <- NA
   
-  message("Building the voteview object")
+  message(sprintf("Building the voteview object with %d rollcalls", length(votelist)))
   pb <- txtProgressBar(min = 0, max = length(votelist), style = 3)
   
   # option to replace any that are Missing with newer passes
@@ -290,7 +324,7 @@ votelist2voteview <- function(votelist) {
   
   data$vmNames <- NULL
   data$rcNames <- NULL
-  
+  data$unretrievedids <- dat$unretrievedids
   class(data) <- "voteview"
   
   return(data)
@@ -359,6 +393,7 @@ voteview2rollcall <- function(data) {
                  legis.data = legis.data,
                  legis.names = rnames,
                  vote.data = data$rollcalls,
+                 unretrievedids = data$unretrievedids,
                  source = "Download from VoteView")
   return(rc)
 }
