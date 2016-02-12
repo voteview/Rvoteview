@@ -13,16 +13,22 @@ trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 #' Searches the Voteview database with a string and returns a data frame with
 #' bill IDs, summary vote statistics, and other identifying information.
 #' 
-#' @param query A string that will search the voteview database.
+#' @param alltext A string or character vector that searches all text fields in
+#' the voteview datase. Each element is a specific phrase joined together with
+#' an AND statement.
 #' @param startdate A string of the format \code{"yyyy-mm-dd"} that is the
 #' earliest possible date to search for a roll call.
 #' @param enddate A string of the format
 #' "yyyy-mm-dd" that is the earliest possible date to search for a roll
 #' call.
-#' @param session A numeric vector. Constrains search to sessions in the numeric
-#' vector. 
-#' @param chamber Can be a string in \code{c("House", "Senate")}. The default
+#' @param session A numeric vector of the sessions of congress to constrain the search to. The default is all sessions.
+#' @param chamber A string in \code{c("House", "Senate")}. The default
 #' NULL value returns results from both chambers of congress.
+#' @param maxsupport Support is the share of Yea votes over total Yea and Nay votes. \code{maxsupport} is a number specifying the maximum support allowed for returned votes.
+#' @param minsupport A number specifying the minimum support allowed for returned votes.
+#' @param query A string that can specify a more complex search of all of the
+#' text fields. See examples for usage and syntax. Can only be used if 
+#' \code{alltext} is not specified.
 #' @return A data.frame with the following columns: 
 #' \itemize{
 #' \item{\code{description} }{Official description of the bill.}
@@ -42,42 +48,54 @@ trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 #' \code{voteview} to query the individual congress people's votes and other
 #' details.}
 #' }
+#' @details
+#' \code{query} uses the following general syntax, \code{field:query AND (query OR query)}. For example, if you wanted to find votes with "war" and either "iraq" or "afghanistan" in any text field, you could set the query to be \code{"alltext:war AND (iraq OR afghanistan)"}. If you wanted to do the same query but only return the votes with "defense" in the description field, the query would become \code{"alltext:war AND (iraq OR afghanistan) description:defense"}
+#' 
+#' The fields that can be searched with text are \code{code.Clausen}, \code{code.Peltzman}, \code{code.Issue}, \code{description}, \code{shortdescription}, \code{bill}, and \code{alltext}. The fields that can be searched by number are \code{session}, \code{yea}, \code{nay}, and \code{support}.
+#' 
 #' @seealso
-#' '\link{voteview.download}','\link{voteview2rollcall}','\link{vlist2df}'.
+#' '\link{voteview_download}','\link{voteview2rollcall}','\link{vlist2df}'.
 #' @examples
 #' 
 #' ## Search for example roll calls
-#' res <- voteview.search("Iraq")
+#' res <- voteview_search("Iraq")
 #' res
 #' 
 #' \dontrun{
 #' ## Search for votes with a start date
-#' res <- voteview.search("Iraq", startdate = "2005-01-01")
+#' res <- voteview_search("Iraq", startdate = "2005-01-01")
 #' res
 #'  
 #' ## Search for votes with an end date in just the house
-#' res <- voteview.search("Iraq", startdate = "2005-01-01", chamber = "House")
+#' res <- voteview_search("Iraq", startdate = "2005-01-01", chamber = "House")
 #' res
 #' 
 #' #' ## Search for votes with an end date in just the house in 112 session
-#' res <- voteview.search("Iraq", startdate = "2005-01-01", session = 112, chamber = "House")
+#' res <- voteview_search("Iraq", startdate = "2005-01-01", session = 112, chamber = "House")
 #' res
 #' }
 #' @export
 #' 
-voteview.search <- function(alltext,
+voteview_search <- function(alltext = NULL,
                             startdate = NULL,
                             enddate = NULL,
                             session = NULL,
-                            chamber = NULL) {
+                            chamber = NULL,
+                            maxsupport = NULL,
+                            minsupport = NULL,
+                            query = NULL) {
   
   # todo: allow or, and and allow "phrase"
   
-  # Start query
-  query <- paste0("alltext:", alltext)
-  
   # Input validation
-  if (!is.character(alltext)) stop("Query must be a character vector")
+  if ((is.null(alltext) & is.null(query)) | (!is.null(alltext) & !is.null(query))) stop("Must specify 'alltext' or 'query', but not both")
+
+  # Start query
+  if (is.character(alltext)){
+    query_string <- paste0("alltext:", paste(alltext, collapse = " and "))
+  } else {
+    query_string <- query
+  }
   
   dates <- c(as.character(startdate), as.character(enddate))
   if (length(grep("^[0-9]{4}($|-(0[0-9]|1[0-2])($|-([0-2][0-9]|3[0-1])))",
@@ -97,12 +115,26 @@ voteview.search <- function(alltext,
     }
     
     # Add session to query (if session is one number, ignores second paste)
-    query <- paste0(query, " session:", paste(session, collapse = " and "))
+    query_string <- paste0(query_string, " session:", paste(session, collapse = " and "))
+  }
+  
+  if (!is.null(maxsupport) | !is.null(minsupport)) {
+    
+    if (any(c(minsupport, maxsupport) < 0 | c(minsupport, maxsupport) > 100)) {
+      stop("Min and max support must be between 0 and 100")
+    }
+    
+    if(is.null(minsupport)) minsupport <- 0
+    if(is.null(maxsupport)) maxsupport <- 100
+    
+    if (maxsupport < minsupport) stop("maxsupport must be greater than minsupport")
+    
+    query_string <- paste0(query_string, " support:[", paste(c(minsupport, maxsupport), collapse = " to "), "]")
   }
   
   theurl <- "http://leela.sscnet.ucla.edu/voteview/search"
-  
-  resp <- POST(theurl, body = list(q = query,
+  print(query_string)
+  resp <- POST(theurl, body = list(q = query_string,
                                    startdate = startdate,
                                    enddate = enddate,
                                    chamber = chamber))
@@ -111,8 +143,8 @@ voteview.search <- function(alltext,
                                                as = "text",
                                                encoding = "utf-8")))
   
-  cat(sprintf("Query '%s' returned %i votes...\n", query, resjson$recordcount))
-  
+  car(sprintf("Query '%s' returned %i votes...\n", query_string, resjson$recordcount))
+  # todo: also return in printout the date and chamber parameters
   if(!is.null(resjson$errormessage)) warning(resjson$errormessage)
   if(resjson$recordcount == 0) stop("No votes found")
   
@@ -121,7 +153,7 @@ voteview.search <- function(alltext,
 }
 
 # Internal function to get a roll call from the web api
-voteview.getvote <- function(id) {
+voteview_getvote <- function(id) {
   theurl <- "http://leela.sscnet.ucla.edu/webvoteview/api/getvote/"
   resp <- GET(paste0(theurl, id, "/R"))
   data <- fromJSON(content(resp, "text"))
@@ -131,7 +163,7 @@ voteview.getvote <- function(id) {
 #' Download rollcalls as voteview object
 #' @export
 #' 
-voteview.download <- function(ids) {
+voteview_download <- function(ids) {
   
   print(paste("Downloading", length(ids), "votes"))
   pb <- txtProgressBar(min = 0, max = length(ids), style = 3)
@@ -144,17 +176,48 @@ voteview.download <- function(ids) {
     
     suppressWarnings({ # because vote is sometimes of length > 1
     while (vote == "ERROR" & attempts < 5) {
-      vote <- tryCatch({voteview.getvote(ids[i])},
-                        error = function(e) {attempts <<- attempts + 1; return("ERROR")})
+      vote <- tryCatch({voteview_getvote(ids[i])},
+                       error = function(e) {
+                         attempts <<- attempts + 1
+                         Sys.sleep(0.5)
+                         return("ERROR")
+                         },
+                       interrupt = function(x) {
+                         
+                         unfinished <- list(ids = ids,
+                                            position = i,
+                                            votelist = votelist)
+                         assign("unfinished", unfinished, envir = .GlobalEnv)
+                         
+                         line1 <- paste("Interrupted before vote:", ids[i])
+                         line2 <- paste("The first", i-1, "votes have been logged in the 'unfinished' object.")
+                         line3 <- ("You can run restart_download(unfinished) to restart your download where it was interrupted.")
+                         stop(paste(line1, line2, line3, sep = "\n"))
+                       })
     }
     
-    if (vote == "ERROR") stop(paste("Cannot find vote with id:", ids[i]))
-    })
+    if (vote == "ERROR") {
+      unfinished <- list(ids = ids,
+                         position = i,
+                         votelist = votelist)
+      assign("unfinished", unfinished, environment = .GlobalEnv)
+      
+      line1 <- paste("Cannot find vote with id:", ids[i])
+      line2 <- paste("The first", i-1, "votes have been logged in the 'unfinished' object.")
+      line3 <- ("As this may have been caused by connectivity, you can run restart_download(unfinished) to restart your download where it cut off.")
+      stop(paste(line1, line2, line3, sep = "\n"))
+    }
+    })  
     
     votelist[[i]] <- vote
     setTxtProgressBar(pb, i)
   }
-  
+
+  return( build_voteview(votelist) )
+}
+
+# Function to build voteview object from voteview list
+build_voteview <- function(votelist) {
   # Get unique list of members
   # 'unlist' because if voters are not all the same, then sapply returns list
   # 'c' in case voters ARE all the same, then sapply returns array
@@ -162,7 +225,7 @@ voteview.download <- function(ids) {
   
   # Data to keep from return
   # todo: add option to keep nominate data for plot method
-  rollcalldatanames <- setdiff(names(votelist[[i]]),
+  rollcalldatanames <- setdiff(names(votelist[[1]]),
                                c("votes", "apitype", "nominate"))
   votedatanames <- setdiff(names(votelist[[1]]$votes[[1]]),
                            c("y", "x", "vote", "icpsr"))
@@ -177,7 +240,7 @@ voteview.download <- function(ids) {
   data$rollcalls[, rollcalldatanames] <- NA
   
   print("Building the voteview object")
-  pb <- txtProgressBar(min = 0, max = length(ids), style = 3)
+  pb <- txtProgressBar(min = 0, max = length(votelist), style = 3)
   
   # option to replace any that are Missing with newer passes
   
@@ -209,35 +272,46 @@ voteview.download <- function(ids) {
   
   data$vmNames <- NULL
   data$rcNames <- NULL
+  
   class(data) <- "voteview"
   
-  return( data )
+  return(data)
+}
+
+# Function to restart interrupted voteview_download processes
+#' Restart rollcall download
+#' @export
+#' 
+restart_download <- function(dat) {
+  if(class(dat) != "unfinished_voteview") stop("restart_download only takes unfinished_voteview objects")
+  
+  
 }
 
 # Takes a voteview object and translate it in to a PSCL rollcall object
 #' Transforms Voteview object to a rollcall object
 #' 
-#' Takes a voteview object that has been using \code{voteview.download.json} and
+#' Takes a voteview object that has been downloaded using \code{voteview_download} and
 #' creates a \code{pscl} \code{rollcall} object that can then be analyzed using
 #' methods in the \code{pscl} package.
 #' 
 #' 
-#' @param json A string of JSON downloaded from the voteview server using
-#' \code{voteview.download}.
+#' @param data A voteview object downloaded from the voteview server using
+#' \code{voteview_download}.
 #' @return A \code{rollcall} object from the \code{pscl} package.
 #' @seealso
-#' '\link{voteview.search}','\link{voteview.download}','\link{read.voteview.json}'.
+#' '\link{voteview_search}','\link{voteview_download}'.
 #' @examples
 #' 
-#' ## NOTE: SIMPLY USE voteview.download INSTEAD
+#' ## NOTE: SIMPLY USE voteview_download INSTEAD
 #' ## Search for example roll calls
-#' res <- voteview.search("Iraq")
+#' res <- voteview_search("Iraq")
 #'   
-#' ## Use the ids from that search to create a json string
-#' json <- voteview.download.json(res$ids)
+#' ## Use the ids from that search to download votes and create voteview object
+#' vv <- voteview_download(res$id)
 #'   
 #' ## Get roll call object
-#' rc <- voteview2rollcall(json)
+#' rc <- voteview2rollcall(vv)
 #'   
 #' ## Summarize the roll call object
 #' summary(rc)
@@ -247,7 +321,7 @@ voteview.download <- function(ids) {
 voteview2rollcall <- function(data) {
   #check type of obj
 
-  dat  <- data$votematrix[,grep("^V\\d+", names(data$votematrix))]
+  dat  <- as.matrix(data$votematrix[,grep("^V\\d+", names(data$votematrix))])
   rnames <- sprintf("%s %s - %s", trim(data$votematrix$name),
                                   data$votematrix$cqlabel,
                                   data$votematrix$icpsr)
@@ -270,15 +344,15 @@ voteview2rollcall <- function(data) {
 #' Transform vector of lists to data frame
 #' 
 #' This is a helper function to transform the vector of lists that were
-#' constructed by \code{voteview.search} in to a data frame that
-#' \code{voteview.search} returns. This function should probably not be called
-#' by itself. See \code{voteview.search} for more information.
+#' constructed by \code{voteview_search} in to a data frame that
+#' \code{voteview_search} returns. This function should probably not be called
+#' by itself. See \code{voteview_search} for more information.
 #' 
 #' 
-#' @param rcs A vector of lists that is built within \code{voteview.search},
+#' @param rcs A vector of lists that is built within \code{voteview_search},
 #' where each list corresponds to a roll call.
 #'
-#' @seealso '\link{voteview.search}'.
+#' @seealso '\link{voteview_search}'.
 #' @export
 #' 
 vlist2df <- function(rcs) {

@@ -7,34 +7,34 @@
 voteview2rollcall(data)
 }
 \arguments{
-\item{json}{A string of JSON downloaded from the voteview server using
-\code{voteview.download}.}
+\item{data}{A voteview object downloaded from the voteview server using
+\code{voteview_download}.}
 }
 \value{
 A \code{rollcall} object from the \code{pscl} package.
 }
 \description{
-Takes a voteview object that has been using \code{voteview.download.json} and
+Takes a voteview object that has been downloaded using \code{voteview_download} and
 creates a \code{pscl} \code{rollcall} object that can then be analyzed using
 methods in the \code{pscl} package.
 }
 \examples{
 
-## NOTE: SIMPLY USE voteview.download INSTEAD
+## NOTE: SIMPLY USE voteview_download INSTEAD
 ## Search for example roll calls
-res <- voteview.search("Iraq")
+res <- voteview_search("Iraq")
   
-## Use the ids from that search to create a json string
-json <- voteview.download.json(res$ids)
+## Use the ids from that search to download votes and create voteview object
+vv <- voteview_download(res$id)
   
 ## Get roll call object
-rc <- voteview2rollcall(json)
+rc <- voteview2rollcall(vv)
   
 ## Summarize the roll call object
 summary(rc)
 summary(rc, verbose = T)
 }
 \seealso{
-'\link{voteview.search}','\link{voteview.download}','\link{read.voteview.json}'.
+'\link{voteview_search}','\link{voteview_download}'.
 }
 

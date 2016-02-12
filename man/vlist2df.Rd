@@ -7,16 +7,16 @@
 vlist2df(rcs)
 }
 \arguments{
-\item{rcs}{A vector of lists that is built within \code{voteview.search},
+\item{rcs}{A vector of lists that is built within \code{voteview_search},
 where each list corresponds to a roll call.}
 }
 \description{
 This is a helper function to transform the vector of lists that were
-constructed by \code{voteview.search} in to a data frame that
-\code{voteview.search} returns. This function should probably not be called
-by itself. See \code{voteview.search} for more information.
+constructed by \code{voteview_search} in to a data frame that
+\code{voteview_search} returns. This function should probably not be called
+by itself. See \code{voteview_search} for more information.
 }
 \seealso{
-'\link{voteview.search}'.
+'\link{voteview_search}'.
 }
 
