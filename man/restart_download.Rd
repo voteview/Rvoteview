@@ -4,7 +4,7 @@
 \alias{restart_download}
 \title{Restart rollcall download}
 \usage{
-restart_download(unfinished)
+restart_download(dat)
 }
 \description{
 Restart rollcall download

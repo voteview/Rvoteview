@@ -15,7 +15,7 @@ knitr::opts_chunk$set(
 
 # Rvoteview
 
-**WARNING: This package is in flux, as is the server and data. Please limit the number of roll calls you request at a time and be prepared for queries to break or behave strangely. See usage below.**
+**WARNING: This package is in alpha, as the server and data are currently being revamped. Not all features work, so please limit usage to the simple kind of examples you see below. Also, please limit the number of roll calls you request at a time and be prepared for queries to break or behave strangely.**
 
 This is a package that enables you to query the Voteview database for roll calls and work with data frames or a `pscl` `rollcall` object.
 
@@ -30,17 +30,19 @@ To use `Rvoteview`, you generally want to query the database to get a list of vo
 ```{r search}
 library(Rvoteview)
   
-res <- voteview.search("Iraq")
+res <- voteview_search("Iraq")
 names(res)
   
 ## I will drop description since it is a very long field
 head(res[, -1])
 ```
 Using `res$id` we can get a `rollcall` object (from the [`pscl` package](https://cran.r-project.org/web/packages/pscl/index.html)) that contains the full set of votes and data for each roll call. Eventually we will either develop additional methods for the `pscl` `rollcall` object.
-```{r download}
-## Get a rollcall object using the ids, please limit to a few ids for now!
-rc <- voteview.download(res$id[1:10])
 
+```{r download, results='hide'}
+## Get a rollcall object using the ids, please limit to a few ids for now!
+rc <- voteview_download(res$id[1:10])
+```
+```{r pscl-sum}
 ## Now this object can be used in many 'pscl' methods
 summary(rc)
 ```
@@ -49,11 +51,13 @@ You can also search by start and end date, session, and chamber. Please see the 
 
 ```{r search-options}
 ## Voteview search with options
-res <- voteview.search("Iraq", chamber = "House", session = 110,
+res <- voteview_search("Iraq", chamber = "House", session = 110,
                        startdate = 2008, enddate = "2008-04-20")
 head(res[, -1])
 
-res <- voteview.search("Iraq", session = 109:112)
+res <- voteview_search("Iraq", session = 109:112)
 head(res[, -1])
+
+## Currently the 'support' options and the 'query' options do not work
 ```
 

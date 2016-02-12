@@ -133,7 +133,7 @@ voteview_search <- function(alltext = NULL,
   }
   
   theurl <- "http://leela.sscnet.ucla.edu/voteview/search"
-  cat(query_string)
+  message(query_string)
   resp <- POST(theurl, body = list(q = query_string,
                                    startdate = startdate,
                                    enddate = enddate,
@@ -143,7 +143,7 @@ voteview_search <- function(alltext = NULL,
                                                as = "text",
                                                encoding = "utf-8")))
   
-  cat(sprintf("Query '%s' returned %i votes...\n", query_string, resjson$recordcount))
+  message(sprintf("Query '%s' returned %i votes...\n", query_string, resjson$recordcount))
   # todo: also return in printout the date and chamber parameters
   if(!is.null(resjson$errormessage)) warning(resjson$errormessage)
   if(resjson$recordcount == 0) stop("No votes found")
@@ -177,7 +177,7 @@ voteview_download <- function(ids) {
 #' 
 build_votelist <- function(votelist, ids, startindex = 1) {
   
-  cat(sprintf("Downloading %d votes", length(ids) - startindex + 1), "\n")
+  message(sprintf("Downloading %d votes", length(ids) - startindex + 1))
   pb <- txtProgressBar(min = startindex - 1, max = length(ids), style = 3)
   
   # Download votes
@@ -257,7 +257,7 @@ votelist2voteview <- function(votelist) {
   data$rollcalls <- data.frame(vote = votenames)
   data$rollcalls[, rollcalldatanames] <- NA
   
-  cat("Building the voteview object")
+  message("Building the voteview object")
   pb <- txtProgressBar(min = 0, max = length(votelist), style = 3)
   
   # option to replace any that are Missing with newer passes
@@ -303,7 +303,7 @@ votelist2voteview <- function(votelist) {
 restart_download <- function(dat) {
   if(class(dat) != "unfinished_voteview") stop("restart_download only takes unfinished_voteview objects")
   
-  cat(sprintf("Starting with %d votes downloaded...", dat$position - 1), "\n")
+  message(sprintf("Starting with %d votes downloaded...", dat$position - 1))
 
   votelist <- build_votelist(dat$votelist, dat$ids, dat$position)
   
