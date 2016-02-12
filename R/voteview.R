@@ -176,23 +176,23 @@ voteview_download <- function(ids) {
   dat <- vector("list", length(uniqueids))
   dat <- build_votelist(dat, uniqueids)
 
-  return( votelist2voteview(dat) )
+  return( voteview2rollcall(votelist2voteview(dat)) )
 }
 
 # Function to build voteview object from voteview list
 #' Internal function to get rollcalls and build voteview list
 #' @export
 #' 
-build_votelist <- function(votelist, ids, startindex = 1) {
+build_votelist <- function(votelist, ids) {
   
-  message(sprintf("Downloading %d rollcalls", length(ids) - startindex + 1))
-  pb <- txtProgressBar(min = startindex - 1, max = length(ids), style = 3)
+  message(sprintf("Downloading %d rollcalls", length(ids)))
+  pb <- txtProgressBar(min = 0, max = length(ids), style = 3)
   
   unretrievedcount <- 0
   unretrievedids <- NULL
   
   # Download votes
-  for (i in startindex:length(ids)) {
+  for (i in 1:length(ids)) {
     attempts <- 1
     vote <- "ERROR"
     
@@ -270,6 +270,8 @@ votelist2voteview <- function(dat) {
     votelist <- dat$votelist[!sapply(dat$votelist, is.null)]
   }
   
+  if(!length(votelist)) stop("Votelist is empty.")
+  
   # Get unique list of members
   # 'unlist' because if voters are not all the same, then sapply returns list
   # 'c' in case voters ARE all the same, then sapply returns array
@@ -331,18 +333,19 @@ votelist2voteview <- function(dat) {
 }
 
 # Function to restart interrupted voteview_download processes
-#' Restart rollcall download
+#' Complete rollcall download
 #' @export
 #' 
-restart_download <- function(dat) {
-  if(class(dat) != "unfinished_voteview") stop("restart_download only takes unfinished_voteview objects")
+complete_download <- function(dat) {
   
-  message(sprintf("Starting with %d votes downloaded...", dat$position - 1))
+  if(class(dat) != "rollcall") stop("restart_download only takes rollcall objects downloaded from VoteView.")
+  if(dat$source != "Download from VoteView") stop("restart_download only takes rollcall objects downloaded from VoteView.")
+  
+  if(is.null(dat$unretrievedids)) stop("No unretrieved ids associated with this rollcall object.")
 
-  votelist <- build_votelist(dat$votelist, dat$ids, dat$position)
+  rc_new <- voteview_download(dat$unretrievedids)
   
-  return( votelist2voteview(votelist) )
-  
+  return( rc %+% rc_new )
 }
 
 # Takes a voteview object and translate it in to a PSCL rollcall object
@@ -393,8 +396,9 @@ voteview2rollcall <- function(data) {
                  legis.data = legis.data,
                  legis.names = rnames,
                  vote.data = data$rollcalls,
-                 unretrievedids = data$unretrievedids,
                  source = "Download from VoteView")
+  
+  rc[["unretrievedids"]] <- data$unretrievedids
   return(rc)
 }
 
@@ -440,6 +444,7 @@ vlist2df <- function(rcs) {
 }
 
 # Eventually this function will properly merge RC files
+#' @export
 "%+%" <- function(rc1, rc2) {
   
   # todo: input validation
@@ -455,7 +460,6 @@ vlist2df <- function(rcs) {
   old.votedat <- data.frame(rc1$votes, icpsr = rc1$legis.data$icpsr)
   new.votedat <- data.frame(rc2$votes[, new.votes], icpsr = rc2$legis.data$icpsr)
   allvote <- merge(old.votedat, new.votedat, by = "icpsr", all = T)
-  allvote[is.na(allvote)] <-  rc1$codes$notInLegis 
   # todo: What about those who switch parties or any other changes in legis.data
   # what does that look like in the db?
   
@@ -467,7 +471,8 @@ vlist2df <- function(rcs) {
   alllegis.data <- alllegis.data[match(allvote$icpsr, alllegis.data$icpsr), ]
   
   # Clean up new vote matrix
-  allvote <- allvote[, colnames(allvote) != "icpsr"]
+  allvote <- as.matrix(allvote[, colnames(allvote) != "icpsr"])
+  allvote[is.na(allvote)] <-  rc1$codes$notInLegis 
   
   rnames <- sprintf("%s %s - %s", alllegis.data$name,
                     alllegis.data$cqlabel,
@@ -476,7 +481,7 @@ vlist2df <- function(rcs) {
   
   # todo: sort votes by date  
   
-  rollcall(data = as.matrix(allvote),
+  rcout <- rollcall(data = allvote,
                   yea = rc1$codes$yea,
                   nay = rc1$codes$nay,
                   missing = rc1$codes$missing,
@@ -485,4 +490,8 @@ vlist2df <- function(rcs) {
                   legis.names = rnames,
                   vote.data = allvote.data,
                   source = "Download from VoteView")
+  rcout$unretrievedids <- rc2$unretrievedids #todo: better handling of unretrieved ids
+
+  return(rcout)
+  
 }

@@ -4,7 +4,7 @@
 \alias{votelist2voteview}
 \title{BUild voteview object from downloaded votelist}
 \usage{
-votelist2voteview(votelist)
+votelist2voteview(dat)
 }
 \description{
 BUild voteview object from downloaded votelist

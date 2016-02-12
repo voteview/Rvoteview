@@ -4,7 +4,7 @@
 \alias{build_votelist}
 \title{Internal function to get rollcalls and build voteview list}
 \usage{
-build_votelist(votelist, ids, startindex = 1)
+build_votelist(votelist, ids)
 }
 \description{
 Internal function to get rollcalls and build voteview list
