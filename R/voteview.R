@@ -133,7 +133,7 @@ voteview_search <- function(alltext = NULL,
   }
   
   theurl <- "http://leela.sscnet.ucla.edu/voteview/search"
-  print(query_string)
+  cat(query_string)
   resp <- POST(theurl, body = list(q = query_string,
                                    startdate = startdate,
                                    enddate = enddate,
@@ -143,7 +143,7 @@ voteview_search <- function(alltext = NULL,
                                                as = "text",
                                                encoding = "utf-8")))
   
-  car(sprintf("Query '%s' returned %i votes...\n", query_string, resjson$recordcount))
+  cat(sprintf("Query '%s' returned %i votes...\n", query_string, resjson$recordcount))
   # todo: also return in printout the date and chamber parameters
   if(!is.null(resjson$errormessage)) warning(resjson$errormessage)
   if(resjson$recordcount == 0) stop("No votes found")
@@ -165,65 +165,83 @@ voteview_getvote <- function(id) {
 #' 
 voteview_download <- function(ids) {
   
-  print(paste("Downloading", length(ids), "votes"))
-  pb <- txtProgressBar(min = 0, max = length(ids), style = 3)
+  votelist <- vector("list", length(ids))
+  votelist <- build_votelist(votelist, ids)
+
+  return( votelist2voteview(votelist) )
+}
+
+# Function to build voteview object from voteview list
+#' Internal function to get rollcalls and build voteview list
+#' @export
+#' 
+build_votelist <- function(votelist, ids, startindex = 1) {
+  
+  cat(sprintf("Downloading %d votes", length(ids) - startindex + 1), "\n")
+  pb <- txtProgressBar(min = startindex - 1, max = length(ids), style = 3)
   
   # Download votes
-  votelist <- vector("list", length(ids))
-  for (i in 1:length(ids)) {
+  for (i in startindex:length(ids)) {
     attempts <- 1
     vote <- "ERROR"
     
     suppressWarnings({ # because vote is sometimes of length > 1
-    while (vote == "ERROR" & attempts < 5) {
-      vote <- tryCatch({voteview_getvote(ids[i])},
-                       error = function(e) {
-                         attempts <<- attempts + 1
-                         Sys.sleep(0.5)
-                         return("ERROR")
+      while (vote == "ERROR" & attempts < 5) {
+        vote <- tryCatch({voteview_getvote(ids[i])},
+                         error = function(e) {
+                           attempts <<- attempts + 1
+                           Sys.sleep(0.5)
+                           return("ERROR")
                          },
-                       interrupt = function(x) {
-                         
-                         unfinished <- list(ids = ids,
-                                            position = i,
-                                            votelist = votelist)
-                         assign("unfinished", unfinished, envir = .GlobalEnv)
-                         
-                         line1 <- paste("Interrupted before vote:", ids[i])
-                         line2 <- paste("The first", i-1, "votes have been logged in the 'unfinished' object.")
-                         line3 <- ("You can run restart_download(unfinished) to restart your download where it was interrupted.")
-                         stop(paste(line1, line2, line3, sep = "\n"))
-                       })
-    }
-    
-    if (vote == "ERROR") {
-      unfinished <- list(ids = ids,
-                         position = i,
-                         votelist = votelist)
-      assign("unfinished", unfinished, environment = .GlobalEnv)
+                         interrupt = function(x) {
+                           
+                           unfinished <- list(ids = ids,
+                                              position = i,
+                                              votelist = votelist)
+                           class(unfinished) <- "unfinished_voteview"
+                           
+                           assign("unfinished", unfinished, envir = .GlobalEnv)
+                           
+                           line1 <- paste("Interrupted before vote:", ids[i])
+                           line2 <- paste("The first", i-1, "votes have been logged in the 'unfinished' object.")
+                           line3 <- ("You can run restart_download(unfinished) to restart your download where it was interrupted.")
+                           stop(paste(line1, line2, line3, sep = "\n"))
+                         })
+      }
       
-      line1 <- paste("Cannot find vote with id:", ids[i])
-      line2 <- paste("The first", i-1, "votes have been logged in the 'unfinished' object.")
-      line3 <- ("As this may have been caused by connectivity, you can run restart_download(unfinished) to restart your download where it cut off.")
-      stop(paste(line1, line2, line3, sep = "\n"))
-    }
+      if (vote == "ERROR") {
+        unfinished <- list(ids = ids,
+                           position = i,
+                           votelist = votelist)
+        class(unfinished) <- "unfinished_voteview"
+        
+        assign("unfinished", unfinished, envir = .GlobalEnv)
+        
+        line1 <- paste("Cannot find vote with id:", ids[i])
+        line2 <- paste("The first", i-1, "votes have been logged in the 'unfinished' object.")
+        line3 <- ("As this may have been caused by connectivity, you can run restart_download(unfinished) to restart your download where it cut off.")
+        stop(paste(line1, line2, line3, sep = "\n"))
+      }
     })  
     
     votelist[[i]] <- vote
     setTxtProgressBar(pb, i)
   }
-
-  return( build_voteview(votelist) )
+  
+  return(votelist)
 }
 
 # Function to build voteview object from voteview list
-build_voteview <- function(votelist) {
+#' BUild voteview object from downloaded votelist
+#' @export
+#' 
+votelist2voteview <- function(votelist) {
   # Get unique list of members
   # 'unlist' because if voters are not all the same, then sapply returns list
   # 'c' in case voters ARE all the same, then sapply returns array
   members <- unique(c(unlist(sapply( votelist, function(vote) sapply(vote$votes, function(member) member$icpsr)))))
-  
-  # Data to keep from return
+
+    # Data to keep from return
   # todo: add option to keep nominate data for plot method
   rollcalldatanames <- setdiff(names(votelist[[1]]),
                                c("votes", "apitype", "nominate"))
@@ -239,7 +257,7 @@ build_voteview <- function(votelist) {
   data$rollcalls <- data.frame(vote = votenames)
   data$rollcalls[, rollcalldatanames] <- NA
   
-  print("Building the voteview object")
+  cat("Building the voteview object")
   pb <- txtProgressBar(min = 0, max = length(votelist), style = 3)
   
   # option to replace any that are Missing with newer passes
@@ -285,6 +303,11 @@ build_voteview <- function(votelist) {
 restart_download <- function(dat) {
   if(class(dat) != "unfinished_voteview") stop("restart_download only takes unfinished_voteview objects")
   
+  cat(sprintf("Starting with %d votes downloaded...", dat$position - 1), "\n")
+
+  votelist <- build_votelist(dat$votelist, dat$ids, dat$position)
+  
+  return( votelist2voteview(votelist) )
   
 }
 
