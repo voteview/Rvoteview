@@ -92,7 +92,7 @@ voteview_search <- function(alltext = NULL,
 
   # Start query
   if (is.character(alltext)){
-    query_string <- paste0("alltext:", paste(alltext, collapse = " and "))
+    query_string <- paste0("alltext:", paste(alltext, collapse = " "))
   } else {
     query_string <- query
   }
@@ -115,7 +115,7 @@ voteview_search <- function(alltext = NULL,
     }
     
     # Add session to query (if session is one number, ignores second paste)
-    query_string <- paste0(query_string, " session:", paste(session, collapse = " and "))
+    query_string <- paste0(query_string, " session:", paste(session, collapse = " "))
   }
   
   if (!is.null(maxsupport) | !is.null(minsupport)) {
@@ -158,23 +158,23 @@ voteview_search <- function(alltext = NULL,
 
 # Internal function to get a roll call from the web api
 #' @export
-voteview_getvote <- function(id) {
+voteview_getvote <- function(ids) {
   theurl <- "http://leela.sscnet.ucla.edu/webvoteview/api/getvote/"
-  resp <- GET(paste0(theurl, id, "/R"), timeout(1))
+  resp <- GET(paste0(theurl, paste(ids, collapse = ","), "/R"), timeout(5))
 }
 
 # Function to download roll calls and turn them in to a voteview object
 #' Download rollcalls as voteview object
 #' @export
 #' 
-voteview_download <- function(ids) {
+voteview_download <- function(ids, nids = 10) {
   
   uniqueids <- unique(ids)
 
   if (length(uniqueids) < length(ids)) message("Duplicated ids dropped")
   
   dat <- vector("list", length(uniqueids))
-  dat <- build_votelist(dat, uniqueids)
+  dat <- build_votelist(dat, uniqueids, nids = nids)
 
   return( voteview2rollcall(votelist2voteview(dat)) )
 }
@@ -183,7 +183,7 @@ voteview_download <- function(ids) {
 #' Internal function to get rollcalls and build voteview list
 #' @export
 #' 
-build_votelist <- function(votelist, ids) {
+build_votelist <- function(votelist, ids, nids) {
   
   message(sprintf("Downloading %d rollcalls", length(ids)))
   pb <- txtProgressBar(min = 0, max = length(ids), style = 3)
@@ -191,18 +191,24 @@ build_votelist <- function(votelist, ids) {
   unretrievedcount <- 0
   unretrievedids <- NULL
   
+  place <- 0
+  
+  idchunks <- split(ids, ceiling(seq_along(ids)/nids))
+  
   # Download votes
-  for (i in 1:length(ids)) {
+  for (i in 1:length(idchunks)) {
     attempts <- 1
-    vote <- "ERROR"
+    votes <- "ERROR"
     
-    while (vote[1] == "ERROR" & attempts < 5) {
+    while (votes[1] == "ERROR" & attempts < 5) {
+
       
-      vote <- tryCatch( {
-        resp <- voteview_getvote(ids[i])
+      votes <- tryCatch( {
+        resp <- voteview_getvote(idchunks[[i]])
         fromJSON(content(resp, as = "text"))
       },
       error = function(e) {
+        print(e)
         attempts <<- attempts + 1
         Sys.sleep(0.5)
         return("ERROR")
@@ -215,42 +221,48 @@ build_votelist <- function(votelist, ids) {
         return("ERROR")
       },
       interrupt = function(x) {
-        message(sprintf("Process interrupted, using completed %d rollcalls", i-1))
         return("INTERRUPT")
       })
     }
     
-    if (vote[1] == "INTERRUPT") {
+    # Have to return outside the trycatch or else it stores it as votes
+    if (votes[1] == "INTERRUPT") {
       return(list(votelist = votelist,
-                  unretrievedids = c(unretrievedids, ids[i:length(ids)])))
+                  unretrievedids = c(unretrievedids,
+                                     unlist(idchunks[i:length(idchunks)],
+                                            use.names = F))))
     }
     
-    if (vote[1] == "ERROR") {
+    if (votes[1] == "ERROR") {
       
       errmess <- geterrmessage()
 
-      if ("unexpected character" == substr(errmess, 1, 20)) {
-         message(sprintf("Rollcall %s could not be found, continuing with remaining rollcalls.", ids[i]))
-         unretrievedcount <- unretrievedcount + 1
-         unretrievedids[unretrievedcount] <- ids[i]
-       } else {
-         if (i == 1) {
-           stop(sprintf("Cannot connect to server. No downloads possible."))
-         }
-         if ("Couldn't resolve host name" == errmess) {
-           warning(sprintf("Cannot connect to server. Will output the %d completed downloads.", i-1-unretrievedcount))
-         } else {
-           warning("Unexpected warning: ", errmess)
-           warning(sprintf("Cannot connect to server. Will output the %d completed downloads.", i-1-unretrievedcount))
-         }
-         return(list(votelist = votelist,
-                     unretrievedids = c(unretrievedids, ids[i:length(ids)])))
-       }
+      if (i == 1) {
+        stop(sprintf("Cannot connect to server. No downloads possible."))
+      }
+      if ("Couldn't resolve host name" == errmess) {
+        warning(sprintf("Cannot connect to server. Will output the %d completed downloads.", length(unlist(idchunks[1:(i-1)]))))
+      } else {
+        warning("Unexpected warning: ", errmess)
+        warning(sprintf("Cannot connect to server. Will output the %d completed downloads.", length(unlist(idchunks[1:(i-1)]))))
+      }
+      return(list(votelist = votelist,
+                  unretrievedids = c(unretrievedids,
+                                     unlist(idchunks[i:length(idchunks)],
+                                            use.names = F))))
     } else {
-      votelist[[i]] <- vote
+      if(length(votes$rollcalls)) {
+        for(j in 1:length(votes$rollcalls)) {
+          votelist[[place + j]] <- votes$rollcalls[[j]]
+        }
+      }
+      place <- place + length(votes$rollcalls)
+      if (!is.null(votes$errormessage)) {
+        warning(votes$errormessage, call. = FALSE)
+      }
+      unretrievedids <- c(unretrievedids, unlist(votes$errormeta, use.names = F))
     }
-    
-    setTxtProgressBar(pb, i)
+    setTxtProgressBar(pb, place + length(unretrievedids) + length(votes$errormeta))
   }
   
   return(list(votelist = votelist,
@@ -266,38 +278,38 @@ votelist2voteview <- function(dat) {
   if(is.null(dat$unretrievedids)) {
     votelist <- dat$votelist
   } else{
-    warning("Not all ids were able to be downloaded. Check 'unretrievedids' in your rollcall object. You can use complete_download to try and retrieve these again.")
+    warning(sprintf("%d id(s) could not be downloaded", length(dat$unretrievedids)), call. = FALSE)
+    warning(paste0("The unretrieved ids are: ", paste(dat$unretrievedids, collapse = ", "), ". Check 'unretrievedids' in your rollcall object. You can use complete_download to try and retrieve these again."), call. = FALSE)
     votelist <- dat$votelist[!sapply(dat$votelist, is.null)]
   }
   
   if(!length(votelist)) stop("Votelist is empty.")
-  
+
   # Get unique list of members
   # 'unlist' because if voters are not all the same, then sapply returns list
   # 'c' in case voters ARE all the same, then sapply returns array
   members <- unique(c(unlist(sapply( votelist, function(vote) sapply(vote$votes, function(member) member$icpsr)))))
-
-    # Data to keep from return
+  
+  # Data to keep from return
   # todo: add option to keep nominate data for plot method
   rollcalldatanames <- setdiff(names(votelist[[1]]),
-                               c("votes", "apitype", "nominate"))
+                               c("votes", "apitype", "nominate", "errormessage", "errormeta"))
   votedatanames <- setdiff(names(votelist[[1]]$votes[[1]]),
                            c("y", "x", "vote", "icpsr"))
-  
+
   # Generic vote names, i.e. V1, V2
   votenames <- paste0(rep("V", times = length(votelist)), 1:length(votelist))
-  
+
   data <- list()
   data$votematrix <- data.frame(icpsr = as.numeric(members))
   data$votematrix[, c(votedatanames, votenames)] <- NA
   data$rollcalls <- data.frame(vote = votenames)
   data$rollcalls[, rollcalldatanames] <- NA
-  
+
   message(sprintf("Building the voteview object with %d rollcalls", length(votelist)))
   pb <- txtProgressBar(min = 0, max = length(votelist), style = 3)
   
   # option to replace any that are Missing with newer passes
-  
   
   for (i in 1:length(votelist)) {
     for (member in votelist[[i]]$votes) {
@@ -423,7 +435,7 @@ vlist2df <- function(rcs) {
   notlists <- sapply(rcs[[1]], function(x) class(x) != "list")
   flds <- names(rcs[[1]][notlists])
 
-    for (f in flds) {
+  for (f in flds) {
     md <- ifelse(class(rcs[[1]][[f]]) == "character", "character", "integer")
     df[[f]] <- vector(mode = md,length = length(rcs))
   }

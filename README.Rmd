@@ -26,7 +26,7 @@ devtools::install_github("JeffreyBLewis/Rvoteview")
   
 ## Using Rvoteview
 
-To use `Rvoteview`, you generally want to query the database to get a list of vote ids and then use those to return the individual votes. We query the database with a search term like so:
+To use `Rvoteview`, you generally want to query the database to get a list of vote ids and then use those to return the individual votes. We query the database with a search term and some parameters to constrain the search. For now we take a string that will seach for a bill that has ANY of the words in the string in ANY text field. Additional boolean and targeted searches are forthcoming.
 ```{r search}
 library(Rvoteview)
   

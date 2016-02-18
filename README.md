@@ -15,14 +15,15 @@ devtools::install_github("JeffreyBLewis/Rvoteview")
 Using Rvoteview
 ---------------
 
-To use `Rvoteview`, you generally want to query the database to get a list of vote ids and then use those to return the individual votes. We query the database with a search term like so:
+To use `Rvoteview`, you generally want to query the database to get a list of vote ids and then use those to return the individual votes. We query the database with a search term and some parameters to constrain the search. For now we take a string that will seach for a bill that has ANY of the words in the string in ANY text field. Additional boolean and targeted searches are forthcoming.
 
 ``` r
 library(Rvoteview)
   
 res <- voteview_search("Iraq")
 #> alltext:Iraq
-#> Query 'alltext:Iraq' returned 335 votes...
+#> No encoding supplied: defaulting to UTF-8.
+#> Query 'alltext:Iraq' returned 335 rollcalls...
 names(res)
 #>  [1] "description"      "shortdescription" "date"            
 #>  [4] "bill"             "chamber"          "session"         
@@ -52,16 +53,37 @@ Using `res$id` we can get a `rollcall` object (from the [`pscl` package](https:/
 ``` r
 ## Get a rollcall object using the ids, please limit to a few ids for now!
 rc <- voteview_download(res$id[1:10])
-#> Downloading 10 votes
-#> Building the voteview object
+#> Downloading 10 rollcalls
+#> Building the voteview object with 10 rollcalls
 ```
 
 ``` r
 ## Now this object can be used in many 'pscl' methods
 summary(rc)
-#>            Length Class      Mode
-#> votematrix 15     data.frame list
-#> rollcalls   6     data.frame list
+#> Source:       Download from VoteView 
+#> 
+#> Number of Legislators:        194
+#> Number of Roll Call Votes:    10
+#> 
+#> 
+#> Using the following codes to represent roll call votes:
+#> Yea:      1 2 3 
+#> Nay:      4 5 6 
+#> Abstentions:  NA 7 8 9 
+#> Not In Legislature:   0 
+#> 
+#> Party Composition:
+#>  100  200  328 <NA> 
+#>   94   98    2    0 
+#> 
+#> Vote Summary:
+#>                Count Percent
+#> 0 (notInLegis)   930    47.9
+#> 1 (yea)          664    34.2
+#> 6 (nay)          301    15.5
+#> 9 (missing)       45     2.3
+#> 
+#> Use summary(rc,verbose=TRUE) for more detailed information.
 ```
 
 You can also search by start and end date, session, and chamber. Please see the help files for each function after you install the package to see a little more about how they work.
@@ -71,7 +93,8 @@ You can also search by start and end date, session, and chamber. Please see the 
 res <- voteview_search("Iraq", chamber = "House", session = 110,
                        startdate = 2008, enddate = "2008-04-20")
 #> alltext:Iraq session:110
-#> Query 'alltext:Iraq session:110' returned 1 votes...
+#> No encoding supplied: defaulting to UTF-8.
+#> Query 'alltext:Iraq session:110' returned 1 rollcalls...
 head(res[, -1])
 #>                                                  shortdescription
 #> 1 IRAQ & AFGHAN. FALLEN MILITARY HEROES POST OFFICE LOUISVILLE KY
@@ -79,8 +102,9 @@ head(res[, -1])
 #> 1 2008-02-28 H R 4454   House     110       1263 404   0     100 H1101263
 
 res <- voteview_search("Iraq", session = 109:112)
-#> alltext:Iraq session:109 and 110 and 111 and 112
-#> Query 'alltext:Iraq session:109 and 110 and 111 and 112' returned 165 votes...
+#> alltext:Iraq session:109 110 111 112
+#> No encoding supplied: defaulting to UTF-8.
+#> Query 'alltext:Iraq session:109 110 111 112' returned 165 rollcalls...
 head(res[, -1])
 #>                                                         shortdescription
 #> 1                        SUPPLEMENTAL APPS FOR IRAQ & AFGHANISTAN (PROC)

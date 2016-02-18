@@ -4,7 +4,7 @@
 \alias{voteview_download}
 \title{Download rollcalls as voteview object}
 \usage{
-voteview_download(ids)
+voteview_download(ids, nids = 10)
 }
 \description{
 Download rollcalls as voteview object
