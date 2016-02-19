@@ -167,7 +167,7 @@ voteview_getvote <- function(ids) {
 #' Download rollcalls as voteview object
 #' @export
 #' 
-voteview_download <- function(ids, nids = 10) {
+voteview_download <- function(ids, nids = 15) {
   
   uniqueids <- unique(ids)
 
