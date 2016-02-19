@@ -10,8 +10,8 @@ voteview_search(alltext = NULL, startdate = NULL, enddate = NULL,
 }
 \arguments{
 \item{alltext}{A string or character vector that searches all text fields in
-the voteview datase. Each element is a specific phrase joined together with
-an AND statement.}
+the voteview datase. All words are searched independently and joined with 
+an OR statement. Case-insensitive.}
 
 \item{startdate}{A string of the format \code{"yyyy-mm-dd"} that is the
 earliest possible date to search for a roll call.}
@@ -25,13 +25,16 @@ call.}
 \item{chamber}{A string in \code{c("House", "Senate")}. The default
 NULL value returns results from both chambers of congress.}
 
-\item{maxsupport}{Support is the share of Yea votes over total Yea and Nay votes. \code{maxsupport} is a number specifying the maximum support allowed for returned votes.}
+\item{maxsupport}{NOT CURRENTLY SUPPORTED. Support is the share of Yea votes 
+over total Yea and Nay votes. \code{maxsupport} is a number specifying the 
+maximum support allowed for returned votes.}
 
-\item{minsupport}{A number specifying the minimum support allowed for returned votes.}
+\item{minsupport}{NOT CURRENTLY SUPPORTED. A number specifying the minimum 
+support allowed for returned votes.}
 
-\item{query}{A string that can specify a more complex search of all of the
-text fields. See examples for usage and syntax. Can only be used if 
-\code{alltext} is not specified.}
+\item{query}{NOT CURRENTLY SUPPORTED. A string that can specify a more 
+complex search of all of the text fields. See examples for usage and syntax.
+ Can only be used if \code{alltext} is not specified.}
 }
 \value{
 A data.frame with the following columns: 
@@ -59,6 +62,8 @@ Searches the Voteview database with a string and returns a data frame with
 bill IDs, summary vote statistics, and other identifying information.
 }
 \details{
+Each of the fields is currently joined together with an AND statement.
+
 \code{query} uses the following general syntax, \code{field:query AND (query OR query)}. For example, if you wanted to find votes with "war" and either "iraq" or "afghanistan" in any text field, you could set the query to be \code{"alltext:war AND (iraq OR afghanistan)"}. If you wanted to do the same query but only return the votes with "defense" in the description field, the query would become \code{"alltext:war AND (iraq OR afghanistan) description:defense"}
 
 The fields that can be searched with text are \code{code.Clausen}, \code{code.Peltzman}, \code{code.Issue}, \code{description}, \code{shortdescription}, \code{bill}, and \code{alltext}. The fields that can be searched by number are \code{session}, \code{yea}, \code{nay}, and \code{support}.
@@ -84,6 +89,6 @@ res
 }
 }
 \seealso{
-'\link{voteview_download}','\link{voteview2rollcall}','\link{vlist2df}'.
+'\link{voteview_download}'.
 }
 

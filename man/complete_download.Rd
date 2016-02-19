@@ -2,11 +2,36 @@
 % Please edit documentation in R/voteview.R
 \name{complete_download}
 \alias{complete_download}
-\title{Complete rollcall download}
+\title{Complete rollcall download if it was interrupted}
 \usage{
-complete_download(dat)
+complete_download(rc)
+}
+\arguments{
+\item{rc}{A rollcall object downloaded from VoteView that has unretrieved ids.}
+}
+\value{
+A modified \code{pscl} \code{rollcall} object including the original
+rollcalls and any ones that succeeded the second time.
 }
 \description{
-Complete rollcall download
+Complete rollcall download if it was interrupted
+}
+\examples{
+
+## Search for example roll calls
+res <- voteview_search("Rhodesia")
+
+## Download some ids and an invalid id
+rc <- voteview_download(c(res$id[1:10], "fakeid", res$id[11:15]))
+summary(rc)
+
+rc$unretrievedids
+
+## Complete download. Wont work because 'fakeid' will always be invalid,
+## however this is just to show usage
+complete_rc <- complete_download(rc)
+}
+\seealso{
+'\link[pscl]{rollcall}','\link{complete_download}','\link{voteview_search}'.
 }
 

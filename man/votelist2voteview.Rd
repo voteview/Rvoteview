@@ -2,11 +2,11 @@
 % Please edit documentation in R/voteview.R
 \name{votelist2voteview}
 \alias{votelist2voteview}
-\title{BUild voteview object from downloaded votelist}
+\title{Internal function to build a voteview object from downloaded votelist}
 \usage{
 votelist2voteview(dat)
 }
 \description{
-BUild voteview object from downloaded votelist
+Internal function to build a voteview object from downloaded votelist
 }
 

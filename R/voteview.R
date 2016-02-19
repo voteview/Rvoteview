@@ -14,8 +14,8 @@ trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 #' bill IDs, summary vote statistics, and other identifying information.
 #' 
 #' @param alltext A string or character vector that searches all text fields in
-#' the voteview datase. Each element is a specific phrase joined together with
-#' an AND statement.
+#' the voteview datase. All words are searched independently and joined with 
+#' an OR statement. Case-insensitive.
 #' @param startdate A string of the format \code{"yyyy-mm-dd"} that is the
 #' earliest possible date to search for a roll call.
 #' @param enddate A string of the format
@@ -24,11 +24,14 @@ trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 #' @param session A numeric vector of the sessions of congress to constrain the search to. The default is all sessions.
 #' @param chamber A string in \code{c("House", "Senate")}. The default
 #' NULL value returns results from both chambers of congress.
-#' @param maxsupport Support is the share of Yea votes over total Yea and Nay votes. \code{maxsupport} is a number specifying the maximum support allowed for returned votes.
-#' @param minsupport A number specifying the minimum support allowed for returned votes.
-#' @param query A string that can specify a more complex search of all of the
-#' text fields. See examples for usage and syntax. Can only be used if 
-#' \code{alltext} is not specified.
+#' @param maxsupport NOT CURRENTLY SUPPORTED. Support is the share of Yea votes 
+#' over total Yea and Nay votes. \code{maxsupport} is a number specifying the 
+#' maximum support allowed for returned votes.
+#' @param minsupport NOT CURRENTLY SUPPORTED. A number specifying the minimum 
+#' support allowed for returned votes.
+#' @param query NOT CURRENTLY SUPPORTED. A string that can specify a more 
+#' complex search of all of the text fields. See examples for usage and syntax.
+#'  Can only be used if \code{alltext} is not specified.
 #' @return A data.frame with the following columns: 
 #' \itemize{
 #' \item{\code{description} }{Official description of the bill.}
@@ -49,12 +52,14 @@ trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 #' details.}
 #' }
 #' @details
+#' Each of the fields is currently joined together with an AND statement.
+#' 
 #' \code{query} uses the following general syntax, \code{field:query AND (query OR query)}. For example, if you wanted to find votes with "war" and either "iraq" or "afghanistan" in any text field, you could set the query to be \code{"alltext:war AND (iraq OR afghanistan)"}. If you wanted to do the same query but only return the votes with "defense" in the description field, the query would become \code{"alltext:war AND (iraq OR afghanistan) description:defense"}
 #' 
 #' The fields that can be searched with text are \code{code.Clausen}, \code{code.Peltzman}, \code{code.Issue}, \code{description}, \code{shortdescription}, \code{bill}, and \code{alltext}. The fields that can be searched by number are \code{session}, \code{yea}, \code{nay}, and \code{support}.
 #' 
 #' @seealso
-#' '\link{voteview_download}','\link{voteview2rollcall}','\link{vlist2df}'.
+#' '\link{voteview_download}'.
 #' @examples
 #' 
 #' ## Search for example roll calls
@@ -97,17 +102,19 @@ voteview_search <- function(alltext = NULL,
     query_string <- query
   }
   
+  # Check date is well formatted (2014, "2014-01", "2014-01-30")
   dates <- c(as.character(startdate), as.character(enddate))
   if (length(grep("^[0-9]{4}($|-(0[0-9]|1[0-2])($|-([0-2][0-9]|3[0-1])))",
                   c(startdate, enddate))) != length(dates)){
     stop("A date is formatted incorrectly. Please use yyyy, yyyy-mm, or yyyy-mm-dd format")
   }
   
+  # Check input for chamber
   if (!is.null(chamber)) {
     if (!(tolower(chamber) %in% c("house", "senate"))) stop("Chamber must be either 'House' or 'Senate'")
   }
   
-  # todo: check to make sure just vector
+  # Check session within range
   if (!is.null(session)) {
 
     if (any(session < 0 | session > 999)) {
@@ -118,6 +125,7 @@ voteview_search <- function(alltext = NULL,
     query_string <- paste0(query_string, " session:", paste(session, collapse = " "))
   }
   
+  # Check support is in correct range and sensible
   if (!is.null(maxsupport) | !is.null(minsupport)) {
     
     if (any(c(minsupport, maxsupport) < 0 | c(minsupport, maxsupport) > 100)) {
@@ -133,12 +141,13 @@ voteview_search <- function(alltext = NULL,
   }
   
   theurl <- "http://leela.sscnet.ucla.edu/voteview/search"
-  message(query_string)
+  message(query_string) # Print out query to user
   resp <- POST(theurl, body = list(q = query_string,
                                    startdate = startdate,
                                    enddate = enddate,
                                    chamber = chamber))
 
+  # If the return is not JSON, print out result to see error
   if (substr(content(resp, as = "text"), 1, 1) != "{") {
     stop(content(resp, as = "text"))
   }
@@ -148,6 +157,7 @@ voteview_search <- function(alltext = NULL,
                                                encoding = "utf-8")))
   
   message(sprintf("Query '%s' returned %i rollcalls...\n", query_string, resjson$recordcount))
+  
   # todo: also return in printout the date and chamber parameters
   if(!is.null(resjson$errormessage)) warning(resjson$errormessage)
   if(resjson$recordcount == 0) stop("No rollcalls found")
@@ -157,24 +167,66 @@ voteview_search <- function(alltext = NULL,
 }
 
 # Internal function to get a roll call from the web api
-#' @export
-voteview_getvote <- function(ids) {
-  theurl <- "http://leela.sscnet.ucla.edu/webvoteview/api/getvote/"
-  resp <- GET(paste0(theurl, paste(ids, collapse = ","), "/R"), timeout(5))
-}
-
-# Function to download roll calls and turn them in to a voteview object
-#' Download rollcalls as voteview object
+#' Internal function to retrieve roll call json
 #' @export
 #' 
-voteview_download <- function(ids, nids = 15) {
+voteview_getvote <- function(ids) {
+  theurl <- "http://leela.sscnet.ucla.edu/webvoteview/api/getvote/"
+  resp <- GET(paste0(theurl, paste0(ids, collapse = ","), "/R"), timeout(5))
+}
+
+# Function to download roll calls and turn them in to a rollcall object
+#' Download rollcalls as a rollcall object
+#' 
+#' Finds rollcalls by ID and builds a \code{rollcall} object from the 
+#' \code{pscl} package.
+#' 
+#' @param ids A character vector of vote ids.
+#' @param perrequest An integer that sets the number of votes requested at a
+#' time from the voteview database. Default is 15, and is roughly the fastest.
+#' Max is 100.
+#' @return A modified \code{pscl} \code{rollcall} object.
+#' 
+#' @details
+#' This function returns a modified \code{rollcall} object. It inherits all of
+#' the relevant methods from \code{pscl} but has two additional features. First,
+#' interrupted downloads can be resumed because there is a new 
+#' \code{unretrievedids} vector in the \code{rollcall} object, which, if 
+#' non-null, can be used in \link{complete_download}. Second, there will
+#' eventually be a plot method.
+#' 
+#' @seealso
+#' '\link[pscl]{rollcall}','\link{complete_download}','\link{voteview_search}'.
+#' @examples
+#' 
+#' ## Search for example roll calls
+#' res <- voteview_search("Rhodesia")
+#' 
+#' ## Download first 50
+#' rc <- voteview_download(res$id[1:50])
+#' summary(rc)
+#' 
+#' \dontrun{
+#' ## Lower the number of rollcalls downloaded at a time
+#' rc <- voteview_download(res$id[1:50], perrequest = 5)
+#' 
+#' ## Continue possibly broken/interrupted download
+#' complete_rc <- complete_download(rc)
+#' }
+#' @export
+#' 
+voteview_download <- function(ids, perrequest = 15) {
+  
+  if (!is.character(ids)) stop("ids must be a character vector.")
+  
+  if (perrequest < 1 | perrequest > 100) stop("Max 100 requests at a time. Server will reject higher requests.")
   
   uniqueids <- unique(ids)
 
   if (length(uniqueids) < length(ids)) message("Duplicated ids dropped")
   
   dat <- vector("list", length(uniqueids))
-  dat <- build_votelist(dat, uniqueids, nids = nids)
+  dat <- build_votelist(dat, uniqueids, perrequest = perrequest)
 
   return( voteview2rollcall(votelist2voteview(dat)) )
 }
@@ -183,7 +235,7 @@ voteview_download <- function(ids, nids = 15) {
 #' Internal function to get rollcalls and build voteview list
 #' @export
 #' 
-build_votelist <- function(votelist, ids, nids) {
+build_votelist <- function(votelist, ids, perrequest) {
   
   message(sprintf("Downloading %d rollcalls", length(ids)))
   pb <- txtProgressBar(min = 0, max = length(ids), style = 3)
@@ -193,7 +245,7 @@ build_votelist <- function(votelist, ids, nids) {
   
   place <- 0
   
-  idchunks <- split(ids, ceiling(seq_along(ids)/nids))
+  idchunks <- split(ids, ceiling(seq_along(ids)/perrequest))
   
   # Download votes
   for (i in 1:length(idchunks)) {
@@ -205,10 +257,12 @@ build_votelist <- function(votelist, ids, nids) {
       
       votes <- tryCatch( {
         resp <- voteview_getvote(idchunks[[i]])
-        fromJSON(content(resp, as = "text"))
+        fromJSON(content(resp,
+                         as = "text",
+                         encoding = "utf-8"))
       },
       error = function(e) {
-        print(e)
+
         attempts <<- attempts + 1
         Sys.sleep(0.5)
         return("ERROR")
@@ -229,7 +283,7 @@ build_votelist <- function(votelist, ids, nids) {
     if (votes[1] == "INTERRUPT") {
       return(list(votelist = votelist,
                   unretrievedids = c(unretrievedids,
-                                     unlist(idchunks[i:length(idchunks)],
+                                     unlist(idchunks[i:length(idchunks)], 
                                             use.names = F))))
     }
     
@@ -241,10 +295,12 @@ build_votelist <- function(votelist, ids, nids) {
         stop(sprintf("Cannot connect to server. No downloads possible."))
       }
       if ("Couldn't resolve host name" == errmess) {
-        warning(sprintf("Cannot connect to server. Will output the %d completed downloads.", length(unlist(idchunks[1:(i-1)]))))
+        warning(sprintf("Cannot connect to server. Will output the %d completed downloads.",
+                        length(unlist(idchunks[1:(i-1)]))))
       } else {
         warning("Unexpected warning: ", errmess)
-        warning(sprintf("Cannot connect to server. Will output the %d completed downloads.", length(unlist(idchunks[1:(i-1)]))))
+        warning(sprintf("Cannot connect to server. Will output the %d completed downloads.",
+                        length(unlist(idchunks[1:(i-1)]))))
       }
       return(list(votelist = votelist,
                   unretrievedids = c(unretrievedids,
@@ -269,8 +325,8 @@ build_votelist <- function(votelist, ids, nids) {
               unretrievedids = unretrievedids))
 }
 
-# Function to build voteview object from voteview list
-#' BUild voteview object from downloaded votelist
+# Internal function to build voteview object from voteview list
+#' Internal function to build a voteview object from downloaded votelist
 #' @export
 #' 
 votelist2voteview <- function(dat) {
@@ -345,49 +401,44 @@ votelist2voteview <- function(dat) {
 }
 
 # Function to restart interrupted voteview_download processes
-#' Complete rollcall download
+#' Complete rollcall download if it was interrupted
+#' 
+#' @param rc A rollcall object downloaded from VoteView that has unretrieved ids.
+#' @return A modified \code{pscl} \code{rollcall} object including the original
+#' rollcalls and any ones that succeeded the second time.
+#' 
+#' @seealso
+#' '\link[pscl]{rollcall}','\link{complete_download}','\link{voteview_search}'.
+#' @examples
+#' 
+#' ## Search for example roll calls
+#' res <- voteview_search("Rhodesia")
+#' 
+#' ## Download some ids and an invalid id
+#' rc <- voteview_download(c(res$id[1:10], "fakeid", res$id[11:15]))
+#' summary(rc)
+#' 
+#' rc$unretrievedids
+#' 
+#' ## Complete download. Wont work because 'fakeid' will always be invalid,
+#' ## however this is just to show usage
+#' complete_rc <- complete_download(rc)
 #' @export
 #' 
-complete_download <- function(dat) {
+complete_download <- function(rc) {
   
-  if(class(dat) != "rollcall") stop("restart_download only takes rollcall objects downloaded from VoteView.")
-  if(dat$source != "Download from VoteView") stop("restart_download only takes rollcall objects downloaded from VoteView.")
+  if(class(rc) != "rollcall") stop("restart_download only takes rollcall objects downloaded from VoteView.")
+  if(rc$source != "Download from VoteView") stop("restart_download only takes rollcall objects downloaded from VoteView.")
   
-  if(is.null(dat$unretrievedids)) stop("No unretrieved ids associated with this rollcall object.")
+  if(is.null(rc$unretrievedids)) stop("No unretrieved ids associated with this rollcall object.")
 
-  rc_new <- voteview_download(dat$unretrievedids)
+  rc_new <- voteview_download(rc$unretrievedids)
   
   return( rc %+% rc_new )
 }
 
-# Takes a voteview object and translate it in to a PSCL rollcall object
-#' Transforms Voteview object to a rollcall object
-#' 
-#' Takes a voteview object that has been downloaded using \code{voteview_download} and
-#' creates a \code{pscl} \code{rollcall} object that can then be analyzed using
-#' methods in the \code{pscl} package.
-#' 
-#' 
-#' @param data A voteview object downloaded from the voteview server using
-#' \code{voteview_download}.
-#' @return A \code{rollcall} object from the \code{pscl} package.
-#' @seealso
-#' '\link{voteview_search}','\link{voteview_download}'.
-#' @examples
-#' 
-#' ## NOTE: SIMPLY USE voteview_download INSTEAD
-#' ## Search for example roll calls
-#' res <- voteview_search("Iraq")
-#'   
-#' ## Use the ids from that search to download votes and create voteview object
-#' vv <- voteview_download(res$id)
-#'   
-#' ## Get roll call object
-#' rc <- voteview2rollcall(vv)
-#'   
-#' ## Summarize the roll call object
-#' summary(rc)
-#' summary(rc, verbose = T)
+# Internal function to transform a voteview object in to a pscl rollcall object
+#' Internal function that transforms Voteview object to a rollcall object
 #' @export
 #' 
 voteview2rollcall <- function(data) {
@@ -455,13 +506,40 @@ vlist2df <- function(rcs) {
                  "session",  "rollnumber", "yea", "nay", "support", "id")])
 }
 
-# Eventually this function will properly merge RC files
+# Joins two rollcall objects
+#' Full outer join of two rollcall objects
+#' 
+#' This function takes two rollcall objects as its parameters and performs a
+#' full outer join on them, returning a new rollcall object that is the union
+#' of the two.
+#' 
+#' @param rc1 The first rollcall object.
+#' @param rc2 The second rollcall object.
+#' @return The union of the two rollcall objects.
+#' 
+#' @examples
+#' 
+#' ## Search for rollcalls about Rhodesia in 100th and 101st Congress
+#' res <- voteview_search("Rhodesia", session = c(99, 100))
+#' 
+#' rc1 <- voteview_download(res$id)
+#' summary(rc1)
+#' 
+#' ## Search for rollcalls about Rhodesia in 101st and 102nd Congress
+#' res <- voteview_search("Rhodesia", session = c(100, 101))
+#' 
+#' rc2 <- voteview_download(res$id)
+#' summary(rc2)
+#' 
+#' ## Union of the two results
+#' rc <- rc1 %+% rc2
+#' 
 #' @export
+#' 
 "%+%" <- function(rc1, rc2) {
   
   # todo: input validation
-  # todo: naming votes V1, V2, ...
-  
+
   # Identifying vectors
   votes.ids1 <- paste0(rc1$vote.data$chamber, rc1$vote.data$rollnumber)
   votes.ids2 <- paste0(rc2$vote.data$chamber, rc2$vote.data$rollnumber)

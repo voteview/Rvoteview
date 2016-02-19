@@ -2,11 +2,50 @@
 % Please edit documentation in R/voteview.R
 \name{voteview_download}
 \alias{voteview_download}
-\title{Download rollcalls as voteview object}
+\title{Download rollcalls as a rollcall object}
 \usage{
-voteview_download(ids, nids = 10)
+voteview_download(ids, perrequest = 15)
+}
+\arguments{
+\item{ids}{A character vector of vote ids.}
+
+\item{perrequest}{An integer that sets the number of votes requested at a
+time from the voteview database. Default is 15, and is roughly the fastest.
+Max is 100.}
+}
+\value{
+A modified \code{pscl} \code{rollcall} object.
 }
 \description{
-Download rollcalls as voteview object
+Finds rollcalls by ID and builds a \code{rollcall} object from the 
+\code{pscl} package.
+}
+\details{
+This function returns a modified \code{rollcall} object. It inherits all of
+the relevant methods from \code{pscl} but has two additional features. First,
+interrupted downloads can be resumed because there is a new 
+\code{unretrievedids} vector in the \code{rollcall} object, which, if 
+non-null, can be used in \link{complete_download}. Second, there will
+eventually be a plot method.
+}
+\examples{
+
+## Search for example roll calls
+res <- voteview_search("Rhodesia")
+
+## Download first 50
+rc <- voteview_download(res$id[1:50])
+summary(rc)
+
+\dontrun{
+## Lower the number of rollcalls downloaded at a time
+rc <- voteview_download(res$id[1:50], perrequest = 5)
+
+## Continue possibly broken/interrupted download
+complete_rc <- complete_download(rc)
+}
+}
+\seealso{
+'\link[pscl]{rollcall}','\link{complete_download}','\link{voteview_search}'.
 }
 

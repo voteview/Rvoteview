@@ -2,39 +2,11 @@
 % Please edit documentation in R/voteview.R
 \name{voteview2rollcall}
 \alias{voteview2rollcall}
-\title{Transforms Voteview object to a rollcall object}
+\title{Internal function that transforms Voteview object to a rollcall object}
 \usage{
 voteview2rollcall(data)
 }
-\arguments{
-\item{data}{A voteview object downloaded from the voteview server using
-\code{voteview_download}.}
-}
-\value{
-A \code{rollcall} object from the \code{pscl} package.
-}
 \description{
-Takes a voteview object that has been downloaded using \code{voteview_download} and
-creates a \code{pscl} \code{rollcall} object that can then be analyzed using
-methods in the \code{pscl} package.
-}
-\examples{
-
-## NOTE: SIMPLY USE voteview_download INSTEAD
-## Search for example roll calls
-res <- voteview_search("Iraq")
-  
-## Use the ids from that search to download votes and create voteview object
-vv <- voteview_download(res$id)
-  
-## Get roll call object
-rc <- voteview2rollcall(vv)
-  
-## Summarize the roll call object
-summary(rc)
-summary(rc, verbose = T)
-}
-\seealso{
-'\link{voteview_search}','\link{voteview_download}'.
+Internal function that transforms Voteview object to a rollcall object
 }
 
