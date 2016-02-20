@@ -2,6 +2,7 @@
 #' @import rjson
 #' @import httr
 #' @import fastmatch
+#' @import reshape2
 
 # Trim white space off of strings
 trim <- function (x) gsub("^\\s+|\\s+$", "", x)
@@ -308,6 +309,7 @@ build_votelist <- function(votelist, ids, perrequest) {
                                             use.names = F))))
     } else {
       if(length(votes$rollcalls)) {
+        found_ids <- setdiff(idchunks[i], unlist(votes$errormeta, use.names = F))
         for(j in 1:length(votes$rollcalls)) {
           votelist[[place + j]] <- votes$rollcalls[[j]]
         }
@@ -349,18 +351,20 @@ votelist2voteview <- function(dat) {
   # Data to keep from return
   # todo: add option to keep nominate data for plot method
   rollcalldatanames <- setdiff(names(votelist[[1]]),
-                               c("votes", "apitype", "nominate", "errormessage", "errormeta"))
-  votedatanames <- setdiff(names(votelist[[1]]$votes[[1]]),
+                               c("votes", "apitype", "nominate", "errormessage", "errormeta", "id"))
+  memberdatanames <- setdiff(names(votelist[[1]]$votes[[1]]),
                            c("y", "x", "vote", "icpsr"))
 
-  # Generic vote names, i.e. V1, V2
-  votenames <- paste0(rep("V", times = length(votelist)), 1:length(votelist))
+  # use IDs for votenames
+  votenames <- c(unlist(sapply(votelist, function(vote) vote$id)))
 
   data <- list()
   data$votematrix <- data.frame(icpsr = as.numeric(members))
-  data$votematrix[, c(votedatanames, votenames)] <- NA
-  data$rollcalls <- data.frame(vote = votenames)
-  data$rollcalls[, rollcalldatanames] <- NA
+  data$votematrix[, c(memberdatanames, votenames)] <- NA
+  data$rollcalls <- data.frame(matrix(NA,
+                                      ncol = length(rollcalldatanames),
+                                      nrow = length(votenames),
+                                      dimnames = list(NULL, rollcalldatanames)))
 
   message(sprintf("Building the voteview object with %d rollcalls", length(votelist)))
   pb <- txtProgressBar(min = 0, max = length(votelist), style = 3)
@@ -369,23 +373,23 @@ votelist2voteview <- function(dat) {
   
   for (i in 1:length(votelist)) {
     for (member in votelist[[i]]$votes) {
-      vname <- paste0("V", i)
+      vname <- votelist[[i]]$id
       # Find member from roll call in output data
       memberpos <- fmatch(member$icpsr, data$votematrix$icpsr)
       # If the legislator data is not entered yet, enter it as well as the vote
       if (is.na(data$votematrix$name[memberpos])) {
-        vdat <- member[votedatanames]
+        vdat <- member[memberdatanames]
         vdat[sapply(vdat, is.null)] <- NA
-        data$votematrix[memberpos, c(votedatanames, vname)] <- c(unlist(vdat), member$vote)
+        data$votematrix[memberpos, c(memberdatanames, vname)] <- c(unlist(vdat), member$vote)
       } else { # else, just enter the vote
         data$votematrix[memberpos, vname] <- member$vote
       }
     }
     
     # If vote is NA, replace it with 0 for not in legislature
-    data$votematrix[, paste0("V", i)] <- ifelse(is.na(data$votematrix[, vname]),
-                                                0,
-                                                data$votematrix[, vname])
+    data$votematrix[, vname] <- ifelse(is.na(data$votematrix[, vname]),
+                                             0,
+                                             data$votematrix[, vname])
     
     # Add rollcall data
     data$rollcalls[i, rollcalldatanames] <- c(votelist[[i]][rollcalldatanames])
@@ -427,14 +431,48 @@ votelist2voteview <- function(dat) {
 #' 
 complete_download <- function(rc) {
   
-  if(class(rc) != "rollcall") stop("restart_download only takes rollcall objects downloaded from VoteView.")
-  if(rc$source != "Download from VoteView") stop("restart_download only takes rollcall objects downloaded from VoteView.")
+  if (class(rc) != "rollcall") stop("complete_download only takes rollcall objects downloaded from VoteView.")
+  if (rc$source != "Download from VoteView") stop("complete_download only takes rollcall objects downloaded from VoteView.")
   
-  if(is.null(rc$unretrievedids)) stop("No unretrieved ids associated with this rollcall object.")
+  if (is.null(rc$unretrievedids)) stop("No unretrieved ids associated with this rollcall object.")
 
   rc_new <- voteview_download(rc$unretrievedids)
   
-  return( rc %+% rc_new )
+  return(rc %+% rc_new)
+}
+
+# Function to turn roll call object into long_rollcall object
+melt_rollcall <- function(rc,
+                          #keepicpsr = rc$legis.data$icpsr,
+                          keepvote = row.names(rc$vote.data),
+                          legiscols = c("icpsr", "name", "state", "cqlabel"),
+                          votecols = c("chamber", "session")) {
+  
+  if(class(rc) != "rollcall") stop("melt_rollcall only takes rollcall objects.")
+
+  # Only keep votes user wants
+  votes <- rc$votes[, keepvote]
+  # Replace 'not in legislature' vote with missing to make dropping easy in the melt
+  votes[votes == "0"] <- NA 
+  # Replace row names with icpsr numbers
+  row.names(votes) <- gsub(".* - ", "", row.names(votes))
+
+  # Use melt from reshape2, very fast
+  long_rc <- melt(votes,
+                  varnames = c("icpsr", "voteid"),
+                  value.name = c("vote"),
+                  na.rm = TRUE)
+  
+  # Change from factors
+  long_rc[] <- lapply(long_rc, as.character)
+  
+  # Add legislator data
+  long_rc <- merge(long_rc, rc$legis.data[, legiscols], by.x = "icpsr", by.y = "icpsr")
+  
+  # Add roll call data
+  long_rc <- merge(long_rc, rc$vote.data[, votecols], by.x = "voteid", by.y = "row.names")
+  
+  return(long_rc)
 }
 
 # Internal function to transform a voteview object in to a pscl rollcall object
@@ -444,21 +482,25 @@ complete_download <- function(rc) {
 voteview2rollcall <- function(data) {
   #check type of obj
 
-  dat  <- as.matrix(data$votematrix[,grep("^V\\d+", names(data$votematrix))])
+  voteindices <- grep("^[HS]\\d+", names(data$votematrix))
+  
+  dat  <- as.matrix(data$votematrix[, voteindices])
+  
   rnames <- sprintf("%s %s - %s", trim(data$votematrix$name),
                                   data$votematrix$cqlabel,
                                   data$votematrix$icpsr)
   rownames(dat) <- rnames
-  legis.data <- data$votematrix[, -grep("^V\\d+", names(data$votematrix))]
+  legis.data <- data$votematrix[, -voteindices]
 
   rc <- rollcall(data = dat,
                  yea = c(1, 2, 3),
                  nay = c(4, 5, 6),
-                 missing = c(NA, 7, 8, 9),
+                 missing = c(7, 8, 9),
                  notInLegis = 0,
                  legis.data = legis.data,
                  legis.names = rnames,
                  vote.data = data$rollcalls,
+                 vote.names = names(data$votematrix)[voteindices],
                  source = "Download from VoteView")
   
   rc[["unretrievedids"]] <- data$unretrievedids
