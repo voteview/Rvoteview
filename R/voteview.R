@@ -2,7 +2,6 @@
 #' @import rjson
 #' @import httr
 #' @import fastmatch
-#' @import reshape2
 
 # Trim white space off of strings
 trim <- function (x) gsub("^\\s+|\\s+$", "", x)
@@ -359,8 +358,11 @@ votelist2voteview <- function(dat) {
   votenames <- c(unlist(sapply(votelist, function(vote) vote$id)))
 
   data <- list()
-  data$votematrix <- data.frame(icpsr = as.numeric(members))
-  data$votematrix[, c(memberdatanames, votenames)] <- NA
+  data$votematrix <- data.frame(matrix(NA,
+                                       ncol = length(c(memberdatanames, votenames)),
+                                       nrow = length(members),
+                                       dimnames = list(as.numeric(members),
+                                                       c(memberdatanames, votenames))))
   data$rollcalls <- data.frame(matrix(NA,
                                       ncol = length(rollcalldatanames),
                                       nrow = length(votenames),
@@ -375,7 +377,7 @@ votelist2voteview <- function(dat) {
     for (member in votelist[[i]]$votes) {
       vname <- votelist[[i]]$id
       # Find member from roll call in output data
-      memberpos <- fmatch(member$icpsr, data$votematrix$icpsr)
+      memberpos <- fmatch(member$icpsr, row.names(data$votematrix))
       # If the legislator data is not entered yet, enter it as well as the vote
       if (is.na(data$votematrix$name[memberpos])) {
         vdat <- member[memberdatanames]
@@ -403,6 +405,36 @@ votelist2voteview <- function(dat) {
   
   return(data)
 }
+
+
+# Internal function to transform a voteview object in to a pscl rollcall object
+#' Internal function that transforms Voteview object to a rollcall object
+#' @export
+#' 
+voteview2rollcall <- function(data) {
+  #check type of obj
+  
+  voteindices <- grep("^[HS]\\d+", names(data$votematrix))
+  
+  dat  <- as.matrix(data$votematrix[, voteindices])
+  
+  legis.data <- data$votematrix[, -voteindices]
+  
+  rc <- rollcall(data = dat,
+                 yea = c(1, 2, 3),
+                 nay = c(4, 5, 6),
+                 missing = c(7, 8, 9),
+                 notInLegis = 0,
+                 legis.data = legis.data,
+                 legis.names = rownames(dat),
+                 vote.data = data$rollcalls,
+                 vote.names = colnames(dat),
+                 source = "Download from VoteView")
+  
+  rc[["unretrievedids"]] <- data$unretrievedids
+  return(rc)
+}
+
 
 # Function to restart interrupted voteview_download processes
 #' Complete rollcall download if it was interrupted
@@ -442,69 +474,95 @@ complete_download <- function(rc) {
 }
 
 # Function to turn roll call object into long_rollcall object
-melt_rollcall <- function(rc,
-                          #keepicpsr = rc$legis.data$icpsr,
-                          keepvote = row.names(rc$vote.data),
-                          legiscols = c("icpsr", "name", "state", "cqlabel"),
-                          votecols = c("chamber", "session")) {
-  
-  if(class(rc) != "rollcall") stop("melt_rollcall only takes rollcall objects.")
-
-  # Only keep votes user wants
-  votes <- rc$votes[, keepvote]
-  # Replace 'not in legislature' vote with missing to make dropping easy in the melt
-  votes[votes == "0"] <- NA 
-  # Replace row names with icpsr numbers
-  row.names(votes) <- gsub(".* - ", "", row.names(votes))
-
-  # Use melt from reshape2, very fast
-  long_rc <- melt(votes,
-                  varnames = c("icpsr", "voteid"),
-                  value.name = c("vote"),
-                  na.rm = TRUE)
-  
-  # Change from factors
-  long_rc[] <- lapply(long_rc, as.character)
-  
-  # Add legislator data
-  long_rc <- merge(long_rc, rc$legis.data[, legiscols], by.x = "icpsr", by.y = "icpsr")
-  
-  # Add roll call data
-  long_rc <- merge(long_rc, rc$vote.data[, votecols], by.x = "voteid", by.y = "row.names")
-  
-  return(long_rc)
-}
-
-# Internal function to transform a voteview object in to a pscl rollcall object
-#' Internal function that transforms Voteview object to a rollcall object
+#' Melt rollcall object to long rollcall data frame
+#' 
+#' This function takes a rollcall object and melts it into a long format, merging
+#' attributes of the rollcalls and legislators. This can be used for legislator-rollcall
+#' analyses.
+#' 
+#' @param rc A rollcall object.
+#' @param keepvote A character vector of vote names to keep. Defaults to all.
+#' @param legiscols A character vector of column names from \code{legis.data} to
+#' include. Defaults to all columns.
+#' @param votecols A character vector of column names from \code{vote.data} to
+#' include. Defaults to all columns.
+#' @param dropNotInLegis Boolean to drop votes that were "notInLegis". Defaults
+#' to TRUE.
+#' @return A data.frame with the following columns:
+#' \itemize{
+#' \item{\code{legisid} }{Legislator names from rollcall object}
+#' \item{\code{voteid} }{Vote names from rollcall object}
+#' \item{\code{legiscols} }{All columns selected from \code{legis.data}}
+#' \item{\code{votecols} }{All columns selected from \code{vote.data}}
+#' \item{\code{vote} }{Numeric vote for legislator-rollcall pair}
+#' }
+#' @details 
+#' This function works for any \code{rollcall} object that meets the following
+#' two criteria. The \code{vote.names}, or the row names of the \code{vote.data}
+#' matrix within the \code{rollcall} object, must match the column names of the 
+#' \code{votes} matrix. Similarly, the 
+#' \code{legis.names}, or the row names of the \code{legis.data} matrix within 
+#' the \code{rollcall} object, must match the row names of the \code{votes} matrix.
+#' 
+#' @seealso
+#' '\link[pscl]{rollcall}'.
+#' @examples
+#' 
+#' ## Search for example roll calls
+#' res <- voteview_search("Rhodesia")
+#' 
+#' ## Download some ids
+#' rc <- voteview_download(res$id[1:10])
+#' 
+#' ## Create long rollcall object, wihtout long description fields
+#' rclong <- melt_rollcall(rc, votecols = c("chamber", "session"))
+#' 
 #' @export
 #' 
-voteview2rollcall <- function(data) {
-  #check type of obj
+melt_rollcall <- function(rc,
+                          #keepicpsr = rc$legis.data$icpsr,
+                          keepvote = rownames(rc$vote.data),
+                          legiscols = colnames(rc$legis.data),
+                          votecols = colnames(rc$vote.data),
+                          dropNotInLegis = TRUE) {
+  
+  if(class(rc) != "rollcall") stop("melt_rollcall only takes rollcall objects.")
+  
+  # Only keep votes user wants
+  votes <- rc$votes[, keepvote]
 
-  voteindices <- grep("^[HS]\\d+", names(data$votematrix))
+  # Modified from reshape2, Hadley Wickham
+  # https://github.com/hadley/reshape
+  dn <- dimnames(votes)
+  names(dn) <- c("legisid", "voteid")
   
-  dat  <- as.matrix(data$votematrix[, voteindices])
+  # Build matrix of all legislator-rollcalls
+  labels <- expand.grid(dn, KEEP.OUT.ATTRS = FALSE,
+                        stringsAsFactors = FALSE)
   
-  rnames <- sprintf("%s %s - %s", trim(data$votematrix$name),
-                                  data$votematrix$cqlabel,
-                                  data$votematrix$icpsr)
-  rownames(dat) <- rnames
-  legis.data <- data$votematrix[, -voteindices]
+  if (dropNotInLegis) {
+    # Drop missing from data
+    missing <- votes %in% rc$codes$notInLegis
+    votes <- votes[!missing]
+    # Drop corresponding rows from matrix of legislator-rollcalls
+    labels <- labels[!missing, ]
+  }
+  
+  # Turn votes in to a vector, will have same pattern as labels
+  value_df <- setNames(data.frame(as.numeric(votes), stringsAsFactors = FALSE),
+                       "vote")
 
-  rc <- rollcall(data = dat,
-                 yea = c(1, 2, 3),
-                 nay = c(4, 5, 6),
-                 missing = c(7, 8, 9),
-                 notInLegis = 0,
-                 legis.data = legis.data,
-                 legis.names = rnames,
-                 vote.data = data$rollcalls,
-                 vote.names = names(data$votematrix)[voteindices],
-                 source = "Download from VoteView")
+  long_rc <- cbind(labels, value_df)
   
-  rc[["unretrievedids"]] <- data$unretrievedids
-  return(rc)
+  # Add legislator data
+  long_rc <- merge(long_rc, rc$legis.data[, legiscols],
+                   by.x = "legisid", by.y = "row.names")
+  
+  # Add roll call data
+  long_rc <- merge(long_rc, rc$vote.data[, votecols],
+                   by.x = "voteid", by.y = "row.names")
+  
+  return(long_rc[, c("legisid", "voteid", votecols, legiscols, "vote")])
 }
 
 # Helper function that transforms a vector of lists into a dataframe
