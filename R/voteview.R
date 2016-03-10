@@ -404,7 +404,7 @@ votelist2voteview <- function(dat) {
         ldat <- member[legislongdatanames]
         # Replace fields missing in DB with NA
         # todo: what if first field is the one missing?
-        sapply(ldat, is.null)] <- NA
+        ldat[sapply(ldat, is.null)] <- NA
         data$legislong[memberpos, legislongdatanames] <- unlist(ldat, F, F)
       } 
       
@@ -636,47 +636,83 @@ voteview_getmember <- function(id, session = NULL, perrequest = 20) {
 melt_rollcall <- function(rc,
                           #keepicpsr = rc$legis.data$icpsr,
                           keepvote = rownames(rc$vote.data),
-                          legiscols = colnames(rc$legis.data),
-                          votecols = colnames(rc$vote.data),
+                          legiscols = NULL,
+                          votecols = NULL,
                           dropNotInLegis = TRUE) {
   
   if(class(rc) != "rollcall") stop("melt_rollcall only takes rollcall objects.")
   
-  # Only keep votes user wants
-  votes <- rc$votes[, keepvote]
-  
-  # Modified from reshape2, Hadley Wickham
-  # https://github.com/hadley/reshape
-  dn <- dimnames(votes)
-  names(dn) <- c("legisid", "voteid")
-  
-  # Build matrix of all legislator-rollcalls
-  labels <- expand.grid(dn, KEEP.OUT.ATTRS = FALSE,
-                        stringsAsFactors = FALSE)
-  
-  if (dropNotInLegis) {
-    # Drop missing from data
-    missing <- votes %in% rc$codes$notInLegis
-    votes <- votes[!missing]
-    # Drop corresponding rows from matrix of legislator-rollcalls
-    labels <- labels[!missing, ]
+  if(!is.null(rc$votes.long)) {
+    
+    if(is.null(votecols)) {
+      votelongcols <- colnames(rc$votes.long)
+      votecols <- colnames(rc$vote.data)
+    } else {
+      votelongcols <- intersect(colnames(rc$legis.long.dynamic, votecols))
+      votecols <- intersect(colnames(rc$vote.data, votecols))
+    }
+    
+    if(is.null(legiscols)) {
+      legiscols <- setdiff(colnames(rc$legis.long.dynamic), "icpsr")
+    } else {
+      if(("icpsr" %in% colnames) & ("icpsr" %in% votecols)) legiscols <- setdiff(legiscols, "icpsr")
+    }
+    
+    # Only keep votes user wants
+    votedat <- rc$votes.long[rc$votes.long$vname %in% keepvote, ]
+    print(dim(votedat))
+    long_rc <- merge(votedat, rc$legis.long.dynamic[, legiscols],
+                     by.x = "id", by.y = "row.names")
+    print(dim(long_rc))
+    long_rc <- merge(long_rc, rc$vote.data[, unique(c(votecols, "id"))],
+                     by.x = "vname", by.y = "id")
+    print(dim(long_rc))
+    
+    return(long_rc[, unique(c(votecols, votelongcols, legiscols))])
+  } else {
+    
+    votes <- rc$votes[, keepvote]
+    
+    if(is.null(legiscols)) legiscols <- colnames(rc$legis.data)
+    if(is.null(votecols)) votecols <- colnames(rc$vote.data)
+    
+    # Modified from reshape2, Hadley Wickham
+    # https://github.com/hadley/reshape
+    dn <- dimnames(votes)
+    names(dn) <- c("legisid", "voteid")
+    
+    # Build matrix of all legislator-rollcalls
+    labels <- expand.grid(dn, KEEP.OUT.ATTRS = FALSE,
+                          stringsAsFactors = FALSE)
+    
+    print(dim(labels))
+    if (dropNotInLegis) {
+      # Drop missing from data
+      missing <- votes %in% rc$codes$notInLegis
+      votes <- votes[!missing]
+      # Drop corresponding rows from matrix of legislator-rollcalls
+      labels <- labels[!missing, ]
+    }
+    
+    # Turn votes in to a vector, will have same pattern as labels
+    value_df <- setNames(data.frame(as.numeric(votes), stringsAsFactors = FALSE),
+                         "vote")
+    
+    long_rc <- cbind(labels, value_df)
+    print(dim(long_rc))
+    
+    # Add legislator data
+    long_rc <- merge(long_rc, rc$legis.data[, legiscols],
+                     by.x = "legisid", by.y = "row.names")
+    print(dim(long_rc))
+    
+    # Add roll call data
+    long_rc <- merge(long_rc, rc$vote.data[, votecols],
+                     by.x = "voteid", by.y = "row.names")
+    print(dim(long_rc))
+    
+    return(long_rc[, c("legisid", "voteid", votecols, legiscols, "vote")])
   }
-  
-  # Turn votes in to a vector, will have same pattern as labels
-  value_df <- setNames(data.frame(as.numeric(votes), stringsAsFactors = FALSE),
-                       "vote")
-  
-  long_rc <- cbind(labels, value_df)
-  
-  # Add legislator data
-  long_rc <- merge(long_rc, rc$legis.data[, legiscols],
-                   by.x = "legisid", by.y = "row.names")
-  
-  # Add roll call data
-  long_rc <- merge(long_rc, rc$vote.data[, votecols],
-                   by.x = "voteid", by.y = "row.names")
-  
-  return(long_rc[, c("legisid", "voteid", votecols, legiscols, "vote")])
 }
 
 # Helper function that transforms a vector of lists into a dataframe

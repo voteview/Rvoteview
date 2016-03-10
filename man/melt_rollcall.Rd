@@ -4,9 +4,8 @@
 \alias{melt_rollcall}
 \title{Melt rollcall object to long rollcall data frame}
 \usage{
-melt_rollcall(rc, keepvote = rownames(rc$vote.data),
-  legiscols = colnames(rc$legis.data), votecols = colnames(rc$vote.data),
-  dropNotInLegis = TRUE)
+melt_rollcall(rc, keepvote = rownames(rc$vote.data), legiscols = NULL,
+  votecols = NULL, dropNotInLegis = TRUE)
 }
 \arguments{
 \item{rc}{A rollcall object.}
