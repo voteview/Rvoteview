@@ -785,6 +785,7 @@ vlist2df <- function(rcs) {
   
   # todo: sort votes by date  
   
+  
   rcout <- rollcall(data = allvote,
                     yea = rc1$codes$yea,
                     nay = rc1$codes$nay,
