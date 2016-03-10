@@ -4,7 +4,7 @@
 \alias{voteview_download}
 \title{Download rollcalls as a rollcall object}
 \usage{
-voteview_download(ids, perrequest = 15)
+voteview_download(ids, perrequest = 15, keeplong = T)
 }
 \arguments{
 \item{ids}{A character vector of vote ids.}

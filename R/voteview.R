@@ -2,7 +2,8 @@
 #' @import rjson
 #' @import httr
 #' @import fastmatch
-
+#' @import dplyr
+#' 
 # Trim white space off of strings
 trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 
@@ -94,7 +95,7 @@ voteview_search <- function(alltext = NULL,
   
   # Input validation
   if ((is.null(alltext) & is.null(query)) | (!is.null(alltext) & !is.null(query))) stop("Must specify 'alltext' or 'query', but not both")
-
+  
   # Start query
   if (is.character(alltext)){
     query_string <- paste0("alltext:", paste(alltext, collapse = " "))
@@ -116,7 +117,7 @@ voteview_search <- function(alltext = NULL,
   
   # Check session within range
   if (!is.null(session)) {
-
+    
     if (any(session < 0 | session > 999)) {
       stop("Session must be a positive number or vector of positive numbers greater than 0 and less than 1000")
     }
@@ -146,7 +147,7 @@ voteview_search <- function(alltext = NULL,
                                    startdate = startdate,
                                    enddate = enddate,
                                    chamber = chamber))
-
+  
   # If the return is not JSON, print out result to see error
   if (substr(content(resp, as = "text"), 1, 1) != "{") {
     stop(content(resp, as = "text"))
@@ -171,8 +172,9 @@ voteview_search <- function(alltext = NULL,
 #' @export
 #' 
 voteview_getvote <- function(ids) {
-  theurl <- "http://leela.sscnet.ucla.edu/webvoteview/api/getvote/"
-  resp <- GET(paste0(theurl, paste0(ids, collapse = ","), "/R"), timeout(5))
+  theurl <- "http://leela.sscnet.ucla.edu/voteview/downloadAPI/?rollcall_id="
+  #theurl <- "http://leela.sscnet.ucla.edu/webvoteview/api/getvote/"
+  resp <- GET(paste0(theurl, paste0(ids, collapse = ","), "&apitype=R"), timeout(5))
 }
 
 # Function to download roll calls and turn them in to a rollcall object
@@ -215,20 +217,24 @@ voteview_getvote <- function(ids) {
 #' }
 #' @export
 #' 
-voteview_download <- function(ids, perrequest = 15) {
+voteview_download <- function(ids, perrequest = 15, keeplong = T) {
   
   if (!is.character(ids)) stop("ids must be a character vector.")
   
   if (perrequest < 1 | perrequest > 100) stop("Max 100 requests at a time. Server will reject higher requests.")
   
   uniqueids <- unique(ids)
-
+  
   if (length(uniqueids) < length(ids)) message("Duplicated ids dropped")
   
   dat <- vector("list", length(uniqueids))
   dat <- build_votelist(dat, uniqueids, perrequest = perrequest)
-
-  return( voteview2rollcall(votelist2voteview(dat)) )
+  
+  vv <- votelist2voteview(dat)
+  #return(vv)
+  rc <- voteview2rollcall(vv, keeplong = keeplong)
+  
+  return( rc )
 }
 
 # Function to build voteview object from voteview list
@@ -253,7 +259,7 @@ build_votelist <- function(votelist, ids, perrequest) {
     votes <- "ERROR"
     
     while (votes[1] == "ERROR" & attempts < 5) {
-
+      
       
       votes <- tryCatch( {
         resp <- voteview_getvote(idchunks[[i]])
@@ -262,7 +268,7 @@ build_votelist <- function(votelist, ids, perrequest) {
                          encoding = "utf-8"))
       },
       error = function(e) {
-
+        
         attempts <<- attempts + 1
         Sys.sleep(0.5)
         return("ERROR")
@@ -283,14 +289,13 @@ build_votelist <- function(votelist, ids, perrequest) {
     if (votes[1] == "INTERRUPT") {
       return(list(votelist = votelist,
                   unretrievedids = c(unretrievedids,
-                                     unlist(idchunks[i:length(idchunks)], 
-                                            use.names = F))))
+                                     unlist(idchunks[i:length(idchunks)], F, F))))
     }
     
     if (votes[1] == "ERROR") {
       
       errmess <- geterrmessage()
-
+      
       if (i == 1) {
         stop(sprintf("Cannot connect to server. No downloads possible."))
       }
@@ -341,97 +346,191 @@ votelist2voteview <- function(dat) {
   }
   
   if(!length(votelist)) stop("Votelist is empty.")
-
+  
   # Get unique list of members
   # 'unlist' because if voters are not all the same, then sapply returns list
   # 'c' in case voters ARE all the same, then sapply returns array
-  members <- unique(c(unlist(sapply( votelist, function(vote) sapply(vote$votes, function(member) member$icpsr)))))
+  allmembers <- c(unlist(sapply( votelist, function(vote) sapply(vote$votes, function(member) member$id)), F, F))
+  members <- unique(allmembers)
   
   # Data to keep from return
   # todo: add option to keep nominate data for plot method
   rollcalldatanames <- setdiff(names(votelist[[1]]),
-                               c("votes", "apitype", "nominate", "errormessage", "errormeta", "id"))
-  memberdatanames <- setdiff(names(votelist[[1]]$votes[[1]]),
-                           c("y", "x", "vote", "icpsr"))
-
+                               c("votes", "apitype", "nominate", "errormessage", "errormeta"))
+  votelongdatanames <- c("id", "icpsr", "vote")
+  legislongdatanames <- setdiff(names(votelist[[1]]$votes[[1]]),
+                                c("vote", "id"))
+  
+  
+  
   # use IDs for votenames
-  votenames <- c(unlist(sapply(votelist, function(vote) vote$id)))
-
+  votenames <- c(unlist(sapply(votelist, function(vote) vote$id), F, F))
+  
   data <- list()
-  data$votematrix <- data.frame(matrix(NA,
-                                       ncol = length(c(memberdatanames, votenames)),
-                                       nrow = length(members),
-                                       dimnames = list(as.numeric(members),
-                                                       c(memberdatanames, votenames))))
+  data$legislong <- matrix(NA,
+                           ncol = length(legislongdatanames),
+                           nrow = length(members),
+                           dimnames = list(members,
+                                           legislongdatanames))
   data$rollcalls <- data.frame(matrix(NA,
-                                      ncol = length(rollcalldatanames),
+                                      ncol = length(rollcalldatanames) + 2,
                                       nrow = length(votenames),
-                                      dimnames = list(NULL, rollcalldatanames)))
-
-  message(sprintf("Building the voteview object with %d rollcalls", length(votelist)))
+                                      dimnames = list(NULL,
+                                                      c(rollcalldatanames, "nomslope", "nomintercept"))))
+  
+  
+  data$votelong <- matrix(NA,
+                          ncol = length(votelongdatanames) + 1,
+                          nrow = length(allmembers),
+                          dimnames = list(NULL,
+                                          c(votelongdatanames, "vname")))
+  
+  #data$votelong <- data.frame(matrix(NA,
+  #                                   ncol))
+  
+  message(sprintf("Reading vote data for %d rollcalls", length(votelist)))
   pb <- txtProgressBar(min = 0, max = length(votelist), style = 3)
   
   # option to replace any that are Missing with newer passes
   
+  votelegis <- 1
   for (i in 1:length(votelist)) {
     for (member in votelist[[i]]$votes) {
       vname <- votelist[[i]]$id
       # Find member from roll call in output data
-      memberpos <- fmatch(member$icpsr, row.names(data$votematrix))
-      # If the legislator data is not entered yet, enter it as well as the vote
-      if (is.na(data$votematrix$name[memberpos])) {
-        vdat <- member[memberdatanames]
-        vdat[sapply(vdat, is.null)] <- NA
-        data$votematrix[memberpos, c(memberdatanames, vname)] <- c(unlist(vdat), member$vote)
-      } else { # else, just enter the vote
-        data$votematrix[memberpos, vname] <- member$vote
-      }
+      memberpos <- fmatch(member$id, rownames(data$legislong))
+      # If the legislator icpsr is not entered yet, enter it to the long legis matrix
+      if (is.na(data$legislong[memberpos, "icpsr"])) {
+        ldat <- member[legislongdatanames]
+        # Replace fields missing in DB with NA
+        # todo: what if first field is the one missing?
+        sapply(ldat, is.null)] <- NA
+        data$legislong[memberpos, legislongdatanames] <- unlist(ldat, F, F)
+      } 
+      
+      # If vote is NA, replace it with 0 for not in legislature
+      membervote <- ifelse(is.na(member$vote), 0 , member$vote)
+      data$votelong[votelegis, ] <- c(member$id, member$icpsr, membervote, vname)
+      votelegis <- votelegis + 1
     }
     
-    # If vote is NA, replace it with 0 for not in legislature
-    data$votematrix[, vname] <- ifelse(is.na(data$votematrix[, vname]),
-                                             0,
-                                             data$votematrix[, vname])
+    # Some votes (like unanimous votes) will not have cut lines
+    if(is.null(votelist[[i]]$nominate$slope)) nominate <- c(NA, NA)
+    else nominate <- unlist(votelist[[i]]$nominate, F, F)
     
     # Add rollcall data
-    data$rollcalls[i, rollcalldatanames] <- c(votelist[[i]][rollcalldatanames])
+    data$rollcalls[i, ] <- c(votelist[[i]][rollcalldatanames],
+                             nominate)
     setTxtProgressBar(pb, i)
   }
   
+  data$votelong <- data.frame(data$votelong[1:(votelegis - 1), ], stringsAsFactors = F)
+  data$legislong <- data.frame(data$legislong, stringsAsFactors = F)
   data$vmNames <- NULL
   data$rcNames <- NULL
   data$unretrievedids <- dat$unretrievedids
   class(data) <- "voteview"
-  
   return(data)
 }
 
+# Internal function to find mode of vector
+Mode <- function(x) {
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
 
 # Internal function to transform a voteview object in to a pscl rollcall object
 #' Internal function that transforms Voteview object to a rollcall object
 #' @export
 #' 
-voteview2rollcall <- function(data) {
+voteview2rollcall <- function(data, keeplong = T) {
   #check type of obj
+  uniqueicpsr <- unique(data$legislong$icpsr)
   
-  voteindices <- grep("^[HS]\\d+", names(data$votematrix))
+  votenames <- data$rollcalls$id
   
-  dat  <- as.matrix(data$votematrix[, voteindices])
   
-  legis.data <- data$votematrix[, -voteindices]
+  message(sprintf("Building the rollcall object with %d rollcalls", length(votenames)))
   
-  rc <- rollcall(data = dat,
+  votemat <- matrix(0,
+                    nrow = length(uniqueicpsr),
+                    ncol = length(votenames),
+                    dimnames = list(uniqueicpsr,
+                                    votenames))
+  
+  votevec <- numeric(length(uniqueicpsr))
+  
+  # This loop fills out vectors of votes for each rollcall and then puts these
+  # vectors in to the vote matrix. This is a massive performance boost over
+  # filing in votes element-wise
+  
+  # Get first vote name
+  votename <- votenames[1]
+    for( i in 1:nrow(data$votelong)) {
+    
+    # Get member-vote ata
+    membervote <- data$votelong[i,]
+  #apply(data$votelong, 1, function(membervote) {  
+    # Check if vote name is different, implying old vote is finished
+    #if(membervote["vname"] != votename) {
+    if(membervote$vname != votename) {
+      # Store old vote vector in overall matrix
+      votemat[, votename] <- votevec
+      # Re-initialize vote vector
+      votevec <- numeric(length(uniqueicpsr))
+      # Update vote name
+      #votename <- membervote["vname"]
+      votename <- membervote$vname
+    }
+    
+    # Fill vote vector with votes
+    memberpos <- fmatch(membervote$icpsr, uniqueicpsr)
+    votevec[memberpos] <- as.numeric(membervote$vote)
+    #memberpos <- fmatch(membervote["icpsr"], uniqueicpsr)
+    #votevec[memberpos] <- as.numeric(membervote["vote"])
+  }
+  #})
+
+  # Replace missing with not in legislature value
+  votemat[is.na(votemat)] <- 0
+  
+  legiscols <-  c("name", "state", "cqlabel", "party")
+  legis.data <- data.frame(matrix(NA,
+                                  nrow = length(uniqueicpsr),
+                                  ncol = length(legiscols) + 1,
+                                  dimnames = list(uniqueicpsr,
+                                                  c(legiscols, "ambiguity"))))
+  
+  
+  
+  # Fill 
+  for (i in 1:nrow(legis.data)) {
+    memberrows <- fmatch(uniqueicpsr[i], data$legislong$icpsr)
+    
+    if (length(memberrows) == 1) {
+      legis.data[i,] <- c(unlist(data$legislong[memberrows, legiscols], use.names = F), 0)
+    } else {
+      legis.data[i,] <- c(apply(data$legislong[, legiscols], 2, Mode), 1)
+    }
+  }
+  
+  rc <- rollcall(data = votemat,
                  yea = c(1, 2, 3),
                  nay = c(4, 5, 6),
                  missing = c(7, 8, 9),
                  notInLegis = 0,
                  legis.data = legis.data,
-                 legis.names = rownames(dat),
+                 legis.names = rownames(legis.data),
                  vote.data = data$rollcalls,
-                 vote.names = colnames(dat),
+                 vote.names = colnames(votemat),
                  source = "Download from VoteView")
   
   rc[["unretrievedids"]] <- data$unretrievedids
+  if (keeplong) {
+    rc[["votes.long"]] <- data$votelong
+    rc[["legis.long.dynamic"]] <- data$legislong
+  }
+  
   return(rc)
 }
 
@@ -467,10 +566,25 @@ complete_download <- function(rc) {
   if (rc$source != "Download from VoteView") stop("complete_download only takes rollcall objects downloaded from VoteView.")
   
   if (is.null(rc$unretrievedids)) stop("No unretrieved ids associated with this rollcall object.")
-
+  
   rc_new <- voteview_download(rc$unretrievedids)
   
   return(rc %+% rc_new)
+}
+
+# Function to retrieve member metadata
+voteview_getmember <- function(id, session = NULL, perrequest = 20) {
+  
+  if (perrequest < 1 | perrequest > 100) stop("Max 100 requests at a time. Server will reject higher requests.")
+  
+  uniqueids <- unique(ids)
+  if (length(uniqueids) < length(ids)) message("Duplicated ids dropped")
+  
+  dat <- vector("list", length(uniqueids))
+  dat <- build_votelist(dat, uniqueids, perrequest = perrequest)
+  
+  
+  vlistdf
 }
 
 # Function to turn roll call object into long_rollcall object
@@ -530,7 +644,7 @@ melt_rollcall <- function(rc,
   
   # Only keep votes user wants
   votes <- rc$votes[, keepvote]
-
+  
   # Modified from reshape2, Hadley Wickham
   # https://github.com/hadley/reshape
   dn <- dimnames(votes)
@@ -551,7 +665,7 @@ melt_rollcall <- function(rc,
   # Turn votes in to a vector, will have same pattern as labels
   value_df <- setNames(data.frame(as.numeric(votes), stringsAsFactors = FALSE),
                        "vote")
-
+  
   long_rc <- cbind(labels, value_df)
   
   # Add legislator data
@@ -585,18 +699,18 @@ vlist2df <- function(rcs) {
   # drop lists from return for now
   notlists <- sapply(rcs[[1]], function(x) class(x) != "list")
   flds <- names(rcs[[1]][notlists])
-
+  
   for (f in flds) {
     md <- ifelse(class(rcs[[1]][[f]]) == "character", "character", "integer")
     df[[f]] <- vector(mode = md,length = length(rcs))
   }
   
   for (i in 1:length(rcs)) {
-     for (f in flds) {
-       if(!is.null(rcs[[i]][[f]])) {
-         df[[f]][i] <- rcs[[i]][[f]]
-       }
-     }
+    for (f in flds) {
+      if(!is.null(rcs[[i]][[f]])) {
+        df[[f]][i] <- rcs[[i]][[f]]
+      }
+    }
   }
   
   # reorder columns explicitly
@@ -639,7 +753,7 @@ vlist2df <- function(rcs) {
 "%+%" <- function(rc1, rc2) {
   
   # todo: input validation
-
+  
   # Identifying vectors
   votes.ids1 <- paste0(rc1$vote.data$chamber, rc1$vote.data$rollnumber)
   votes.ids2 <- paste0(rc2$vote.data$chamber, rc2$vote.data$rollnumber)
@@ -672,16 +786,16 @@ vlist2df <- function(rcs) {
   # todo: sort votes by date  
   
   rcout <- rollcall(data = allvote,
-                  yea = rc1$codes$yea,
-                  nay = rc1$codes$nay,
-                  missing = rc1$codes$missing,
-                  notInLegis = rc1$codes$notInLegis,
-                  legis.data = alllegis.data,
-                  legis.names = rnames,
-                  vote.data = allvote.data,
-                  source = "Download from VoteView")
+                    yea = rc1$codes$yea,
+                    nay = rc1$codes$nay,
+                    missing = rc1$codes$missing,
+                    notInLegis = rc1$codes$notInLegis,
+                    legis.data = alllegis.data,
+                    legis.names = rnames,
+                    vote.data = allvote.data,
+                    source = "Download from VoteView")
   rcout$unretrievedids <- rc2$unretrievedids #todo: better handling of unretrieved ids
-
+  
   return(rcout)
   
 }
