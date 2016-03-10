@@ -790,6 +790,10 @@ vlist2df <- function(rcs) {
 "%+%" <- function(rc1, rc2) {
   
   # todo: input validation
+  if((class(rc1) != "rollcall") | (class(rc2) != "rollcall")) stop("Both objects must be rollcall objects.")
+  if(is.null(rc1$votes.long) != is.null(rc2$votes.long)) stop("Only one rollcall has the long dataframes. Either both must or neither may; use keeplong in the download function.")
+  
+  if(is.null(rc1$votes.long)) {
   
   # Identifying vectors
   votes.ids1 <- paste0(rc1$vote.data$chamber, rc1$vote.data$rollnumber)
@@ -835,5 +839,7 @@ vlist2df <- function(rcs) {
   rcout$unretrievedids <- rc2$unretrievedids #todo: better handling of unretrieved ids
   
   return(rcout)
-  
+  } else {
+    stop("For now, only rollcalls without the long dataframes can be added.")
+  }
 }
