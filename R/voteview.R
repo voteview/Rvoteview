@@ -460,6 +460,7 @@ voteview2rollcall <- function(data, keeplong = T) {
   
   votevec <- numeric(length(uniqueicpsr))
   
+  
   # This loop fills out vectors of votes for each rollcall and then puts these
   # vectors in to the vote matrix. This is a massive performance boost over
   # filing in votes element-wise
@@ -468,29 +469,29 @@ voteview2rollcall <- function(data, keeplong = T) {
   votename <- votenames[1]
     for( i in 1:nrow(data$votelong)) {
     
-    # Get member-vote ata
+    # Get member-vote data
     membervote <- data$votelong[i,]
-  #apply(data$votelong, 1, function(membervote) {  
+
     # Check if vote name is different, implying old vote is finished
-    #if(membervote["vname"] != votename) {
     if(membervote$vname != votename) {
       # Store old vote vector in overall matrix
       votemat[, votename] <- votevec
       # Re-initialize vote vector
       votevec <- numeric(length(uniqueicpsr))
       # Update vote name
-      #votename <- membervote["vname"]
       votename <- membervote$vname
     }
     
     # Fill vote vector with votes
     memberpos <- fmatch(membervote$icpsr, uniqueicpsr)
     votevec[memberpos] <- as.numeric(membervote$vote)
-    #memberpos <- fmatch(membervote["icpsr"], uniqueicpsr)
-    #votevec[memberpos] <- as.numeric(membervote["vote"])
   }
-  #})
+  ## Write last vote to vector
+  votemat[, votename] <- votevec
 
+  # clean up from loop logic above
+  
+  
   # Replace missing with not in legislature value
   votemat[is.na(votemat)] <- 0
   
