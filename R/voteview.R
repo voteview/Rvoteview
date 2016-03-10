@@ -514,6 +514,7 @@ voteview2rollcall <- function(data, keeplong = T) {
       legis.data[i,] <- c(apply(data$legislong[, legiscols], 2, Mode), 1)
     }
   }
+  legis.data$icpsr <- rownames(legis.data)
   
   rc <- rollcall(data = votemat,
                  yea = c(1, 2, 3),
@@ -794,51 +795,44 @@ vlist2df <- function(rcs) {
   if(is.null(rc1$votes.long) != is.null(rc2$votes.long)) stop("Only one rollcall has the long dataframes. Either both must or neither may; use keeplong in the download function.")
   
   if(is.null(rc1$votes.long)) {
-  
-  # Identifying vectors
-  votes.ids1 <- paste0(rc1$vote.data$chamber, rc1$vote.data$rollnumber)
-  votes.ids2 <- paste0(rc2$vote.data$chamber, rc2$vote.data$rollnumber)
-  legis.inrc1 <- rc2$legis.data$icpsr %in% rc1$legis.data$icpsr
-  new.votes <- !(votes.ids2 %in% votes.ids1)
-  
-  # Building the new vote matrix
-  old.votedat <- data.frame(rc1$votes, icpsr = rc1$legis.data$icpsr)
-  new.votedat <- data.frame(rc2$votes[, new.votes], icpsr = rc2$legis.data$icpsr)
-  allvote <- merge(old.votedat, new.votedat, by = "icpsr", all = T)
-  # todo: What about those who switch parties or any other changes in legis.data
-  # what does that look like in the db?
-  
-  # Building metadata matrices
-  allvote.data <- rbind(rc1$vote.data, rc2$vote.data[new.votes, ])
-  allvote.data$vote <- paste0("V", 1:nrow(allvote.data))
-  
-  alllegis.data <- rbind(rc1$legis.data, rc2$legis.data[!legis.inrc1, ])
-  alllegis.data <- alllegis.data[match(allvote$icpsr, alllegis.data$icpsr), ]
-  
-  # Clean up new vote matrix
-  allvote <- as.matrix(allvote[, colnames(allvote) != "icpsr"])
-  allvote[is.na(allvote)] <-  rc1$codes$notInLegis 
-  
-  rnames <- sprintf("%s %s - %s", alllegis.data$name,
-                    alllegis.data$cqlabel,
-                    alllegis.data$icpsr)
-  rownames(allvote) <- rnames
-  
-  # todo: sort votes by date  
+    # Building new vote data matrix
+    newvotes.data <- merge(rc1$vote.data, rc2$vote.data, all = T)
+    
+    # Building new legislator data matrix
+    legis.inrc1 <- setdiff(rownames(rc2$legis.data), rownames(rc1$legis.data))
+    alllegis.data <- rbind(rc1$legis.data, rc2$legis.data[legis.inrc1, ])
+    alllegis.data <- alllegis.data[match(newvotes$icpsr, rownames(alllegis.data)), ]
+    alllegis.data$icpsr <- rownames(alllegis.data)
+    
+    # Building the new vote matrix
+    old.votedat <- data.frame(rc1$votes, icpsr = rownames(rc1$votes))
+    new.votedat <- data.frame(rc2$votes[, setdiff(rownames(rc2$vote.data),
+                                                  rownames(rc1$vote.data))],
+                              icpsr = rownames(rc2$votes))
+    
+    newvotes <- merge(old.votedat, new.votedat, by = "icpsr", all = T)
+    newvotes <- as.matrix(newvotes[, colnames(newvotes) != "icpsr"])
+    newvotes[is.na(newvotes)] <-  rc1$codes$notInLegis 
+    # todo: What about those who switch parties or any other changes in legis.data
+    # answer: Not going to worry about it unless keep.long
+    
+    # todo: sort votes by date  
   
   
-  rcout <- rollcall(data = allvote,
-                    yea = rc1$codes$yea,
-                    nay = rc1$codes$nay,
-                    missing = rc1$codes$missing,
-                    notInLegis = rc1$codes$notInLegis,
-                    legis.data = alllegis.data,
-                    legis.names = rnames,
-                    vote.data = allvote.data,
-                    source = "Download from VoteView")
-  rcout$unretrievedids <- rc2$unretrievedids #todo: better handling of unretrieved ids
+    rcout <- rollcall(data = newvotes,
+                      yea = rc1$codes$yea,
+                      nay = rc1$codes$nay,
+                      missing = rc1$codes$missing,
+                      notInLegis = rc1$codes$notInLegis,
+                      legis.data = alllegis.data,
+                      legis.names = rownames(alllegis.data),
+                      vote.data = newvotes.data,
+                      vote.names = newvotes.data$id,
+                      source = "Download from VoteView")
   
-  return(rcout)
+    rcout$unretrievedids <- rc2$unretrievedids #todo: better handling of unretrieved ids
+  
+    return(rcout)
   } else {
     stop("For now, only rollcalls without the long dataframes can be added.")
   }
