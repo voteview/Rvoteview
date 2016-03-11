@@ -662,14 +662,11 @@ melt_rollcall <- function(rc,
     
     # Only keep votes user wants
     votedat <- rc$votes.long[rc$votes.long$vname %in% keepvote, ]
-    print(dim(votedat))
     long_rc <- merge(votedat, rc$legis.long.dynamic[, legiscols],
                      by.x = "id", by.y = "row.names")
-    print(dim(long_rc))
     long_rc <- merge(long_rc, rc$vote.data[, unique(c(votecols, "id"))],
-                     by.x = "vname", by.y = "id")
-    print(dim(long_rc))
-    
+                     by.x = "vname", by.y = "id", sort = F)
+
     return(long_rc[, unique(c(votecols, votelongcols, legiscols))])
   } else {
     
@@ -687,7 +684,6 @@ melt_rollcall <- function(rc,
     labels <- expand.grid(dn, KEEP.OUT.ATTRS = FALSE,
                           stringsAsFactors = FALSE)
     
-    print(dim(labels))
     if (dropNotInLegis) {
       # Drop missing from data
       missing <- votes %in% rc$codes$notInLegis
@@ -701,18 +697,15 @@ melt_rollcall <- function(rc,
                          "vote")
     
     long_rc <- cbind(labels, value_df)
-    print(dim(long_rc))
-    
+
     # Add legislator data
     long_rc <- merge(long_rc, rc$legis.data[, legiscols],
                      by.x = "legisid", by.y = "row.names")
-    print(dim(long_rc))
-    
+
     # Add roll call data
     long_rc <- merge(long_rc, rc$vote.data[, votecols],
-                     by.x = "voteid", by.y = "row.names")
-    print(dim(long_rc))
-    
+                     by.x = "voteid", by.y = "row.names", sort = F)
+
     return(long_rc[, c("legisid", "voteid", votecols, legiscols, "vote")])
   }
 }
@@ -790,34 +783,38 @@ vlist2df <- function(rcs) {
 #' 
 "%+%" <- function(rc1, rc2) {
   
+  # todo: replacing merge with manual match might be faster
+  # todo: could be faster if we treated rc2 as smaller bc more searching on that object i think
   # todo: input validation
   if((class(rc1) != "rollcall") | (class(rc2) != "rollcall")) stop("Both objects must be rollcall objects.")
   if(is.null(rc1$votes.long) != is.null(rc2$votes.long)) stop("Only one rollcall has the long dataframes. Either both must or neither may; use keeplong in the download function.")
   
-  if(is.null(rc1$votes.long)) {
-    # Building new vote data matrix
-    newvotes.data <- merge(rc1$vote.data, rc2$vote.data, all = T)
-    
-    # Building new legislator data matrix
-    legis.inrc1 <- setdiff(rownames(rc2$legis.data), rownames(rc1$legis.data))
-    alllegis.data <- rbind(rc1$legis.data, rc2$legis.data[legis.inrc1, ])
-    alllegis.data <- alllegis.data[match(newvotes$icpsr, rownames(alllegis.data)), ]
-    alllegis.data$icpsr <- rownames(alllegis.data)
-    
-    # Building the new vote matrix
-    old.votedat <- data.frame(rc1$votes, icpsr = rownames(rc1$votes))
-    new.votedat <- data.frame(rc2$votes[, setdiff(rownames(rc2$vote.data),
-                                                  rownames(rc1$vote.data))],
-                              icpsr = rownames(rc2$votes))
-    
-    newvotes <- merge(old.votedat, new.votedat, by = "icpsr", all = T)
-    newvotes <- as.matrix(newvotes[, colnames(newvotes) != "icpsr"])
-    newvotes[is.na(newvotes)] <-  rc1$codes$notInLegis 
-    # todo: What about those who switch parties or any other changes in legis.data
-    # answer: Not going to worry about it unless keep.long
-    
-    # todo: sort votes by date  
+
+   # Building new vote data matrix
+   newvotes.data <- merge(rc1$vote.data, rc2$vote.data, all = T)
+   
+   # Building the new vote matrix
+   old.votedat <- data.frame(rc1$votes, icpsr = rownames(rc1$votes), stringsAsFactors = F)
+   new.votedat <- data.frame(rc2$votes[, setdiff(rownames(rc2$vote.data),
+                                                 rownames(rc1$vote.data))],
+                             icpsr = rownames(rc2$votes),
+                             stringsAsFactors = F)
+   
+   newvotes <- merge(old.votedat, new.votedat, by = "icpsr", all = T)
+   
+   # Building new legislator data matrix
+   legis.inrc1 <- setdiff(rownames(rc2$legis.data), rownames(rc1$legis.data))
+   alllegis.data <- rbind(rc1$legis.data, rc2$legis.data[legis.inrc1, ])
+   alllegis.data <- alllegis.data[fmatch(newvotes$icpsr, rownames(alllegis.data)), ]
+   alllegis.data$icpsr <- rownames(alllegis.data)
+   
+   # todo: What about those who switch parties or any other changes in legis.data
+   # answer: Not going to worry about it unless keep.long
+   # todo: sort votes by date  
   
+   # Clean up new votes matrix
+   newvotes <- as.matrix(newvotes[, colnames(newvotes) != "icpsr"])
+   newvotes[is.na(newvotes)] <-  rc1$codes$notInLegis 
   
     rcout <- rollcall(data = newvotes,
                       yea = rc1$codes$yea,
@@ -831,9 +828,13 @@ vlist2df <- function(rcs) {
                       source = "Download from VoteView")
   
     rcout$unretrievedids <- rc2$unretrievedids #todo: better handling of unretrieved ids
-  
+  if(is.null(rc1$votes.long)) {
     return(rcout)
   } else {
-    stop("For now, only rollcalls without the long dataframes can be added.")
+    rcout$votes.long <- rbind(rc1$votes.long, rc2$votes.long[!fmatch(paste0(rc2$votes.long$vname, rc2$votes.long$id),
+                                                                paste0(rc1$votes.long$vname, rc1$votes.long$id)),])
+    rcout$legis.long.dynamic <- rbind(rc1$legis.long.dynamic, rc2$legis.long.dynamic[!fmatch(rownames(rc2$legis.long.dynamic), rownames(rc1$legis.long.dynamic)),])
+    
+    return(rcout)
   }
 }
