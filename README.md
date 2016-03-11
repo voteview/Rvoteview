@@ -54,7 +54,8 @@ Using `res$id` we can get a `rollcall` object (from the [`pscl` package](https:/
 ## Get a rollcall object using the ids, please limit to a few ids for now!
 rc <- voteview_download(res$id[1:10])
 #> Downloading 10 rollcalls
-#> Building the voteview object with 10 rollcalls
+#> Reading vote data for 10 rollcalls
+#> Building the rollcall object with 10 rollcalls
 ```
 
 ``` r
@@ -69,7 +70,7 @@ summary(rc)
 #> Using the following codes to represent roll call votes:
 #> Yea:      1 2 3 
 #> Nay:      4 5 6 
-#> Abstentions:  NA 7 8 9 
+#> Abstentions:  7 8 9 
 #> Not In Legislature:   0 
 #> 
 #> Party Composition:
