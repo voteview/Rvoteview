@@ -12,21 +12,49 @@ voteview_download(ids, perrequest = 15, keeplong = T)
 \item{perrequest}{An integer that sets the number of votes requested at a
 time from the voteview database. Default is 15, and is roughly the fastest.
 Max is 100.}
+
+\item{keeplong}{A boolean for whether long format of the votes are kept and
+whether a unique data frame of legislator data is kept. Default is TRUE
+although this can result in a very large object being returned. See 'Details'
+for more information.}
 }
 \value{
 A modified \code{pscl} \code{rollcall} object.
 }
 \description{
-Finds rollcalls by ID and builds a \code{rollcall} object from the 
+Finds rollcalls by ID and builds a modified \code{rollcall} object from the 
 \code{pscl} package.
 }
 \details{
 This function returns a modified \code{rollcall} object. It inherits all of
-the relevant methods from \code{pscl} but has two additional features. First,
+the relevant methods from \code{pscl} but has a few additional features. First,
 interrupted downloads can be resumed because there is a new 
 \code{unretrievedids} vector in the \code{rollcall} object, which, if 
-non-null, can be used in \link{complete_download}. Second, there will
-eventually be a plot method.
+non-null, can be used in \link{complete_download}. Furthermore, the row names
+of the vote matrix are icpsr numbers and the column names are the rollcall
+id numbers that are used in the voteview database.
+
+If \code{keeplong = TRUE}, then the \code{rollcall} object will have two 
+additional data frames. The \code{votes.long} data frame consists of four 
+columns, \code{id}, \code{icpsr}, \code{vote}, and \code{vname}, which are
+a unique id, that legislator's icpsr number, how they voted, and
+which roll call that vote belongs to. Thus this is a data frame of unique
+id-rollcalls. Note that icpsr numbers are constant across party
+changes and across sessions, while \code{id} will always be consistent with
+party and session. This is important because we can then map votes to the
+second additional data frame, \code{legis.long.dynamic}. This data frame
+consists of data for unique members as identified by \code{id}, and not 
+\code{icpsr} number. Thus this provides unique covariates by legislator-party-session. This enables us
+to also store their session-specific NOMINATE score. We retain this data frame
+because the default \code{legis.data} data frame is only unique to icpsr number,
+which may not have a unique party and is constant across sessions. 
+
+To that end, there is a column \code{ambiguity} in the \code{legis.data} data
+frame that denotes whether there is some ambiguity in the legislator's record.
+This means that perhaps across the votes that you downloaded, a legislator changed
+party, constituency or some other value. When that ambiguity occurs, we fill
+\code{legis.data} with the modal value in \code{legis.long.dynamic} and set
+\code{ambiguity} to 1.
 }
 \examples{
 

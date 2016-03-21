@@ -43,6 +43,11 @@ matrix within the \code{rollcall} object, must match the column names of the
 \code{votes} matrix. Similarly, the 
 \code{legis.names}, or the row names of the \code{legis.data} matrix within 
 the \code{rollcall} object, must match the row names of the \code{votes} matrix.
+
+This will work for all \code{rollcall} objects downloaded from the voteview database.
+If \code{legis.long.dynamic} and \code{votes.long} are included, meaning \code{keeplong == TRUE},
+then the melted data frame will be unique by internal id and roll call. Otherwise
+the melted data frame will be unique by icpsr and roll call.
 }
 \examples{
 
