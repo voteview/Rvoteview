@@ -10,7 +10,7 @@
 
 <meta name="author" content="Luke Sonnet" />
 
-<meta name="date" content="2016-03-09" />
+<meta name="date" content="2016-03-22" />
 
 <title>Using the Rvoteview API</title>
 
@@ -54,23 +54,99 @@ code > span.er { color: #ff0000; font-weight: bold; }
 <div id="header">
 <h1 class="title">Using the Rvoteview API</h1>
 <h4 class="author"><em>Luke Sonnet</em></h4>
-<h4 class="date"><em>2016-03-09</em></h4>
+<h4 class="date"><em>2016-03-22</em></h4>
 </div>
 
 
-<p>This package provides tools to query and download from the VoteView database. This vignette will demonstrate the different types of queries that can be used, how <code>rvoteview</code> can be used to do ideal point estimation on a subset of votes using the <code>pscl</code> package, and how <code>rvoteview</code> facilitates regression analyses of congressional voting behavior.</p>
+<p>This package provides tools to query and download from the VoteView database. This vignette will demonstrate the different types of queries that can be used, how <code>Rvoteview</code> can be used to do ideal point estimation on a subset of votes using the <code>pscl</code> package, and how <code>Rvoteview</code> facilitates regression analyses of congressional voting behavior.</p>
 <div id="installation" class="section level1">
 <h1>Installation</h1>
 <p>To install this package, ensure you have <code>devtools</code> installed. If you do not, run <code>install.packages(&quot;devtools&quot;)</code> and then install from GitHub using</p>
 <pre class="sourceCode r"><code class="sourceCode r">devtools::<span class="kw">install_github</span>(<span class="st">&quot;JeffreyBLewis/Rvoteview&quot;</span>)</code></pre>
 </div>
-<div id="querying-the-database" class="section level1">
-<h1>Querying the database</h1>
-<p>Using a custom query parser, we allow both simple and complex queries to be made to the VoteView datase…</p>
+<div id="querying-the-database-voteview_search" class="section level1">
+<h1>Querying the database, <code>voteview_search</code></h1>
+<p>The first main function of this package is to allow users to search for roll calls. Using a custom query parser, we allow both simple and complex queries to be made to the VoteView database. The simple way uses a set of arguments to build a query within the <code>R</code> package while the complex way allows the user to build a specific query with nested, boolean logic.</p>
+<div id="the-simple-way" class="section level2">
+<h2>The simple way</h2>
+<p>The simple way only allows for query of all of the text fields simultaneously, and provides a few other arguments to make queries easier. The default usage is to pass a character vector to the <code>alltext</code> argument. The query builder will then join all of the elements by either an “AND” or an “OR” statement, which is controlled by the <code>jointext</code> argument. Each individual element of the character vector will be treated as an exact phrase to be matched, case-insensitive, in any text field. For example, if you want to search for votes that had the phrase “war on terrorism” AND “iraq”, you would use the following query:</p>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(Rvoteview)
+res &lt;-<span class="st"> </span><span class="kw">voteview_search</span>(<span class="kw">c</span>(<span class="st">&quot;war on terrorism&quot;</span>, <span class="st">&quot;iraq&quot;</span>))</code></pre>
+<p>It is simple enough to change it to search for the phrase “war on terrorism” OR “iraq”, as seen below:</p>
+<pre class="sourceCode r"><code class="sourceCode r">res &lt;-<span class="st"> </span><span class="kw">voteview_search</span>(<span class="kw">c</span>(<span class="st">&quot;war on terrorism&quot;</span>, <span class="st">&quot;iraq&quot;</span>), <span class="dt">jointext =</span> <span class="st">&quot;OR&quot;</span>)</code></pre>
+<p>Additionally, users can specify which house of Congress to limit queries to, what dates to limit queries to, which sessions to restrict the search to, and what range of support, defined as the percent of total yea and nay votes that were yea, roll calls can have. This is especially useful if users only want to return competitive votes. Note that all fields are joined using “AND” logic; for example you search for roll calls that have the word “iraq” and are in the “House” but not votes that either have “iraq” or were held in the “House”. That kind of search is much less likely. Also note that the session field uses “OR” logic within the numeric vector that specifices which session to search. No roll call can be in two sessions, so it makes no sense to search for roll calls that are in one session AND in another session.</p>
+<pre class="sourceCode r"><code class="sourceCode r">## Search for votes with a start date
+res &lt;-<span class="st"> </span><span class="kw">voteview_search</span>(<span class="st">&quot;Iraq&quot;</span>, <span class="dt">startdate =</span> <span class="st">&quot;2005-01-01&quot;</span>)
+
+## Search for votes with an end date in just the house
+res &lt;-<span class="st"> </span><span class="kw">voteview_search</span>(<span class="st">&quot;Iraq&quot;</span>, <span class="dt">enddate =</span> <span class="st">&quot;2005-01-01&quot;</span>, <span class="dt">chamber =</span> <span class="st">&quot;House&quot;</span>)
+
+## Search for votes with a start date in just the house in the 110th or 112th session
+res &lt;-<span class="st"> </span><span class="kw">voteview_search</span>(<span class="st">&quot;Iraq&quot;</span>, <span class="dt">startdate =</span> <span class="st">&quot;2000-12-20&quot;</span>, <span class="dt">session =</span> <span class="kw">c</span>(<span class="dv">110</span>, <span class="dv">112</span>), <span class="dt">chamber =</span> <span class="st">&quot;House&quot;</span>)</code></pre>
 </div>
-<div id="downloading-rollcall-data" class="section level1">
-<h1>Downloading rollcall data</h1>
-<p>How to download…</p>
+<div id="the-complex-way" class="section level2">
+<h2>The complex way</h2>
+<p>The simple way provides a simple, readable syntax for most searches users may want to implement. However, to allow for nested terms and more complicated logic we also allow users to explicitly specify queries. You can see <a href="http://www.google.com">complete documentation here</a>. In general, the following syntax is used, <code>field:specific phrase (field:other phrase OR field:second phrase)</code>.</p>
+<p>For example, if you wanted to find votes with “war” and either “iraq” or “afghanistan” in any text field, you could set the query to be <code>&quot;alltext:war (alltext:iraq OR alltext:afghanistan)&quot;</code>. If you wanted to do the same query but only return the votes with “defense” in the description field, the query would become <code>&quot;alltext:war (alltext:iraq OR alltext:afghanistan) description:defense&quot;</code>.</p>
+<p>Numeric fields can be searched in a similar way, although users can also use square brackets and “to” for ranges of numbers. For example, the query for all votes about taxes in the 100th to 102nd congress could be expressed either using <code>&quot;alltext:taxes session:100 OR session:101 OR session:102&quot;</code> or using <code>&quot;alltext:taxes session:[100 to 102]&quot;</code>. Note that if you want to restrict search to certain dates, the <code>startdate</code> and <code>enddate</code> fields should still be used.</p>
+<p>For example,</p>
+<pre class="sourceCode r"><code class="sourceCode r">## Search for &quot;war&quot; AND (&quot;iraq&quot; or &quot;afghanistan&quot;) in the description field in 2013
+res &lt;-<span class="st"> </span><span class="kw">voteview_search</span>(<span class="dt">query =</span> <span class="st">&quot;description:war (description:iraq OR description:afghanistan)&quot;</span>,
+                       <span class="dt">startdate =</span> <span class="st">&quot;2013-01-01&quot;</span>,
+                       <span class="dt">enddate =</span> <span class="st">&quot;2013-12-31&quot;</span>)
+
+## Search for &quot;afghanistan&quot; or &quot;iraq&quot; in all text fields and &quot;defense&quot; in any code field
+res &lt;-<span class="st"> </span><span class="kw">voteview_search</span>(<span class="dt">query =</span> <span class="st">&quot;(alltext:afghanistan OR alltext:iraq) AND  description:defense&quot;</span>)</code></pre>
+<p>The fields that can be searched with text are <code>codes</code>, <code>code.Clausen</code>, <code>code.Peltzman</code>, <code>code.Issue</code>, <code>description</code>, <code>shortdescription</code>, <code>bill</code>, and <code>alltext</code>. The fields that can be searched by number are <code>session</code>, <code>yea</code>, <code>nay</code>, and <code>support</code>. Searching by individual legislator will be implemented soon.</p>
+</div>
+</div>
+<div id="downloading-roll-call-data-voteview_download" class="section level1">
+<h1>Downloading roll call data, <code>voteview_download</code></h1>
+<p>The second main function of this package is to allow users to download detailed roll call data into a modified <code>rollcall</code> object from the <code>pscl</code> package. The default usage is to pass <code>voteview_download</code> a vector of roll call id numbers that we return in the <code>voteview_search</code> function.</p>
+<pre class="sourceCode r"><code class="sourceCode r">## Search all votes with phrase &quot;estate tax&quot;
+res &lt;-<span class="st"> </span><span class="kw">voteview_search</span>(<span class="st">&quot;estate tax&quot;</span>)
+
+## Download all estate tax votes
+rc &lt;-<span class="st"> </span><span class="kw">voteview_download</span>(res$id)
+
+<span class="kw">summary</span>(rc)</code></pre>
+<pre><code>## Source:       Download from VoteView 
+## 
+## Number of Legislators:        2204
+## Number of Roll Call Votes:    96
+## 
+## 
+## Using the following codes to represent roll call votes:
+## Yea:      1 2 3 
+## Nay:      4 5 6 
+## Abstentions:  7 8 9 
+## Not In Legislature:   0 
+## 
+## Party Composition:
+##  100  112  200  328  331  380  537 &lt;NA&gt; 
+## 1082    1 1114    4    1    1    1    0 
+## 
+## Vote Summary:
+##                 Count Percent
+## 0 (notInLegis) 187585    88.7
+## 1 (yea)         12532     5.9
+## 2 (yea)            27     0.0
+## 3 (yea)            33     0.0
+## 4 (nay)            18     0.0
+## 5 (nay)            29     0.0
+## 6 (nay)         10357     4.9
+## 7 (missing)        31     0.0
+## 8 (missing)         1     0.0
+## 9 (missing)       971     0.5
+## 
+## Use summary(rc,verbose=TRUE) for more detailed information.</code></pre>
+<div id="joining-two-rollcall-objects" class="section level2">
+<h2>Joining two <code>rollcall</code> objects</h2>
+</div>
+<div id="melting-rollcall-objects" class="section level2">
+<h2>Melting <code>rollcall</code> objects</h2>
+<p>Also, see usage below</p>
+</div>
 </div>
 <div id="two-example-usages" class="section level1">
 <h1>Two example usages</h1>

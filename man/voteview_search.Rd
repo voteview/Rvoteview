@@ -4,35 +4,40 @@
 \alias{voteview_search}
 \title{Query the Voteview Database with a String}
 \usage{
-voteview_search(alltext = NULL, startdate = NULL, enddate = NULL,
-  session = NULL, chamber = NULL, maxsupport = NULL, minsupport = NULL,
-  query = NULL)
+voteview_search(alltext = NULL, jointext = "AND", startdate = NULL,
+  enddate = NULL, session = NULL, chamber = NULL, maxsupport = NULL,
+  minsupport = NULL, query = NULL)
 }
 \arguments{
-\item{alltext}{A string or character vector that searches all text fields in
-the voteview datase. All words are searched independently and joined with 
-an OR statement. Case-insensitive.}
+\item{alltext}{A character vector of length 1 or longer. Each element of the
+character vector is treated as an exact phrase to be searched. The elements
+are joined using either and AND or OR statement, controlled by the next argument.
+Case-insensitive.}
+
+\item{jointext}{A string for whether to join elements of \code{alltext} charater
+vector by "AND" or "OR". Defaults to "AND" and is case-insensitive.}
 
 \item{startdate}{A string of the format \code{"yyyy-mm-dd"} that is the
 earliest possible date to search for a roll call.}
 
 \item{enddate}{A string of the format
-"yyyy-mm-dd" that is the earliest possible date to search for a roll
+"yyyy-mm-dd" that is the latest possible date to search for a roll
 call.}
 
-\item{session}{A numeric vector of the sessions of congress to constrain the search to. The default is all sessions.}
+\item{session}{A numeric vector of the sessions of congress to constrain the 
+search to. The default is all sessions.}
 
 \item{chamber}{A string in \code{c("House", "Senate")}. The default
 NULL value returns results from both chambers of congress.}
 
-\item{maxsupport}{NOT CURRENTLY SUPPORTED. Support is the share of Yea votes 
+\item{maxsupport}{Support is the share of Yea votes 
 over total Yea and Nay votes. \code{maxsupport} is a number specifying the 
 maximum support allowed for returned votes.}
 
-\item{minsupport}{NOT CURRENTLY SUPPORTED. A number specifying the minimum 
+\item{minsupport}{A number specifying the minimum 
 support allowed for returned votes.}
 
-\item{query}{NOT CURRENTLY SUPPORTED. A string that can specify a more 
+\item{query}{A string that can specify a more 
 complex search of all of the text fields. See examples for usage and syntax.
  Can only be used if \code{alltext} is not specified.}
 }
@@ -62,11 +67,11 @@ Searches the Voteview database with a string and returns a data frame with
 bill IDs, summary vote statistics, and other identifying information.
 }
 \details{
-Each of the fields is currently joined together with an AND statement.
+Across fields an AND join is used. Note that there are two core ways to build a query. Using the arguments you are restricted to searching all text fields and cannot search specific text fields. Furthermore, text phrases can only be joined using AND or OR statements, but not both at the same time. Meanwhile, values in \code{session} are joined using an OR, as no roll call will be in two sessions, making AND nonsensical.
 
-\code{query} uses the following general syntax, \code{field:query AND (query OR query)}. For example, if you wanted to find votes with "war" and either "iraq" or "afghanistan" in any text field, you could set the query to be \code{"alltext:war AND (iraq OR afghanistan)"}. If you wanted to do the same query but only return the votes with "defense" in the description field, the query would become \code{"alltext:war AND (iraq OR afghanistan) description:defense"}
+Alternatively, users can build more advanced queries using a general syntax and the \code{query} field. For complete documentation see \code{google.com}. In general, the following syntax is used, \code{field:specific phrase (field:other phrase OR field:second phrase)}. For example, if you wanted to find votes with "war" and either "iraq" or "afghanistan" in any text field, you could set the query to be \code{"alltext:war (alltext:iraq OR alltext:afghanistan)"}. If you wanted to do the same query but only return the votes with "defense" in the description field, the query would become \code{"alltext:war (alltext:iraq OR alltext:afghanistan) description:defense"}. Numeric fields can be searched in a similar way, although users can also use square brackets and "to" for ranges of numbers. For example, the query for all votes about taxes in the 100th to 102nd congress could be expressed either using \code{"alltext:taxes session:100 OR session:101 OR session:102"} or using \code{"alltext:taxes session:[100 to 102]"}. Note that if you want to restrict search to certain dates, the \code{startdate} and \code{enddate} fields should still be used.
 
-The fields that can be searched with text are \code{code.Clausen}, \code{code.Peltzman}, \code{code.Issue}, \code{description}, \code{shortdescription}, \code{bill}, and \code{alltext}. The fields that can be searched by number are \code{session}, \code{yea}, \code{nay}, and \code{support}.
+The fields that can be searched with text are \code{codes}, \code{code.Clausen}, \code{code.Peltzman}, \code{code.Issue}, \code{description}, \code{shortdescription}, \code{bill}, and \code{alltext}. The fields that can be searched by number are \code{session}, \code{yea}, \code{nay}, and \code{support}. Searching by individual legislator will be implemented soon.
 }
 \examples{
 
@@ -77,15 +82,23 @@ res
 \dontrun{
 ## Search for votes with a start date
 res <- voteview_search("Iraq", startdate = "2005-01-01")
-res
  
 ## Search for votes with an end date in just the house
-res <- voteview_search("Iraq", startdate = "2005-01-01", chamber = "House")
-res
+res <- voteview_search("Iraq", enddate = "2005-01-01", chamber = "House")
 
-#' ## Search for votes with an end date in just the house in 112 session
-res <- voteview_search("Iraq", startdate = "2005-01-01", session = 112, chamber = "House")
-res
+## Search for votes with a start date in just the house in the 110th or 112th session
+res <- voteview_search("Iraq", startdate = "2005-01-01", session = c(110, 112), chamber = "House")
+
+## Search for "war on terrorism" AND iraq
+res <- voteview_search(c("war on terrorism", "iraq"))
+
+## Search for "war on terrorism" OR iraq
+res <- voteview_search(c("war on terrorism", "iraq"), jointext = "OR")
+
+## Search for "war" AND ("iraq" or "afghanistan") in the description field in 2013
+res <- voteview_search(query = "description:war (description:iraq OR description:afghanistan)",
+                       startdate = "2013-01-01",
+                       enddate = "2013-12-31")
 }
 }
 \seealso{

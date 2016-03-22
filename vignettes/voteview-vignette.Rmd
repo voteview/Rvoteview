@@ -2,32 +2,101 @@
 title: "Using the Rvoteview API"
 author: "Luke Sonnet"
 date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
+output: 
+  rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Vignette Title}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
+```{r echo=F}
+library(Rvoteview)
+```
 
-This package provides tools to query and download from the VoteView database. This vignette will demonstrate the different types of queries that can be used, how `rvoteview` can be used to do ideal point estimation on a subset of votes using the `pscl` package, and how `rvoteview` facilitates regression analyses of congressional voting behavior.
+This package provides tools to query and download from the VoteView database. This vignette will demonstrate the different types of queries that can be used, how `Rvoteview` can be used to do ideal point estimation on a subset of votes using the `pscl` package, and how `Rvoteview` facilitates regression analyses of congressional voting behavior.
 
 # Installation
 
 To install this package, ensure you have `devtools` installed. If you do not, run `install.packages("devtools")` and then install from GitHub using
 
-```R
+```{r install, eval=F}
 devtools::install_github("JeffreyBLewis/Rvoteview")
 ```
 
-# Querying the database
+# Querying the database with `voteview_search`
 
-Using a custom query parser, we allow both simple and complex queries to be made to the VoteView datase...
+The first main function of this package is to allow users to search for roll calls. Using a custom query parser, we allow both simple and complex queries to be made to the VoteView database. The simple way uses a set of arguments to build a query within the `R` package while the complex way allows the user to build a specific query with nested, boolean logic.
 
-# Downloading rollcall data
+## The simple way
 
-How to download...
+The simple way only allows for query of all of the text fields simultaneously, and provides a few other arguments to make queries easier. The default usage is to pass a character vector to the `alltext` argument. The query builder will then join all of the elements by either an "AND" or an "OR" statement, which is controlled by the `jointext` argument. Each individual element of the character vector will be treated as an exact phrase to be matched, case-insensitive, in any text field. For example, if you want to search for votes that had the phrase "war on terrorism" AND "iraq", you would use the following query:
+```{r search-ex1, eval=F}
+library(Rvoteview)
+res <- voteview_search(c("war on terrorism", "iraq"))
+```
+It is simple enough to change it to search for the phrase "war on terrorism" OR "iraq", as seen below:
+```{r search-ex2, eval=F}
+res <- voteview_search(c("war on terrorism", "iraq"), jointext = "OR")
+```
+Additionally, users can specify which house of Congress to limit queries to, what dates to limit queries to, which sessions to restrict the search to, and what range of support, defined as the percent of total yea and nay votes that were yea, roll calls can have. This is especially useful if users only want to return competitive votes. Note that all fields are joined using "AND" logic; for example you search for roll calls that have the word "iraq" and are in the "House" but not votes that either have "iraq" or were held in the "House". That kind of search is much less likely. Also note that the session field uses "OR" logic within the numeric vector that specifices which session to search. No roll call can be in two sessions, so it makes no sense to search for roll calls that are in one session AND in another session.
+```{r search-ex3, eval=F}
+## Search for votes with a start date
+res <- voteview_search("Iraq", startdate = "2005-01-01")
 
-# Two example usages
+## Search for votes with an end date in just the house
+res <- voteview_search("Iraq", enddate = "2005-01-01", chamber = "House")
+
+## Search for votes with a start date in just the house in the 110th or 112th session
+res <- voteview_search("Iraq", startdate = "2000-12-20", session = c(110, 112), chamber = "House")
+```
+
+## The complex way
+
+The simple way provides a simple, readable syntax for most searches users may want to implement. However, to allow for nested terms and more complicated logic we also allow users to explicitly specify queries. You can see [complete documentation here](http://www.google.com). In general, the following syntax is used, `field:specific phrase (field:other phrase OR field:second phrase)`.
+
+For example, if you wanted to find votes with "war" and either "iraq" or "afghanistan" in any text field, you could set the query to be `"alltext:war (alltext:iraq OR alltext:afghanistan)"`. If you wanted to do the same query but only return the votes with "defense" in the description field, the query would become `"alltext:war (alltext:iraq OR alltext:afghanistan) description:defense"`.
+
+Numeric fields can be searched in a similar way, although users can also use square brackets and "to" for ranges of numbers. For example, the query for all votes about taxes in the 100th to 102nd congress could be expressed either using `"alltext:taxes session:100 OR session:101 OR session:102"` or using `"alltext:taxes session:[100 to 102]"`. Note that if you want to restrict search to certain dates, the `startdate` and `enddate` fields should still be used.
+
+For example, 
+```{r adv-search-ex, eval=F}
+## Search for "war" AND ("iraq" or "afghanistan") in the description field in 2013
+res <- voteview_search(query = "description:war (description:iraq OR description:afghanistan)",
+                       startdate = "2013-01-01",
+                       enddate = "2013-12-31")
+
+## Search for "afghanistan" or "iraq" in all text fields and "defense" in any code field
+res <- voteview_search(query = "(alltext:afghanistan OR alltext:iraq) AND  description:defense")
+```
+
+The fields that can be searched with text are `codes`, `code.Clausen`, `code.Peltzman`, `code.Issue`, `description`, `shortdescription`, `bill`, and `alltext`. The fields that can be searched by number are `session`, `yea`, `nay`, and `support`. Searching by individual legislator will be implemented soon.
+
+# Downloading roll call data with `voteview_download`
+
+The second main function of this package is to allow users to download detailed roll call data into a modified `rollcall` object from the `pscl` package. The default usage is to pass `voteview_download` a vector of roll call id numbers that we return in the `voteview_search` function.
+
+```{r simple-download, results='hide', cache=T, message=F, warning=F}
+## Search all votes with phrase "estate tax"
+res <- voteview_search("estate tax")
+
+## Download all estate tax votes
+rc <- voteview_download(res$id)
+
+summary(rc)
+```
+```{r echo=F}
+summary(rc)
+```
+
+discuss keep.long
+
+## Joining two `rollcall` objects
+
+## Melting `rollcall` objects
+
+Also, see usage below
+
+# Two example uses
 
 ## Ideal point estimation using `pscl`
 
