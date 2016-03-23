@@ -17,13 +17,18 @@ knitr::opts_chunk$set(
 
 **WARNING: This package is under construction. The server and database are currently being revamped. Not all features work, so please limit usage to the simple kind of examples you see below. Also, please limit the number of roll calls you request at a time and be prepared for queries to break or behave strangely.**
 
-This is a package that enables you to query the Voteview database for roll calls and work with data frames or a `pscl` `rollcall` object. For a longer introduction, see [the vignette](https://github.com/JeffreyBLewis/Rvoteview/blob/master/vignettes/voteview-vignette.Rmd).
+This is a package that enables you to query the Voteview database for roll calls and work with data frames or a `pscl` `rollcall` object.
 
 To install this package, ensure you have `devtools` installed. If you do not, run `install.packages("devtools")` before doing the following:
 ```R
 devtools::install_github("JeffreyBLewis/Rvoteview")
 ```
-  
+
+For more thorough documentation, see the help files and the vignette included with the package:
+```R
+vignette("voteview-vignette")
+```
+
 ## Using Rvoteview
 
 To use `Rvoteview`, you generally want to query the database to get a list of vote ids and then use those to return the individual votes. We query the database with a search term and some parameters to constrain the search. For now we take a string that will seach for a bill that has ANY of the words in the string in ANY text field. Additional boolean and targeted searches are forthcoming.

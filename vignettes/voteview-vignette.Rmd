@@ -139,7 +139,7 @@ This section details two different possible uses of the `Rvoteview` package, sho
 
 ## Ideal point estimation using `pscl`
 
-Imagine that we want to conduct an ideal point estimation for all legislators voting on foreign policy and defense issues from 2002 until today. We will use all vote that fit the Clausen category "Foreign and Defense Policy," are somewhat competitive, meaning between 15 and 85 percent of votes on the floor were yeas.
+Imagine that we want to conduct an ideal point estimation for all legislators voting on foreign policy and defense issues from 2008 until today. We will use all vote that fit the Clausen category "Foreign and Defense Policy," are somewhat competitive, meaning between 15 and 85 percent of votes on the floor were yeas.
 
 ```{r defense-search, cache = T}
 ## Load package
@@ -147,10 +147,10 @@ library(Rvoteview)
 
 ## Search database for votes that meet our criteria
 res <- voteview_search(query = "code.Clausen:Foreign and Defense Policy support:[15 to 85]",
-                       startdate = "2002-01-01")
+                       startdate = "2008-01-01")
 ```
 
-Downloading `r nrow(res)` rollcalls can be quite slow, for now, so be patient. We are working to improve speed.
+Large downloads can be quite slow for now, so be patient. We are working to improve speed.
 
 ```{r defense-download, cache = T, message = F}
 ## Download votes into rollcall object
@@ -159,15 +159,42 @@ rc <- voteview_download(res$id)
 summary(rc)
 ```
 
-Now we use the `pscl` package to run an ideal point estimation.
+Now we use the `pscl` package to run an ideal point estimation. Warning, this is somewhat slow.
 
-```{r defense-ideal, cache=T, message = F}
+```{r defense-ideal, cache=T, message = F, results='hide'}
 library(pscl)
 defIdeal <- ideal(rc,
-                  normalize = T)
+                  d = 2)
 ```
 
+In this case we get a vector of ideal points along two dimensions. We can use the default `plot` method provided by `pscl` to get a quick look at the estimated points:
+
+```{r plot-ideal}
+plot(defIdeal)
+```
+
+This ideal point estimation also returns estimated points in a matrix that has has the same row names as the `rc$legis.data` data frame, which are ICPSR numbers. They are also in the same order so it is easy to bring the ideal points to the rest of the data. Let's do that and create a custom plot.
+
+```{r explore-ideal, cache=T, message = F, results='hide'}
+## Add custom ideal points to legislator data
+idealdf <- cbind(rc$legis.data, defIdeal$xbar)
+## Create text party name
+idealdf$partyName <- ifelse(idealdf$party == 200, "Republican",
+                     ifelse(idealdf$party == 100, "Democrat", "Independent"))
+
+ggplot2::ggplot(idealdf, aes(x=D1, y=D2, color=partyName, label=cqlabel)) +
+  geom_text() +
+  scale_color_manual("Party", values = c("Republican" = "red",
+                                         "Democrat" = "blue",
+                                         "Independent" = "darkgreen")) + 
+  theme_bw()
+```
+
+We see the usual split between Republicans and Democrats. Interestingly, the first dimension is the reverse of how we usually think about politics; Democrats are on the right and Republicans are on the left. Furthermore, we see that Bernie Sanders (Independent Senator from Vermont) and Rand Paul (Republican Senator from Kentucky) are very similar along the second dimension while they are very different along the first dimension.
+
 ## Regression analysis of roll call behavior
+
+We can also use Rvoteview for regression analysis.
 
 # Additional tools
 
