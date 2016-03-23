@@ -88,9 +88,34 @@ summary(rc)
 summary(rc)
 ```
 
-discuss keep.long
+Importantly, the object we return is a modified `rollcall` object, in that it may contain additional eements that the authors of the `pscl` package did not include. Therefore it will work with all of the methods they wrote for `rollcall` objects as well as some methods we include in this package. The biggest difference between the original `rollcall` object and what we return is the inclusion of "long" versions of the `votes.data` and `legis.data` data frames, described below.
+
+First, because icpsr numbers are not necessarily unique to legislators, we include `legis.long.dynamic` in the output. For example, when Strom Thurmond changed parties, his icpsr number also changed. However, when building rollcall objects, icpsr numbers are the default. Therefore, `legis.long.dynamic` contains a record of every legislator-party-session as a unique id, as well as the relevant covariates.
+
+Second, we include `votes.long`, a data frame where the rows are legislator-roll calls and contain how each legislator voted on each roll call. This is the long version of the `votes` matrix included in all `rollcall` objects.
+
+We also add two methods that can be used on `rollcall` objects created by our package.
 
 ## Joining two `rollcall` objects
+
+The first function allows for a full outer join of two `rollcall` objects downloaded from the VoteView database, creating a new `rollcall` object that is a union of the two. It is called by using the `%+%` operator. This is especially useful if the user downloaded two roll call objects at separate times and wants to join them together rather than redownload all of the votes at the same time.
+```{r outerjoin, results='hide', cache=T, message=F, warning=F}
+## Search all votes with phrase "estate tax"
+res <- voteview_search("estate tax")
+
+## Download first 10 votes
+rc1 <- voteview_download(res$id[1:10])
+## Download another 10 votes with some overlap
+rc2 <- voteview_download(res$id[5:14])
+
+## Merge them together
+rcall <- rc1 %+% rc2
+
+rcall$m # The number of total votes
+```
+```{r echo=F}
+rcall$m
+```
 
 ## Melting `rollcall` objects
 

@@ -845,11 +845,14 @@ vlist2df <- function(rcs) {
 
    # Building new legis.long.dynamic and legis.data data frames if keeplong
    if(!is.null(rc1$legis.long.dynamic)) {
-     newlegis.long.dynamic <- rbind(rc1$legis.long.dynamic,
-                                    rc2$legis.long.dynamic[!fmatch(rc2$legis.long.dynamic$id, rc1$legis.long.dynamic$id),]) 
+     idsfound <- fmatch(rc2$legis.long.dynamic$id, rc1$legis.long.dynamic$id)
+
+     newlegis.long.dynamic <- rbind(rc1$legis.long.dynamic[-idsfound[!is.na(idsfound)],],
+                                    rc2$legis.long.dynamic)
      
+
      uniqueicpsr <- unique(newlegis.long.dynamic$icpsr)
-     
+
      legiscols <-  c("name", "state", "cqlabel", "party")
      alllegis.data <- data.frame(matrix(NA,
                                      nrow = length(uniqueicpsr),
@@ -883,7 +886,7 @@ vlist2df <- function(rcs) {
    # Clean up new votes matrix
    newvotemat <- as.matrix(newvotes[, colnames(newvotes) != "icpsr"])
    newvotemat[is.na(newvotemat)] <-  rc1$codes$notInLegis 
-  
+
     rcout <- rollcall(data = newvotemat,
                       yea = rc1$codes$yea,
                       nay = rc1$codes$nay,
