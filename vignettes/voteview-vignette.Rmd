@@ -120,11 +120,52 @@ rcall$m
 
 ## Melting `rollcall` objects
 
-Also, see usage below
+We also provide a function called `melt_rollcall` which allows users to produce a long data frame that is essentially the same as `votes.long` but includes all of the roll call and legislator data on each row.
+```{r melt-rollcall}
+## Default is to retain all data
+rc_long <- melt_rollcall(rcall)
+rc_long[1:3, ]
+
+## Retaining fewer columns
+rc_long <- melt_rollcall(rcall, votecols = c("chamber", "session"))
+rc_long[1:3, ]
+```
+
+Also, see usage below in the regression analysis example.
 
 # Two example uses
 
+This section details two different possible uses of the `Rvoteview` package, showing users from beginning to end how to conduct their own ideal point estimation and use `Rvoteview` in more traditional regression analysis.
+
 ## Ideal point estimation using `pscl`
+
+Imagine that we want to conduct an ideal point estimation for all legislators voting on foreign policy and defense issues from 2002 until today. We will use all vote that fit the Clausen category "Foreign and Defense Policy," are somewhat competitive, meaning between 15 and 85 percent of votes on the floor were yeas.
+
+```{r defense-search, cache = T}
+## Load package
+library(Rvoteview)
+
+## Search database for votes that meet our criteria
+res <- voteview_search(query = "code.Clausen:Foreign and Defense Policy support:[15 to 85]",
+                       startdate = "2002-01-01")
+```
+
+Downloading `r nrow(res)` rollcalls can be quite slow, for now, so be patient. We are working to improve speed.
+
+```{r defense-download, cache = T, message = F}
+## Download votes into rollcall object
+rc <- voteview_download(res$id)
+
+summary(rc)
+```
+
+Now we use the `pscl` package to run an ideal point estimation.
+
+```{r defense-ideal, cache=T, message = F}
+library(pscl)
+defIdeal <- ideal(rc,
+                  normalize = T)
+```
 
 ## Regression analysis of roll call behavior
 

@@ -414,7 +414,7 @@ votelist2voteview <- function(dat) {
   data$legislong <- matrix(NA,
                            ncol = length(legislongdatanames),
                            nrow = length(members),
-                           dimnames = list(members,
+                           dimnames = list(NULL,
                                            legislongdatanames))
   data$rollcalls <- data.frame(matrix(NA,
                                       ncol = length(rollcalldatanames) + 2,
@@ -439,18 +439,21 @@ votelist2voteview <- function(dat) {
     for (member in votelist[[i]]$votes) {
       vname <- votelist[[i]]$id
       # Find member from roll call in output data
-      memberpos <- fmatch(member$id, rownames(data$legislong))
+      memberpos <- fmatch(member$id, members)
       # If the legislator icpsr is not entered yet, enter it to the long legis matrix
       if (is.na(data$legislong[memberpos, "icpsr"])) {
         ldat <- member[legislongdatanames]
         # Replace fields missing in DB with NA
         ldat[sapply(ldat, is.null)] <- NA
-        data$legislong[memberpos, legislongdatanames] <- unlist(ldat, F, F)
+        data$legislong[memberpos, ] <- unlist(ldat, F, F)
       } 
       
-      # If vote is NA, replace it with 0 for not in legislature
-      membervote <- ifelse(is.na(member$vote), 0 , member$vote)
-      data$votelong[votelegis, ] <- c(member$id, member$icpsr, membervote, vname)
+      data$votelong[votelegis, ] <- c(member$id,
+                                      member$icpsr,
+                                      # If vote is NA, replace it with 0 for not in legislature
+                                      ifelse(is.na(member$vote), 0 , member$vote),
+                                      vname)
+
       votelegis <- votelegis + 1
     }
     
@@ -465,7 +468,8 @@ votelist2voteview <- function(dat) {
   }
   
   data$votelong <- data.frame(data$votelong[1:(votelegis - 1), ], stringsAsFactors = F)
-  data$legislong <- data.frame(data$legislong, stringsAsFactors = F)
+  data$legislong <- data.frame(data$legislong,
+                               id = members, stringsAsFactors = F)
   data$vmNames <- NULL
   data$rcNames <- NULL
   data$unretrievedids <- dat$unretrievedids
@@ -488,9 +492,7 @@ voteview2rollcall <- function(data, keeplong = T) {
   uniqueicpsr <- unique(data$legislong$icpsr)
   
   votenames <- data$rollcalls$id
-  
-  message(sprintf("Building the rollcall object with %d rollcalls", length(votenames)))
-  
+
   votemat <- matrix(0,
                     nrow = length(uniqueicpsr),
                     ncol = length(votenames),
@@ -506,24 +508,31 @@ voteview2rollcall <- function(data, keeplong = T) {
   
   # Get first vote name
   votename <- votenames[1]
-    for( i in 1:nrow(data$votelong)) {
+  
+  message(sprintf("Building vote matrix"))
+  pb <- txtProgressBar(min = 0, max = nrow(data$votelong), style = 3)
+  
+  for( i in 1:nrow(data$votelong)) {
     
+      
     # Get member-vote data
-    membervote <- data$votelong[i,]
+    #membervote <- 
 
     # Check if vote name is different, implying old vote is finished
-    if(membervote$vname != votename) {
+    if(data$votelong$vname[i] != votename) {
       # Store old vote vector in overall matrix
       votemat[, votename] <- votevec
       # Re-initialize vote vector
       votevec <- numeric(length(uniqueicpsr))
       # Update vote name
-      votename <- membervote$vname
+      votename <- data$votelong$vname[i]
     }
     
     # Fill vote vector with votes
-    memberpos <- fmatch(membervote$icpsr, uniqueicpsr)
-    votevec[memberpos] <- as.numeric(membervote$vote)
+    memberpos <- fmatch(data$votelong$icpsr[i], uniqueicpsr)
+    votevec[memberpos] <- as.numeric(data$votelong$vote[i])
+    setTxtProgressBar(pb, i)
+    
   }
   ## Write last vote to vector
   votemat[, votename] <- votevec
@@ -532,28 +541,33 @@ voteview2rollcall <- function(data, keeplong = T) {
   votemat[is.na(votemat)] <- 0
   
   legiscols <-  c("name", "state", "cqlabel", "party")
-  legis.data <- data.frame(matrix(NA,
+  legis.data <- matrix(NA,
                                   nrow = length(uniqueicpsr),
                                   ncol = length(legiscols) + 1,
-                                  dimnames = list(uniqueicpsr,
-                                                  c(legiscols, "ambiguity"))))
+                                  dimnames = list(NULL,
+                                                  c(legiscols, "ambiguity")))
   
   
   
+  message(sprintf("Building legis.data matrix"))
+  pb <- txtProgressBar(min = 0, max = nrow(legis.data), style = 3)
   # Fill 
   for (i in 1:nrow(legis.data)) {
     memberrows <- fmatch(uniqueicpsr[i], data$legislong$icpsr)
     
     if (length(memberrows) == 1) {
-      legis.data[i,] <- c(unlist(data$legislong[memberrows, legiscols], use.names = F), 0)
+      legis.data[i,] <- c(unlist(data$legislong[memberrows, legiscols], F, F), 0)
     } else {
       legis.data[i,] <- c(apply(data$legislong[, legiscols], 2, Mode), 1)
     }
+    setTxtProgressBar(pb, i)
   }
-  legis.data$icpsr <- rownames(legis.data)
-  
+  legis.data <- data.frame(legis.data, icpsr = uniqueicpsr, stringsAsFactors = FALSE)
+
   #rename vote id for consistency
   names(data$rollcalls)[names(data$rollcalls) == "id"] <- "vname"
+  
+  message(sprintf("Building rollcall object"))
   
   rc <- rollcall(data = votemat,
                  yea = c(1, 2, 3),
@@ -561,7 +575,7 @@ voteview2rollcall <- function(data, keeplong = T) {
                  missing = c(7, 8, 9),
                  notInLegis = 0,
                  legis.data = legis.data,
-                 legis.names = rownames(legis.data),
+                 legis.names = uniqueicpsr,
                  vote.data = data$rollcalls,
                  vote.names = colnames(votemat),
                  source = "Download from VoteView")
@@ -569,8 +583,8 @@ voteview2rollcall <- function(data, keeplong = T) {
   rc[["unretrievedids"]] <- data$unretrievedids
   if (keeplong) {
     rc[["votes.long"]] <- data$votelong
-    data$legislong$id <- row.names(data$legislong)
-    row.names(data$legslong) <- NULL
+    #data$legislong$id <- row.names(data$legislong)
+    #row.names(data$legslong) <- NULL
     rc[["legis.long.dynamic"]] <- data$legislong
   }
   
@@ -690,8 +704,8 @@ melt_rollcall <- function(rc,
       votelongcols <- colnames(rc$votes.long)
       votecols <- colnames(rc$vote.data)
     } else {
-      votelongcols <- intersect(colnames(rc$legis.long.dynamic, votecols))
-      votecols <- intersect(colnames(rc$vote.data, votecols))
+      votelongcols <- intersect(colnames(rc$legis.long.dynamic), votecols)
+      votecols <- intersect(colnames(rc$vote.data), votecols)
     }
     
     if(is.null(legiscols)) {
