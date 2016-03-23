@@ -4,7 +4,7 @@ Rvoteview
 
 **WARNING: This package is under construction. The server and database are currently being revamped. Not all features work, so please limit usage to the simple kind of examples you see below. Also, please limit the number of roll calls you request at a time and be prepared for queries to break or behave strangely.**
 
-This is a package that enables you to query the Voteview database for roll calls and work with data frames or a `pscl` `rollcall` object. For a longer introduction, see [the vignette](https://htmlpreview.github.com/JeffreyBLewis/Rvoteview/tree/master/vignettes/voteview-vignette.html).
+This is a package that enables you to query the Voteview database for roll calls and work with data frames or a `pscl` `rollcall` object. For a longer introduction, see [the vignette](https://github.com/JeffreyBLewis/Rvoteview/blob/master/vignettes/voteview-vignette.Rmd).
 
 To install this package, ensure you have `devtools` installed. If you do not, run `install.packages("devtools")` before doing the following:
 
