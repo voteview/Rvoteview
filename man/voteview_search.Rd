@@ -4,28 +4,16 @@
 \alias{voteview_search}
 \title{Query the Voteview Database with a String}
 \usage{
-voteview_search(alltext = NULL, jointext = "AND", startdate = NULL,
-  enddate = NULL, session = NULL, chamber = NULL, maxsupport = NULL,
-  minsupport = NULL, query = NULL)
+voteview_search(q = NULL, startdate = NULL, enddate = NULL,
+  congress = NULL, chamber = NULL, maxsupport = NULL, minsupport = NULL)
 }
 \arguments{
-\item{alltext}{A character vector of length 1 or longer. Each element of the
-character vector is treated as an exact phrase to be searched. The elements
-are joined using either and AND or OR statement, controlled by the next argument.
-Case-insensitive.}
-
-\item{jointext}{A string for whether to join elements of \code{alltext} charater
-vector by "AND" or "OR". Defaults to "AND" and is case-insensitive.}
-
 \item{startdate}{A string of the format \code{"yyyy-mm-dd"} that is the
 earliest possible date to search for a roll call.}
 
 \item{enddate}{A string of the format
 "yyyy-mm-dd" that is the latest possible date to search for a roll
 call.}
-
-\item{session}{A numeric vector of the sessions of congress to constrain the 
-search to. The default is all sessions.}
 
 \item{chamber}{A string in \code{c("House", "Senate")}. The default
 NULL value returns results from both chambers of congress.}
@@ -36,6 +24,17 @@ maximum support allowed for returned votes.}
 
 \item{minsupport}{A number specifying the minimum 
 support allowed for returned votes.}
+
+\item{alltext}{A character vector of length 1 or longer. Each element of the
+character vector is treated as an exact phrase to be searched. The elements
+are joined using either and AND or OR statement, controlled by the next argument.
+Case-insensitive.}
+
+\item{jointext}{A string for whether to join elements of \code{alltext} charater
+vector by "AND" or "OR". Defaults to "AND" and is case-insensitive.}
+
+\item{session}{A numeric vector of the sessions of congress to constrain the 
+search to. The default is all sessions.}
 
 \item{query}{A string that can specify a more 
 complex search of all of the text fields. See examples for usage and syntax.

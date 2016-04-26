@@ -93,68 +93,74 @@ trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 #' }
 #' @export
 #' 
-voteview_search <- function(alltext = NULL,
-                            jointext = "AND",
+voteview_search <- function(q = NULL,
                             startdate = NULL,
                             enddate = NULL,
-                            session = NULL,
+                            congress = NULL,
                             chamber = NULL,
                             maxsupport = NULL,
-                            minsupport = NULL,
-                            query = NULL) {
+                            minsupport = NULL) {
   
   # Input validation
-  if (is.null(alltext) & is.null(query)) 
-    stop("Must specify 'alltext' or 'query'")
-  if ((!is.null(alltext) | !is.null(session)| !is.null(maxsupport) | !is.null(minsupport)) & !is.null(query))
-    stop("Cannot use both 'query' with several other arguments. Only the date and chamber fields can be used in conjunction with 'query'")
-  if (!(tolower(jointext) %in% c("and", "or")))
-    stop("'jointext' must be either 'AND' or 'OR'. Note that case does not matter")
+  if (is.null(c(q, startdate, enddate, congress, chamber, maxsupport, minsupport))) 
+    stop("Must specify at least one argument")
   
   # Start query
-  jointext <- toupper(jointext)
-  if (!is.null(alltext)){
-    query_string <- paste0("alltext:", paste0(alltext, collapse = paste0(" ", jointext, " alltext:")))
-  } else {
-    query_string <- query
-  }
-  
-  # Check date is well formatted (2014, "2014-01", "2014-01-30")
-  dates <- c(as.character(startdate), as.character(enddate))
-  if (length(grep("^[0-9]{4}($|-(0[0-9]|1[0-2])($|-([0-2][0-9]|3[0-1])))",
-                  c(startdate, enddate))) != length(dates)){
-    stop("A date is formatted incorrectly. Please use yyyy, yyyy-mm, or yyyy-mm-dd format. Note that if months or days are excluded, they default to the earliest values, so '2013' defaults to '2013-01-01'.")
-  }
-  
-  # Check input for chamber
-  if (!is.null(chamber)) {
-    if (!(tolower(chamber) %in% c("house", "senate"))) stop("Chamber must be either 'House' or 'Senate'")
-  }
-  
-  # Check session within range
-  if (!is.null(session)) {
-    
-    if (any(session < 0 | session > 999)) {
-      stop("Session must be a positive number or vector of positive numbers greater than 0 and less than 1000")
+  if (!is.null(q)) {
+    if (is.null(c(startdate, enddate, congress, chamber, maxsupport, minsupport))) {
+      # Query text and no arguments
+      query_string <- q
+    } else {
+      # Query text and arguments
+      if (grepl(":", q)) {
+        # Query text and arguments and colon
+        query_string <- paste0("(", q, ")")
+      } else {
+        # Query text and arguments and no colon
+        # todo: what if text is not first? what if they added alltext to query
+        # just advise against this in the intro
+        query_string <- paste0("(alltext:", q, ")")
+      }
+      
+      # Check date is well formatted (2014, "2014-01", "2014-01-30")
+      dates <- c(as.character(startdate), as.character(enddate))
+      if (length(grep("^[0-9]{4}($|-(0[0-9]|1[0-2])($|-([0-2][0-9]|3[0-1])))",
+                      c(startdate, enddate))) != length(dates)){
+        stop("A date is formatted incorrectly. Please use yyyy, yyyy-mm, or yyyy-mm-dd format. Note that if months or days are excluded, they default to the earliest values, so '2013' defaults to '2013-01-01'.")
+      }
+      
+      # Check input for chamber
+      if (!is.null(chamber)) {
+        if (!(tolower(chamber) %in% c("house", "senate"))) stop("Chamber must be either 'House' or 'Senate'")
+      }
+      
+      # Check session within range
+      if (!is.null(congress)) {
+        
+        if (any(congress < 0 | congress > 999)) {
+          stop("Session must be a positive number or vector of positive numbers greater than 0 and less than 1000")
+        }
+        
+        # Add session to query (if session is one number, ignores second paste)
+        query_string <- paste0(query_string, "AND (session:", paste(congress, collapse = " "), ")")
+      }
+      
+      # Check support is in correct range and sensible
+      if (!is.null(maxsupport) | !is.null(minsupport)) {
+        
+        if (any(c(minsupport, maxsupport) < 0 | c(minsupport, maxsupport) > 100)) {
+          stop("Min and max support must be between 0 and 100")
+        }
+        
+        if (is.null(minsupport)) minsupport <- 0
+        if (is.null(maxsupport)) maxsupport <- 100
+        
+        if (maxsupport < minsupport) stop("maxsupport must be greater than minsupport")
+        
+        query_string <- paste0(query_string, " AND (support:[", paste(c(minsupport, maxsupport), collapse = " to "), "])")
+      }
+      
     }
-    
-    # Add session to query (if session is one number, ignores second paste)
-    query_string <- paste0(query_string, " session:", paste(session, collapse = " "))
-  }
-  
-  # Check support is in correct range and sensible
-  if (!is.null(maxsupport) | !is.null(minsupport)) {
-    
-    if (any(c(minsupport, maxsupport) < 0 | c(minsupport, maxsupport) > 100)) {
-      stop("Min and max support must be between 0 and 100")
-    }
-    
-    if(is.null(minsupport)) minsupport <- 0
-    if(is.null(maxsupport)) maxsupport <- 100
-    
-    if (maxsupport < minsupport) stop("maxsupport must be greater than minsupport")
-    
-    query_string <- paste0(query_string, " support:[", paste(c(minsupport, maxsupport), collapse = " to "), "]")
   }
   
   theurl <- "http://leela.sscnet.ucla.edu/voteview/search"
