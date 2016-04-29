@@ -96,8 +96,8 @@ trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 voteview_search <- function(q = NULL,
                             startdate = NULL,
                             enddate = NULL,
-                            congress = NULL,
                             chamber = NULL,
+                            congress = NULL,
                             maxsupport = NULL,
                             minsupport = NULL) {
   
@@ -122,54 +122,66 @@ voteview_search <- function(q = NULL,
         query_string <- paste0("(alltext:", q, ")")
       }
       
-      # Check date is well formatted (2014, "2014-01", "2014-01-30")
-      dates <- c(as.character(startdate), as.character(enddate))
-      if (length(grep("^[0-9]{4}($|-(0[0-9]|1[0-2])($|-([0-2][0-9]|3[0-1])))",
-                      c(startdate, enddate))) != length(dates)){
-        stop("A date is formatted incorrectly. Please use yyyy, yyyy-mm, or yyyy-mm-dd format. Note that if months or days are excluded, they default to the earliest values, so '2013' defaults to '2013-01-01'.")
-      }
-      
-      # Check input for chamber
-      if (!is.null(chamber)) {
-        if (!(tolower(chamber) %in% c("house", "senate"))) stop("Chamber must be either 'House' or 'Senate'")
-      }
-      
-      # Check session within range
-      if (!is.null(congress)) {
-        
-        if (any(congress < 0 | congress > 999)) {
-          stop("Session must be a positive number or vector of positive numbers greater than 0 and less than 1000")
-        }
-        
-        # Add session to query (if session is one number, ignores second paste)
-        query_string <- paste0(query_string, "AND (session:", paste(congress, collapse = " "), ")")
-      }
-      
-      # Check support is in correct range and sensible
-      if (!is.null(maxsupport) | !is.null(minsupport)) {
-        
-        if (any(c(minsupport, maxsupport) < 0 | c(minsupport, maxsupport) > 100)) {
-          stop("Min and max support must be between 0 and 100")
-        }
-        
-        if (is.null(minsupport)) minsupport <- 0
-        if (is.null(maxsupport)) maxsupport <- 100
-        
-        if (maxsupport < minsupport) stop("maxsupport must be greater than minsupport")
-        
-        query_string <- paste0(query_string, " AND (support:[", paste(c(minsupport, maxsupport), collapse = " to "), "])")
-      }
-      
+      ## Replace single quotes ' with double quotes for parser, try to avoid
+      ## apostrophes
+      query_string <- gsub("(?=[^:\\s])\\'", '\\"', query_string, perl=TRUE)
+      query_string <- gsub("\\'(?=[\\s$])", '\\"', query_string, perl=TRUE)
+    }
+  } else {
+    query_string <- "()" # This ensures string does not start with boolean
+  }
+  ## todo:build full query string from options so that user sees full query
+
+  # Check date is well formatted (2014, "2014-01", "2014-01-30")
+  if (!is.null(c(startdate, enddate))) {
+    dates <- c(as.character(startdate), as.character(enddate))
+    if (length(grep("^[0-9]{4}($|-(0[0-9]|1[0-2])($|-([0-2][0-9]|3[0-1])))",
+                    c(startdate, enddate))) != length(dates)){
+      stop("A date is formatted incorrectly. Please use yyyy, yyyy-mm, or yyyy-mm-dd format. Note that if months or days are excluded, they default to the earliest values, so '2013' defaults to '2013-01-01'.")
     }
   }
   
-  ## Replace single quotes ' with double quotes for parser, try to avoid
-  ## apostrophes
-  query_string <- gsub("(?=[^:\\s])\\'", '\\"', query_string, perl=TRUE)
-  query_string <- gsub("\\'(?=[\\s$])", '\\"', query_string, perl=TRUE)
+  # Check session within range
+  if (!is.null(congress)) {
+    
+    if (any(congress < 0 | congress > 999)) {
+      stop("Session must be a positive number or vector of positive numbers greater than 0 and less than 1000")
+    }
+    
+    # Add session to query (if session is one number, ignores second paste)
+    query_string <- paste0(query_string, " AND (session:", paste(congress, collapse = " "), ")")
+  }
   
-  theurl <- "http://leela.sscnet.ucla.edu/voteview/search"
+  
+  # Check support is in correct range and sensible
+  if (!is.null(maxsupport) | !is.null(minsupport)) {
+    
+    if (any(c(minsupport, maxsupport) < 0 | c(minsupport, maxsupport) > 100)) {
+      stop("Min and max support must be between 0 and 100")
+    }
+    
+    if (is.null(minsupport)) minsupport <- 0
+    if (is.null(maxsupport)) maxsupport <- 100
+    
+    if (maxsupport < minsupport) stop("maxsupport must be greater than minsupport")
+    
+    query_string <- paste0(query_string, " AND (support:[", paste(c(minsupport, maxsupport), collapse = " to "), "])")
+  }
+  
+  
+  # Check input for chamber
+  if (!is.null(chamber)) {
+    if (!(tolower(chamber) %in% c("house", "senate"))) stop("Chamber must be either 'House' or 'Senate'")
+  }
+
+  # Make sure query does not begin with boolean (it will if session or support
+  # are passed as args but q is NULL
+  
+  
+  
   message(query_string) # Print out query to user
+  
+  theurl <- "http://voteview.polisci.ucla.edu/api/search"
   resp <- POST(theurl, body = list(q = query_string,
                                    startdate = startdate,
                                    enddate = enddate,

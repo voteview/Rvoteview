@@ -5,7 +5,7 @@
 \title{Query the Voteview Database with a String}
 \usage{
 voteview_search(q = NULL, startdate = NULL, enddate = NULL,
-  congress = NULL, chamber = NULL, maxsupport = NULL, minsupport = NULL)
+  chamber = NULL, congress = NULL, maxsupport = NULL, minsupport = NULL)
 }
 \arguments{
 \item{startdate}{A string of the format \code{"yyyy-mm-dd"} that is the
