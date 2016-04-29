@@ -163,6 +163,11 @@ voteview_search <- function(q = NULL,
     }
   }
   
+  ## Replace single quotes ' with double quotes for parser, try to avoid
+  ## apostrophes
+  query_string <- gsub("(?=[^:\\s])\\'", '\\"', query_string, perl=TRUE)
+  query_string <- gsub("\\'(?=[\\s$])", '\\"', query_string, perl=TRUE)
+  
   theurl <- "http://leela.sscnet.ucla.edu/voteview/search"
   message(query_string) # Print out query to user
   resp <- POST(theurl, body = list(q = query_string,
@@ -573,7 +578,7 @@ voteview2rollcall <- function(data, keeplong = T) {
   #rename vote id for consistency
   names(data$rollcalls)[names(data$rollcalls) == "id"] <- "vname"
   
-  message(sprintf("Building rollcall object"))
+  message(sprintf("Building rollcall object, may take some time..."))
   
   rc <- rollcall(data = votemat,
                  yea = c(1, 2, 3),
