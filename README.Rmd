@@ -31,7 +31,7 @@ vignette("voteview-vignette")
 
 ## Using Rvoteview
 
-To use `Rvoteview`, you generally want to query the database to get a list of vote ids and then use those to return the individual votes. We query the database with a search term and some parameters to constrain the search. For now we take a string that will seach for a bill that has ANY of the words in the string in ANY text field. Additional boolean and targeted searches are forthcoming.
+To use `Rvoteview`, you generally want to query the database to get a list of vote ids and then use those to return the individual votes. We query the database with a search term and some parameters to constrain the search. For now we take a string that will seach for a bill that has ANY of the words in the string in ANY text field. Additional boolean and targeted searches have been implemented (and will be explained in the vignette and documentation soon).
 ```{r search}
 library(Rvoteview)
   
@@ -41,7 +41,7 @@ names(res)
 ## I will drop description since it is a very long field
 head(res[, -1])
 ```
-Using `res$id` we can get a `rollcall` object (from the [`pscl` package](https://cran.r-project.org/web/packages/pscl/index.html)) that contains the full set of votes and data for each roll call. Eventually we will either develop additional methods for the `pscl` `rollcall` object.
+Using `res$id` we can get a `rollcall` object (from the [`pscl` package](https://cran.r-project.org/web/packages/pscl/index.html)) that contains the full set of votes and data for each roll call. 
 
 ```{r download, results='hide'}
 ## Get a rollcall object using the ids, please limit to a few ids for now!
@@ -52,15 +52,38 @@ rc <- voteview_download(res$id[1:10])
 summary(rc)
 ```
 
-You can also search by start and end date, session, and chamber. Please see the help files for each function after you install the package to see a little more about how they work.
+We have also begun extending the `pscl` `rollcall` object by allowing you to do a full outer join on two `rollcall` objects that were built using this package. For example:
+
+```{r download2, results='hide'}
+rc2 <- voteview_download(res$id[c(5, 100)])
+```
+```{r pscl-add}
+## Now we can merge this with 'rc'
+rcAll <- rc %+% rc2
+
+rc$m
+rc2$m
+rcAll$m # rc$m + rc2$m - 1 because of the one vote overlap
+```
+
+You can also search by start and end date, congress, and chamber. Please see the help files for each function after you install the package to see a little more about how they work.
 
 ```{r search-options}
 ## Voteview search with options
-res <- voteview_search("Iraq", chamber = "House", session = 110,
+res <- voteview_search("Iraq", chamber = "House", congress = 110,
                        startdate = 2008, enddate = "2008-04-20")
 head(res[, -1])
 
-res <- voteview_search("Iraq", session = 109:112)
+res <- voteview_search("Iraq", congress = 109:112)
 head(res[, -1])
+```
+
+We can also build complex queries manually (note session will be replaced with congress as soon as the database is updated).
+
+```{r search-adv}
+## Voteview search with options
+res <- voteview_search("((alltext:'estate tax' OR 'death tax') AND session:[100 to 114]) OR (alltext:'property tax' AND session:[95 to 100])")
+head(res[, -1])
+tail(res[, -1])
 ```
 

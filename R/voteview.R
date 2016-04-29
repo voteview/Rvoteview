@@ -121,12 +121,11 @@ voteview_search <- function(q = NULL,
         # just advise against this in the intro
         query_string <- paste0("(alltext:", q, ")")
       }
-      
-      ## Replace single quotes ' with double quotes for parser, try to avoid
-      ## apostrophes
-      query_string <- gsub("(?=[^:\\s])\\'", '\\"', query_string, perl=TRUE)
-      query_string <- gsub("\\'(?=[\\s$])", '\\"', query_string, perl=TRUE)
     }
+    ## Replace single quotes ' with double quotes for parser, try to avoid
+    ## apostrophes
+    query_string <- gsub("(?=[^:\\s])\\'", '\\"', query_string, perl=TRUE)
+    query_string <- gsub("\\'(?=[\\s$])", '\\"', query_string, perl=TRUE)
   } else {
     query_string <- "()" # This ensures string does not start with boolean
   }
@@ -358,6 +357,8 @@ build_votelist <- function(votelist, ids, perrequest) {
                                      unlist(idchunks[i:length(idchunks)], F, F))))
     }
     
+    
+    # todo:documentation
     if (votes[1] == "ERROR") {
       
       errmess <- geterrmessage()
