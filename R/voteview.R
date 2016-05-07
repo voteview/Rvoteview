@@ -733,18 +733,21 @@ melt_rollcall <- function(rc,
     }
     
     if(is.null(legiscols)) {
-      legiscols <- setdiff(colnames(rc$legis.long.dynamic), "icpsr")
-    } else {
-      if(("icpsr" %in% colnames) & ("icpsr" %in% votecols)) legiscols <- setdiff(legiscols, "icpsr")
+      legiscols <- colnames(rc$legis.long.dynamic)
     }
+    if(("icpsr" %in% legiscols) & ("icpsr" %in% votecols)) 
+      legiscols <- setdiff(legiscols, "icpsr")
     
     # Only keep votes user wants
-    votedat <- rc$votes.long[rc$votes.long$vname %in% keepvote, ]
+    votedat <- rc$votes.long[rc$votes.long$vname %in% keepvote,
+                             names(rc$votes.long) != "icpsr"] 
+    # Otherwise icpsr duplicates in merge below
+    
     long_rc <- merge(votedat, rc$legis.long.dynamic[, legiscols],
                      by = "id")
     long_rc <- merge(long_rc, rc$vote.data[, unique(c(votecols, "vname"))],
                      by = "vname", sort = F)
-
+    
     return(long_rc[, unique(c(votecols, votelongcols, legiscols))])
   } else {
     
