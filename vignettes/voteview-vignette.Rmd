@@ -246,7 +246,9 @@ senDfWide <- reshape2::dcast(senDfLong,
 head(senDfWide)
 ```
 
-Now let's add 
+Now let's add their 2010 election status from an external source.
+
+TODO: it appears all ideal points are identical across congresses
 
 ## Regression analysis of roll call behavior
 

@@ -8,24 +8,22 @@ trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 
 # Function to run a voteview query, returning a dataframe of matching votes and
 # basic data about those votes
-#' Query the Voteview Database with a String
+#' Query the Voteview Database for Roll Calls
 #' 
-#' Searches the Voteview database with a string and returns a data frame with
-#' bill IDs, summary vote statistics, and other identifying information.
+#' Searches the Voteview database for roll calls and returns a data frame with
+#' bill IDs, the breakdown of voting, and other descriptive information. Takes
+#' any one or more of the arguments.
 #' 
-#' @param alltext A character vector of length 1 or longer. Each element of the
-#' character vector is treated as an exact phrase to be searched. The elements
-#' are joined using either and AND or OR statement, controlled by the next argument.
-#' Case-insensitive.
-#' @param jointext A string for whether to join elements of \code{alltext} charater
-#' vector by "AND" or "OR". Defaults to "AND" and is case-insensitive.
+#' @param q A string that is passed directly to the Voteview query parser. It
+#' can either specify parameters for the search, incorporate complex boolean
+#' logic, or be a simple string that will search all text fields. See Details.
 #' @param startdate A string of the format \code{"yyyy-mm-dd"} that is the
 #' earliest possible date to search for a roll call.
 #' @param enddate A string of the format
 #' "yyyy-mm-dd" that is the latest possible date to search for a roll
 #' call.
-#' @param session A numeric vector of the sessions of congress to constrain the 
-#' search to. The default is all sessions.
+#' @param congress A numeric vector of the congresses to constrain the 
+#' search to. The default NULL value returns results from all congresses.
 #' @param chamber A string in \code{c("House", "Senate")}. The default
 #' NULL value returns results from both chambers of congress.
 #' @param maxsupport Support is the share of Yea votes 
@@ -33,9 +31,6 @@ trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 #' maximum support allowed for returned votes.
 #' @param minsupport A number specifying the minimum 
 #' support allowed for returned votes.
-#' @param query A string that can specify a more 
-#' complex search of all of the text fields. See examples for usage and syntax.
-#'  Can only be used if \code{alltext} is not specified.
 #' @return A data.frame with the following columns: 
 #' \itemize{
 #' \item{\code{description} }{Official description of the bill.}
@@ -56,11 +51,11 @@ trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 #' details.}
 #' }
 #' @details
-#' Across fields an AND join is used. Note that there are two core ways to build a query. Using the arguments you are restricted to searching all text fields and cannot search specific text fields. Furthermore, text phrases can only be joined using AND or OR statements, but not both at the same time. Meanwhile, values in \code{session} are joined using an OR, as no roll call will be in two sessions, making AND nonsensical.
+#' This function requires at least one argument. The user can use the \code{q} field either to search across all text fields or to pass a more complicated advanced query. This is essentially like a "search box" where the user can just put in some key words, specific phrases in quotes, or can use notation like "support:[10 to 90]" along with boolean logic to build complicated queries.
 #' 
-#' Alternatively, users can build more advanced queries using a general syntax and the \code{query} field. For complete documentation see \code{google.com}. In general, the following syntax is used, \code{field:specific phrase (field:other phrase OR field:second phrase)}. For example, if you wanted to find votes with "war" and either "iraq" or "afghanistan" in any text field, you could set the query to be \code{"alltext:war (alltext:iraq OR alltext:afghanistan)"}. If you wanted to do the same query but only return the votes with "defense" in the description field, the query would become \code{"alltext:war (alltext:iraq OR alltext:afghanistan) description:defense"}. Numeric fields can be searched in a similar way, although users can also use square brackets and "to" for ranges of numbers. For example, the query for all votes about taxes in the 100th to 102nd congress could be expressed either using \code{"alltext:taxes session:100 OR session:101 OR session:102"} or using \code{"alltext:taxes session:[100 to 102]"}. Note that if you want to restrict search to certain dates, the \code{startdate} and \code{enddate} fields should still be used.
+#' For complete documentation see \code{google.com} and for examples see the vignette. In general, the following syntax is used, \code{field:specific phrase (field:other phrase OR field:second phrase)}. For example, if you wanted to find votes with "war" and either "iraq" or "afghanistan" in any text field, you could set the query to be \code{"alltext:war AND (alltext:iraq OR alltext:afghanistan)"}. Note that the \code{AND} in the above is redundant as fields are joined by \code{AND} by default. If you wanted to do the same query but only return the votes with "defense" in the description field, the query would become \code{"alltext:war (alltext:iraq OR alltext:afghanistan) description:defense"}. Numeric fields can be searched in a similar way, although users can also use square brackets and "to" for ranges of numbers. For example, the query for all votes about taxes in the 100th to 102nd congress could be expressed either using \code{"alltext:taxes session:100 OR session:101 OR session:102"} or using \code{"alltext:taxes session:[100 to 102]"}. Note that if you want to restrict search to certain dates, the \code{startdate} and \code{enddate} fields shuld still be used. Furthermore, users can specify exact phrases that they want to search like \code{"budget 'estate tax'"}.
 #' 
-#' The fields that can be searched with text are \code{codes}, \code{code.Clausen}, \code{code.Peltzman}, \code{code.Issue}, \code{description}, \code{shortdescription}, \code{bill}, and \code{alltext}. The fields that can be searched by number are \code{session}, \code{yea}, \code{nay}, and \code{support}. Searching by individual legislator will be implemented soon.
+#' The fields that can be searched with text are \code{codes}, \code{code.Clausen}, \code{code.Peltzman}, \code{code.Issue}, \code{description}, \code{shortdescription}, \code{bill}, and \code{alltext}. The code and bill fields are searched exactly using regular expressions while in the other fields words are stemmed and searched anywhere in the field specified (unless the query is in quotes). The fields that can be searched numerically are \code{session}, \code{yea}, \code{nay}, and \code{support}. Searching by individual legislator will be implemented soon.
 #' 
 #' @seealso
 #' '\link{voteview_download}'.
@@ -81,13 +76,10 @@ trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 #' res <- voteview_search("Iraq", startdate = "2005-01-01", session = c(110, 112), chamber = "House")
 #' 
 #' ## Search for "war on terrorism" AND iraq
-#' res <- voteview_search(c("war on terrorism", "iraq"))
-#' 
-#' ## Search for "war on terrorism" OR iraq
-#' res <- voteview_search(c("war on terrorism", "iraq"), jointext = "OR")
+#' res <- voteview_search("'war on terrorism' iraq")
 #' 
 #' ## Search for "war" AND ("iraq" or "afghanistan") in the description field in 2013
-#' res <- voteview_search(query = "description:war (description:iraq OR description:afghanistan)",
+#' res <- voteview_search("description:war AND (description:iraq OR description:afghanistan)",
 #'                        startdate = "2013-01-01",
 #'                        enddate = "2013-12-31")
 #' }
