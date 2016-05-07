@@ -133,24 +133,25 @@ rc_long[1:3, ]
 
 Also, see usage below in the regression analysis example.
 
-# Two example uses
+# Three example uses
 
-This section details two different possible uses of the `Rvoteview` package, showing users from beginning to end how to conduct their own ideal point estimation and use `Rvoteview` in more traditional regression analysis.
+This section details three different possible uses of the `Rvoteview` package, showing users from beginning to end how to conduct their own ideal point estimation and use `Rvoteview` in more traditional regression analysis.
 
 ## Ideal point estimation using `pscl`
 
 Imagine that we want to conduct an ideal point estimation for all legislators voting on foreign policy and defense issues from 2008 until today. We will use all vote that fit the Clausen category "Foreign and Defense Policy," are somewhat competitive, meaning between 15 and 85 percent of votes on the floor were yeas.
 
 ```{r defense-search, cache = T}
-## Load package
+## Load packages
+library(ggplot2)   # Load this first so that Rvoteview can use %+%
 library(Rvoteview)
 
 ## Search database for votes that meet our criteria
-res <- voteview_search(query = "code.Clausen:Foreign and Defense Policy support:[15 to 85]",
+res <- voteview_search("code.Clausen:Foreign and Defense Policy support:[15 to 85]",
                        startdate = "2008-01-01")
 ```
 
-Large downloads can be quite slow for now, so be patient. We are working to improve speed.
+Large downloads can be quite slow for now, so be patient. We are working on improving speed.
 
 ```{r defense-download, cache = T, message = F}
 ## Download votes into rollcall object
@@ -182,7 +183,7 @@ idealdf <- cbind(rc$legis.data, defIdeal$xbar)
 idealdf$partyName <- ifelse(idealdf$party == 200, "Republican",
                      ifelse(idealdf$party == 100, "Democrat", "Independent"))
 
-ggplot2::ggplot(idealdf, aes(x=D1, y=D2, color=partyName, label=cqlabel)) +
+ggplot(idealdf, aes(x=D1, y=D2, color=partyName, label=cqlabel)) +
   geom_text() +
   scale_color_manual("Party", values = c("Republican" = "red",
                                          "Democrat" = "blue",
@@ -191,6 +192,61 @@ ggplot2::ggplot(idealdf, aes(x=D1, y=D2, color=partyName, label=cqlabel)) +
 ```
 
 We see the usual split between Republicans and Democrats. Interestingly, the first dimension is the reverse of how we usually think about politics; Democrats are on the right and Republicans are on the left. Furthermore, we see that Bernie Sanders (Independent Senator from Vermont) and Rand Paul (Republican Senator from Kentucky) are very similar along the second dimension while they are very different along the first dimension.
+
+## Analyzing the impact of reelection on ideal points
+
+The package also provides ideal points estimated by TODO:FINDALGORITHM for each legislator in each congress. We can use this information to track how senators who faced reelection changed relative to senators who did not face reelection. Let's examine the 2008 election. For now we need to get at least one Senate roll call from the 110th and 111th congresses for this analysis because the stored ideal points TODO:NAME FOR SCORES constate at the legislator-session level. In the future it may be possible to search directly for legislators and congressional sessions.
+
+```{r search-senate110111, cache = T}
+## Find roll calls from 110 and 111th congresses
+senateRes <- voteview_search(chamber = "Senate",
+                             congress = c(110, 111))
+
+## Extract one roll call
+sen110id <- senateRes[senateRes$session == 110, "id"][1]
+sen111id <- senateRes[senateRes$session == 111, "id"][1]
+
+senate2010dld <- voteview_download(c(sen110id, sen111id))
+```
+
+Now let's get the long data frame of legislator-congresses and cast it to be at the legislator level but retaining the ideal points estimated for each congress.
+
+```{r melt-senate}
+## This line takes our legis.long.dynamic df and adds to it "session" from the
+## vote.data df
+senDf <- melt_rollcall(senate2010dld, votecols = "session")
+head(senDf)
+
+senate2010dld$legis.long.dynamic$icpsr
+## Let's drop the POTUS
+senDf <- senDf[senDf$state != 99, ]
+nrow(senDf)
+
+## Plot ideal points by congress
+ggplot(senDf, aes(x = as.numeric(x), y = as.numeric(y), color = party, label = cqlabel)) +
+  facet_grid(. ~ session) + 
+  geom_text() +
+  scale_color_manual("Party", 
+                     labels = c("100" = "Democrat",
+                                "200" = "Republican",
+                                "328" = "Independent"),
+                     values = c("200" = "red",
+                                "100" = "blue",
+                                "328" = "darkgreen")) +
+  xlab("D1") + ylab("D2") + 
+  theme_bw()
+
+## First melt the data to get ideal points x and y in one column
+senDfLong <- reshape2::melt(senDf, id = c("icpsr", "name", "session", "state",
+                                          "cqlabel", "party", "id"))
+## Cast the data so that each row is a legislator
+senDfWide <- reshape2::dcast(senDfLong,
+                             icpsr + name + state + cqlabel + party ~ variable + session,
+                             value.var = "value")
+head(senDfWide)
+```
+
+Now let's add 
 
 ## Regression analysis of roll call behavior
 
