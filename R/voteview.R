@@ -172,7 +172,7 @@ voteview_search <- function(q = NULL,
   
   message(query_string) # Print out query to user
   
-  theurl <- "http://voteview.polisci.ucla.edu/api/search"
+  theurl <- "https://voteview.polisci.ucla.edu/api/search"
   resp <- POST(theurl, body = list(q = query_string,
                                    startdate = startdate,
                                    enddate = enddate,
@@ -202,7 +202,7 @@ voteview_search <- function(q = NULL,
 #' @export
 #' 
 voteview_getvote <- function(ids) {
-  theurl <- "http://leela.sscnet.ucla.edu/voteview/downloadAPI/?rollcall_id="
+  theurl <- "https://voteview.polisci.ucla.edu/api/download?rollcall_id="
   resp <- GET(paste0(theurl, paste0(ids, collapse = ","), "&apitype=R"), timeout(5))
 }
 
@@ -420,8 +420,10 @@ votelist2voteview <- function(dat) {
   ## Data to keep from return
   ## todo: check if these fields are consistent, what if first return has missing
   ## data. Maybe best fixed server side, as in always return most number of fields
-  rollcalldatanames <- setdiff(names(votelist[[1]]),
+  firstlevelnames <- setdiff(names(votelist[[1]]),
                                c("votes", "apitype", "nominate", "errormessage", "errormeta"))
+  ## Use firstlevel names to get sublist names
+  rollcalldatanames <- names(unlist(votelist[[1]][firstlevelnames]))
   votelongdatanames <- c("id", "icpsr", "vote")
   legislongdatanames <- setdiff(names(votelist[[1]]$votes[[1]]),
                                 c("vote", "id"))
@@ -454,7 +456,7 @@ votelist2voteview <- function(dat) {
   
   ## todo: option to replace any fields that are missing with newer passes over same
   ## legislator or vote. Shouldn't be necessary with high data integrity. 
-  
+
   votelegis <- 1
   for (i in 1:length(votelist)) {
     for (member in votelist[[i]]$votes) {
@@ -484,7 +486,7 @@ votelist2voteview <- function(dat) {
     else nominate <- unlist(votelist[[i]]$nominate, F, F)
     
     # Add rollcall data
-    data$rollcalls[i, ] <- c(votelist[[i]][rollcalldatanames],
+    data$rollcalls[i, ] <- c(unlist(votelist[[i]])[rollcalldatanames],
                              nominate)
     setTxtProgressBar(pb, i)
   }

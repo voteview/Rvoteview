@@ -59,6 +59,7 @@ res <- voteview_search("alltext:terrorism iraq")
 Unfortunately, due to the way the text index works, to search for documents that have both "terror" *and* "iraq" will require some more work. One way to do this is to search a specific text field more than once, as queries across fields will be joined by AND by default:
 ```{r search-ex2, eval=F}
 res <- voteview_search("description:'terror' description:'iraq'")
+## 11 found rollcalls
 ```
 
 Unfortunately, the full text index cannot be accessed more than once at a time. That means that you cannot have two text fields that you search without quotes. Thus, `"description:iraq description:terror"` will not work and neither will `"alltext:iraq alltext:terror"`.
@@ -100,9 +101,6 @@ For example,
 res <- voteview_search(q = qString,
                        startdate = "2003-01-01",
                        enddate = "2003-12-31")
-
-## Search for "afghanistan" or "iraq" in all text fields or "defense" in any code field
-res <- voteview_search(q = "alltext:afghanistan iraq OR codes:defense")
 ```
 
 The fields that can be searched with text are `codes`, `code.Clausen`, `code.Peltzman`, `code.Issue`, `description`, `shortdescription`, `bill`, and `alltext`. The fields that can be searched by number are `session`, `yea`, `nay`, and `support`. Searching by individual legislator will be implemented soon.
@@ -112,8 +110,8 @@ The fields that can be searched with text are `codes`, `code.Clausen`, `code.Pel
 The second main function of this package is to allow users to download detailed roll call data into a modified `rollcall` object from the `pscl` package. The default usage is to pass `voteview_download` a vector of roll call id numbers that we return in the `voteview_search` function.
 
 ```{r simple-download, results='hide', cache=T, message=F, warning=F}
-## Search all votes with phrase "estate tax"
-res <- voteview_search("estate tax")
+## Search all votes with phrase "estate tax" since 2000
+res <- voteview_search("estate tax", startdate = "2000-01-01")
 
 ## Download all estate tax votes
 rc <- voteview_download(res$id)
