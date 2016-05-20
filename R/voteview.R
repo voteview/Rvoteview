@@ -40,7 +40,7 @@ trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 #' \item{\code{bill} }{Bill name abbreviation.}
 #' \item{\code{chamber} }{The chamber the roll call was held in. Either "House"
 #' or "Senate"} 
-#' \item{\code{session} }{The session of congress the roll call was held in.}
+#' \item{\code{congress} }{The congress the roll call was held in.}
 #' \item{\code{rollnumber} }{The roll call number of the vote.}
 #' \item{\code{yea} }{The total number of 'Yea' votes.}
 #' \item{\code{nay} }{The total number of 'Nay' votes.}
@@ -53,9 +53,9 @@ trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 #' @details
 #' This function requires at least one argument. The user can use the \code{q} field either to search across all text fields or to pass a more complicated advanced query. This is essentially like a "search box" where the user can just put in some key words, specific phrases in quotes, or can use notation like "support:[10 to 90]" along with boolean logic to build complicated queries.
 #' 
-#' For complete documentation see \code{google.com} and for examples see the vignette. In general, the following syntax is used, \code{field:specific phrase (field:other phrase OR field:second phrase)}. For example, if you wanted to find votes with "war" and either "iraq" or "afghanistan" in any text field, you could set the query to be \code{"alltext:war AND (alltext:iraq OR alltext:afghanistan)"}. Note that the \code{AND} in the above is redundant as fields are joined by \code{AND} by default. If you wanted to do the same query but only return the votes with "defense" in the description field, the query would become \code{"alltext:war (alltext:iraq OR alltext:afghanistan) description:defense"}. Numeric fields can be searched in a similar way, although users can also use square brackets and "to" for ranges of numbers. For example, the query for all votes about taxes in the 100th to 102nd congress could be expressed either using \code{"alltext:taxes session:100 OR session:101 OR session:102"} or using \code{"alltext:taxes session:[100 to 102]"}. Note that if you want to restrict search to certain dates, the \code{startdate} and \code{enddate} fields shuld still be used. Furthermore, users can specify exact phrases that they want to search like \code{"budget 'estate tax'"}.
+#' For complete documentation see \code{google.com} and for examples see the vignette. In general, the following syntax is used, \code{field:specific phrase (field:other phrase OR field:second phrase)}. For example, if you wanted to find votes with "war" and either "iraq" or "afghanistan" in any text field, you could set the query to be \code{"alltext:war AND (alltext:iraq OR alltext:afghanistan)"}. Note that the \code{AND} in the above is redundant as fields are joined by \code{AND} by default. If you wanted to do the same query but only return the votes with "defense" in the description field, the query would become \code{"alltext:war (alltext:iraq OR alltext:afghanistan) description:defense"}. Numeric fields can be searched in a similar way, although users can also use square brackets and "to" for ranges of numbers. For example, the query for all votes about taxes in the 100th to 102nd congress could be expressed either using \code{"alltext:taxes congress:100 OR congress:101 OR congress:102"} or using \code{"alltext:taxes congress:[100 to 102]"}. Note that if you want to restrict search to certain dates, the \code{startdate} and \code{enddate} fields shuld still be used. Furthermore, users can specify exact phrases that they want to search like \code{"budget 'estate tax'"}.
 #' 
-#' The fields that can be searched with text are \code{codes}, \code{code.Clausen}, \code{code.Peltzman}, \code{code.Issue}, \code{description}, \code{shortdescription}, \code{bill}, and \code{alltext}. The code and bill fields are searched exactly using regular expressions while in the other fields words are stemmed and searched anywhere in the field specified (unless the query is in quotes). The fields that can be searched numerically are \code{session}, \code{yea}, \code{nay}, and \code{support}. Searching by individual legislator will be implemented soon.
+#' The fields that can be searched with text are \code{codes}, \code{code.Clausen}, \code{code.Peltzman}, \code{code.Issue}, \code{description}, \code{shortdescription}, \code{bill}, and \code{alltext}. The code and bill fields are searched exactly using regular expressions while in the other fields words are stemmed and searched anywhere in the field specified (unless the query is in quotes). The fields that can be searched numerically are \code{congress}, \code{yea}, \code{nay}, and \code{support}. Searching by individual legislator will be implemented soon.
 #' 
 #' @seealso
 #' '\link{voteview_download}'.
@@ -72,8 +72,8 @@ trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 #' ## Search for votes with an end date in just the house
 #' res <- voteview_search("Iraq", enddate = "2005-01-01", chamber = "House")
 #' 
-#' ## Search for votes with a start date in just the house in the 110th or 112th session
-#' res <- voteview_search("Iraq", startdate = "2005-01-01", session = c(110, 112), chamber = "House")
+#' ## Search for votes with a start date in just the house in the 110th or 112th congress
+#' res <- voteview_search("Iraq", startdate = "2005-01-01", congress = c(110, 112), chamber = "House")
 #' 
 #' ## Search for "war on terrorism" AND iraq
 #' res <- voteview_search("'war on terrorism' iraq")
@@ -132,15 +132,15 @@ voteview_search <- function(q = NULL,
     }
   }
   
-  # Check session within range
+  # Check congress within range
   if (!is.null(congress)) {
     
     if (any(congress < 0 | congress > 999)) {
-      stop("Session must be a positive number or vector of positive numbers greater than 0 and less than 1000")
+      stop("Congress must be a positive number or vector of positive numbers greater than 0 and less than 1000")
     }
     
-    # Add session to query (if session is one number, ignores second paste)
-    query_string <- paste0(query_string, " AND (session:", paste(congress, collapse = " "), ")")
+    # Add congress to query (if congress is one number, ignores second paste)
+    query_string <- paste0(query_string, " AND (congress:", paste(congress, collapse = " "), ")")
   }
   
   
@@ -165,7 +165,7 @@ voteview_search <- function(q = NULL,
     if (!(tolower(chamber) %in% c("house", "senate"))) stop("Chamber must be either 'House' or 'Senate'")
   }
 
-  # Make sure query does not begin with boolean (it will if session or support
+  # Make sure query does not begin with boolean (it will if congress or support
   # are passed as args but q is NULL
   
   
@@ -237,14 +237,14 @@ voteview_getvote <- function(ids) {
 #' a unique id, that legislator's icpsr number, how they voted, and
 #' which roll call that vote belongs to. Thus this is a data frame of unique
 #' id-rollcalls. Note that icpsr numbers are constant across party
-#' changes and across sessions, while \code{id} will always be consistent with
-#' party and session. This is important because we can then map votes to the
+#' changes and across congresses, while \code{id} will always be consistent with
+#' party and congress. This is important because we can then map votes to the
 #' second additional data frame, \code{legis.long.dynamic}. This data frame
 #' consists of data for unique members as identified by \code{id}, and not 
-#' \code{icpsr} number. Thus this provides unique covariates by legislator-party-session. This enables us
-#' to also store their session-specific NOMINATE score. We retain this data frame
+#' \code{icpsr} number. Thus this provides unique covariates by legislator-party-congress. This enables us
+#' to also store their congress-specific NOMINATE score. We retain this data frame
 #' because the default \code{legis.data} data frame is only unique to icpsr number,
-#' which may not have a unique party and is constant across sessions. 
+#' which may not have a unique party and is constant across congresss. 
 #' 
 #' To that end, there is a column \code{ambiguity} in the \code{legis.data} data
 #' frame that denotes whether there is some ambiguity in the legislator's record.
@@ -654,7 +654,7 @@ complete_download <- function(rc) {
 }
 
 # Forthcoming, function to get member data
-# voteview_getmember <- function(id, session = NULL, perrequest = 20) {
+# voteview_getmember <- function(id, congress = NULL, perrequest = 20) {
 # }
 
 # Function to turn roll call object into long_rollcall object
@@ -704,7 +704,7 @@ complete_download <- function(rc) {
 #' rc <- voteview_download(res$id[1:10])
 #' 
 #' ## Create long rollcall object, wihtout long description fields
-#' rclong <- melt_rollcall(rc, votecols = c("chamber", "session"))
+#' rclong <- melt_rollcall(rc, votecols = c("chamber", "congress"))
 #' 
 #' @export
 #' 
@@ -828,8 +828,12 @@ vlist2df <- function(rcs) {
   # reorder columns explicitly
   df <- as.data.frame(df, stringsAsFactors = FALSE)
   
-  return( df[, c("description", "shortdescription", "date", "bill", "chamber",
-                 "session",  "rollnumber", "yea", "nay", "support", "id")])
+  ## To return the following in order
+  orderCols <- c("description", "shortdescription", "date", "bill", "chamber",
+                 "congress",  "rollnumber", "yea", "nay", "support", "id")
+  
+  ## Returns it with those columns first in order and append remaining data
+  return( df[, c(orderCols, setdiff(names(df), orderCols))] )
 }
 
 # Joins two rollcall objects
@@ -845,14 +849,14 @@ vlist2df <- function(rcs) {
 #' 
 #' @examples
 #' 
-#' ## Search for rollcalls about Rhodesia in 100th and 101st Congress
-#' res <- voteview_search("Rhodesia", session = c(99, 100))
+#' ## Search for rollcalls about Rhodesia in 95th and 96th Congress
+#' res <- voteview_search("Rhodesia", congress = c(95, 96))
 #' 
 #' rc1 <- voteview_download(res$id)
 #' summary(rc1)
 #' 
-#' ## Search for rollcalls about Rhodesia in 101st and 102nd Congress
-#' res <- voteview_search("Rhodesia", session = c(100, 101))
+#' ## Search for rollcalls about Rhodesia in  90th and 92nd Congress
+#' res <- voteview_search("Rhodesia", congress = c(90, 92))
 #' 
 #' rc2 <- voteview_download(res$id)
 #' summary(rc2)

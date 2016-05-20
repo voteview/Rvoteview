@@ -21,14 +21,14 @@ of the two.
 }
 \examples{
 
-## Search for rollcalls about Rhodesia in 100th and 101st Congress
-res <- voteview_search("Rhodesia", session = c(99, 100))
+## Search for rollcalls about Rhodesia in 95th and 96th Congress
+res <- voteview_search("Rhodesia", congress = c(95, 96))
 
 rc1 <- voteview_download(res$id)
 summary(rc1)
 
-## Search for rollcalls about Rhodesia in 101st and 102nd Congress
-res <- voteview_search("Rhodesia", session = c(100, 101))
+## Search for rollcalls about Rhodesia in  90th and 92nd Congress
+res <- voteview_search("Rhodesia", congress = c(90, 92))
 
 rc2 <- voteview_download(res$id)
 summary(rc2)

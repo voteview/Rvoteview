@@ -58,7 +58,7 @@ res <- voteview_search("Rhodesia")
 rc <- voteview_download(res$id[1:10])
 
 ## Create long rollcall object, wihtout long description fields
-rclong <- melt_rollcall(rc, votecols = c("chamber", "session"))
+rclong <- melt_rollcall(rc, votecols = c("chamber", "congress"))
 
 }
 \seealso{

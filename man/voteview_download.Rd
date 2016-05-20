@@ -40,14 +40,14 @@ columns, \code{id}, \code{icpsr}, \code{vote}, and \code{vname}, which are
 a unique id, that legislator's icpsr number, how they voted, and
 which roll call that vote belongs to. Thus this is a data frame of unique
 id-rollcalls. Note that icpsr numbers are constant across party
-changes and across sessions, while \code{id} will always be consistent with
-party and session. This is important because we can then map votes to the
+changes and across congresses, while \code{id} will always be consistent with
+party and congress. This is important because we can then map votes to the
 second additional data frame, \code{legis.long.dynamic}. This data frame
 consists of data for unique members as identified by \code{id}, and not 
-\code{icpsr} number. Thus this provides unique covariates by legislator-party-session. This enables us
-to also store their session-specific NOMINATE score. We retain this data frame
+\code{icpsr} number. Thus this provides unique covariates by legislator-party-congress. This enables us
+to also store their congress-specific NOMINATE score. We retain this data frame
 because the default \code{legis.data} data frame is only unique to icpsr number,
-which may not have a unique party and is constant across sessions. 
+which may not have a unique party and is constant across congresss. 
 
 To that end, there is a column \code{ambiguity} in the \code{legis.data} data
 frame that denotes whether there is some ambiguity in the legislator's record.
