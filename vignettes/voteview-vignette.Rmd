@@ -10,7 +10,8 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 ```{r echo=F}
-knitr::opts_chunk$set(comment = "#>")
+knitr::opts_chunk$set(comment = "#>", fig.align='center',
+                      fig.width = 7, fig.height = 5)
 library(Rvoteview)
 ```
 
@@ -187,10 +188,11 @@ res <- voteview_search("code.Clausen:Foreign and Defense Policy support:[15 to 8
 
 Large downloads can be quite slow for now, so be patient. We are working on improving speed. You can always download the full database yourself.
 
-```{r defense-download, cache = T, message = F}
+```{r defense-download, cache = T, message = F, results = 'hide'}
 ## Download votes into rollcall object
 rc <- voteview_download(res$id)
-
+```
+```{r}
 summary(rc)
 ```
 
@@ -241,7 +243,7 @@ In order to allow senators who were reelected to move across congresses, we have
 
 First, let's download two rollcall objects for each congress and add data on which Senators were reelected.
 
-```{r}
+```{r, results = 'hide'}
 ## Download the rollcalls in to separate objects
 senate110 <- voteview_download(senateRes$id[senateRes$congress == 110])
 senate111 <- voteview_download(senateRes$id[senateRes$congress == 111])
