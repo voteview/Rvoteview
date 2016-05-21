@@ -49,6 +49,7 @@ or "Senate"}
 \item{\code{support} }{Percent of 'Yea' votes out of all 'Yea' or 'Nay' 
 votes (excludes absent).}
 \item{\code{id} }{Unique identifier for the roll call that allows
+\item Other columns that depend on the query
 \code{voteview} to query the individual congress people's votes and other
 details.}
 }
@@ -61,7 +62,7 @@ any one or more of the arguments.
 \details{
 This function requires at least one argument. The user can use the \code{q} field either to search across all text fields or to pass a more complicated advanced query. This is essentially like a "search box" where the user can just put in some key words, specific phrases in quotes, or can use notation like "support:[10 to 90]" along with boolean logic to build complicated queries.
 
-For complete documentation see \code{google.com} and for examples see the vignette. In general, the following syntax is used, \code{field:specific phrase (field:other phrase OR field:second phrase)}. For example, if you wanted to find votes with "war" and either "iraq" or "afghanistan" in any text field, you could set the query to be \code{"alltext:war AND (alltext:iraq OR alltext:afghanistan)"}. Note that the \code{AND} in the above is redundant as fields are joined by \code{AND} by default. If you wanted to do the same query but only return the votes with "defense" in the description field, the query would become \code{"alltext:war (alltext:iraq OR alltext:afghanistan) description:defense"}. Numeric fields can be searched in a similar way, although users can also use square brackets and "to" for ranges of numbers. For example, the query for all votes about taxes in the 100th to 102nd congress could be expressed either using \code{"alltext:taxes congress:100 OR congress:101 OR congress:102"} or using \code{"alltext:taxes congress:[100 to 102]"}. Note that if you want to restrict search to certain dates, the \code{startdate} and \code{enddate} fields shuld still be used. Furthermore, users can specify exact phrases that they want to search like \code{"budget 'estate tax'"}.
+Complete documentatino is forthcoming for the query syntax. You can also see the vignette for other examples. In general, the following syntax is used, \code{field:specific phrase (field:other phrase OR field:second phrase)}. For example, if you wanted to find votes with "war" and either "iraq" or "afghanistan" in any text field, you could set the query to be \code{"alltext:war AND (alltext:iraq OR alltext:afghanistan)"}. Note that the \code{AND} in the above is redundant as fields are joined by \code{AND} by default. If you wanted to do the same query but only return the votes with "defense" in the description field, the query would become \code{"alltext:war (alltext:iraq OR alltext:afghanistan) description:defense"}. Numeric fields can be searched in a similar way, although users can also use square brackets and "to" for ranges of numbers. For example, the query for all votes about taxes in the 100th to 102nd congress could be expressed either using \code{"alltext:taxes congress:100 OR congress:101 OR congress:102"} or using \code{"alltext:taxes congress:[100 to 102]"}. Note that if you want to restrict search to certain dates, the \code{startdate} and \code{enddate} fields shuld still be used. Furthermore, users can specify exact phrases that they want to search like \code{"budget 'estate tax'"}.
 
 The fields that can be searched with text are \code{codes}, \code{code.Clausen}, \code{code.Peltzman}, \code{code.Issue}, \code{description}, \code{shortdescription}, \code{bill}, and \code{alltext}. The code and bill fields are searched exactly using regular expressions while in the other fields words are stemmed and searched anywhere in the field specified (unless the query is in quotes). The fields that can be searched numerically are \code{congress}, \code{yea}, \code{nay}, and \code{support}. Searching by individual legislator will be implemented soon.
 }
@@ -84,10 +85,6 @@ res <- voteview_search("Iraq", startdate = "2005-01-01", congress = c(110, 112),
 ## Search for "war on terrorism" AND iraq
 res <- voteview_search("'war on terrorism' iraq")
 
-## Search for "war" AND ("iraq" or "afghanistan") in the description field in 2013
-res <- voteview_search("description:war AND (description:iraq OR description:afghanistan)",
-                       startdate = "2013-01-01",
-                       enddate = "2013-12-31")
 }
 }
 \seealso{

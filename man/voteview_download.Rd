@@ -61,13 +61,13 @@ party, constituency or some other value. When that ambiguity occurs, we fill
 ## Search for example roll calls
 res <- voteview_search("Rhodesia")
 
-## Download first 50
-rc <- voteview_download(res$id[1:50])
+## Download first 25
+rc <- voteview_download(res$id[1:25])
 summary(rc)
 
 \dontrun{
 ## Lower the number of rollcalls downloaded at a time
-rc <- voteview_download(res$id[1:50], perrequest = 5)
+rc <- voteview_download(res$id[1:25], perrequest = 5)
 
 ## Continue possibly broken/interrupted download
 complete_rc <- complete_download(rc)
