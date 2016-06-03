@@ -440,7 +440,6 @@ votelist2voteview <- function(dat) {
                                       dimnames = list(NULL,
                                                       c(rollcalldatanames, "nomslope", "nomintercept"))))
   
-  
   data$votelong <- matrix(NA,
                           ncol = length(votelongdatanames) + 1,
                           nrow = length(allmembers),

@@ -352,20 +352,91 @@ ggplot(idealdf, aes(x=D1, y=D2, color=partyName, label=icpsr, shape = congress))
 
 ## Regression analysis of roll call behavior
 
-```{r}
-library(Rvoteview)
-# Some of the search stuff is still not working
-#voteview_search("gay OR lesbian")
-#voteview_search("gay OR lesbian congress:111")
+Users can also use the VoteView API to do regression analyses. Let's take the state level opinion data on gay rights that was estimated in [Lax and Phillips (2009)](http://dx.doi.org/10.1017/S0003055409990050). They used multilevel regression and poststratification on surveys from 1999-2008 in order to estimate state-level explicit support for gay rights issues. Let's pull down some important bills presented before the 111th congress (2009-2011) and see how state level public opinion in the preceding years predicts voting behavior in the legislature.
 
+Let's see what bills there were in the 111th congress that had to do with homosexuality. We can use a search that will capture quite a few different bills.
+
+```{r}
+## Two separate searches because fields cannot be joined with an OR
 res <- voteview_search("code.Issue:Homosexuality congress:111")
 res
 
-dadt <- voteview_download(c("H1111621", "S1110678"))
-dadt$vote.data
+res2 <- voteview_search("gay lesbian congress:111")
+res2
 ```
 
-We can also use Rvoteview for regression analysis. This section is coming soon.
+To focus on actual bills that were of some consequence, let's take the House and Senate don't ask don't tell votes and the hate crimes bill from the House.
+
+```{r, results='hide'}
+dadt <- voteview_download(c("H1111621", "S1110678", "H1110222"))
+```
+
+Now we want to turn this into a long dataframe, where each row is a legislator-vote. We could also then cast this using a standard cast function or the `reshape2` package to have each row be a legislator. The longer format will serve our purposes for now. Note that `x` and `y` are the positions on the first and second ideological dimensions as estimated by DW-Nominate. They are fixed over the legislator's service in office.
+
+```{r}
+## Only retain certain columns with respect to the legislator and the vote
+dadtLong <- melt_rollcall(dadt,
+                          legiscols = c("name", "state","party", "x", "y"),
+                          votecols = c("vname", "date", "chamber"))
+head(dadtLong)
+```
+
+Included in the package is a dataframe that links the numeric ICPSR codes to state names and state mail codes. You can load the data by calling `data(states)`. We use this to merge in the proper state names that will be matched to the Lax and Phillips (2009) dataset. Obama appears three times in this dataset and will be dropped in this merge.
+
+```{r}
+data(states)
+dadtLong <- merge(dadtLong, states[, c("stateICPSR", "stateName")],
+                  by.x = "state", by.y = "stateICPSR")
+
+dadtLong$stateName <- tolower(dadtLong$stateName)
+```
+
+Now we use the Lax and Phillips (2009) data, which we make available in the package as well under `lpOpinion`.
+
+```{r}
+data(lpOpinion)
+lpOpinion$state <- tolower(lpOpinion$state)
+
+df <- merge(dadtLong, lpOpinion,
+            by.x = "stateName", by.y = "state")
+head(df)
+```
+
+Now let's build a dichotomous variable that represents whether the legislator voted yea on that bill (1), nay on that bill (0), or abstained (NA).
+
+```{r}
+## Recode votes
+df$voteYes <- ifelse(df$vote == 1, 1, ifelse(df$vote == 6, 0, NA))
+
+## Raw votes by party
+table(df$party, df$voteYes, useNA = "always")
+
+## Recode party (add independent to democrats)
+df$republican <- ifelse(df$party == "200", 1, 0)
+```
+
+Let's use `meanOpinion` from the Lax and Phillips (2009) data, which is the average of pro-gay public opinion sentiment on various dimensions. We will use it in a couple of analyses.
+
+```{r}
+## Simple model
+summary(lm(voteYes ~ meanOpinion, data = df))
+
+## Control for party
+summary(lm(voteYes ~ meanOpinion*republican, data = df))
+
+## Control for ideology
+## Note that ideology here has been estimated using this vote and later votes,
+## so interpret the results iwth some caution
+summary(lm(voteYes ~ meanOpinion*republican + as.numeric(x) + as.numeric(y),
+           data = df))
+
+## Now let's look just at repealing don't ask don't tell and add chamber fixed effects
+summary(lm(voteYes ~ meanOpinion*republican + as.numeric(x) + as.numeric(y) + chamber,
+           data = df[df$vname != "H1110222", ]))
+
+```
+
+Even when controlling for ideology and party, it seems that legislators, and especially Republican legislators, are more likely to vote for pro-gay rights bills when their state has a high average level of pro-gay rights sentiment.
 
 # Additional tools
 
