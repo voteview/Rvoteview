@@ -736,6 +736,10 @@ melt_rollcall <- function(rc,
     if(("icpsr" %in% legiscols) & ("icpsr" %in% votecols)) 
       legiscols <- setdiff(legiscols, "icpsr")
     
+    ## Make sure to always keep id
+    if(!("id" %in% legiscols))
+      legiscols <- c("id", legiscols)
+    
     ## Only keep votes user wants
     votedat <- rc$votes.long[rc$votes.long$vname %in% keepvote,
                              names(rc$votes.long) != "icpsr"] 
@@ -746,7 +750,7 @@ melt_rollcall <- function(rc,
     long_rc <- merge(long_rc, rc$vote.data[, unique(c(votecols, "vname"))],
                      by = "vname", sort = F)
     
-    return(long_rc[, unique(c(votecols, votelongcols, legiscols))])
+    return(long_rc[, unique(c("id", "vote", votecols, votelongcols, legiscols))])
   } else {
     
     votes <- rc$votes[, keepvote]
