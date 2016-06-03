@@ -6,3 +6,8 @@
 #' 
 #' @source \href{http://dx.doi.org/10.1017/S0003055409990050}{Lax and Phillips (2009)}
 "lpOpinion"
+
+#' Data of state codes and names
+#'
+#' Dataset containing the ICPSR state codes, mail codes, and the state names.
+"states"

@@ -352,6 +352,19 @@ ggplot(idealdf, aes(x=D1, y=D2, color=partyName, label=icpsr, shape = congress))
 
 ## Regression analysis of roll call behavior
 
+```{r}
+library(Rvoteview)
+# Some of the search stuff is still not working
+#voteview_search("gay OR lesbian")
+#voteview_search("gay OR lesbian congress:111")
+
+res <- voteview_search("code.Issue:Homosexuality congress:111")
+res
+
+dadt <- voteview_download(c("H1111621", "S1110678"))
+dadt$vote.data
+```
+
 We can also use Rvoteview for regression analysis. This section is coming soon.
 
 # Additional tools
