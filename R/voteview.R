@@ -471,7 +471,7 @@ votelist2voteview <- function(dat) {
                                       member$icpsr,
                                       ## If vote is NA, replace it with 0 for not in legislature
                                       ## only occurs when there is no record for legislator-vote
-                                      ## meaning it was a congress the legislat
+                                      ## meaning it was a congress the legislator was not in
                                       ifelse(is.na(member$vote), 0 , member$vote),
                                       vname)
 
@@ -585,6 +585,33 @@ voteview2rollcall <- function(data, keeplong = T) {
   ## Rename vote id for consistency
   names(data$rollcalls)[names(data$rollcalls) == "id"] <- "vname"
   
+  ## Change class of some variables
+  legis.data$ambiguity <- as.numeric(legis.data$ambiguity)
+  data$rollcalls[, c("congress", "yea", "nay", "nomslope", "nomintercept")] <-
+    apply(data$rollcalls[, c("congress", "yea", "nay", "nomslope", "nomintercept")],
+          2,
+          as.numeric)
+  data$votelong$vote <- as.numeric(data$votelong$vote)
+  data$legislong[, c("y", "x")] <- apply(data$legislong[, c("y", "x")],
+                                         2,
+                                         as.numeric)
+
+  ## Re-ordering some columns (explicit ordering, additional vars added to the end
+  ## by using setdiff)
+  ## Try to reorder, if some fields explicitly stated aren't returned, then this will be skipped
+  try({
+    legis.long.order <- c("id", "icpsr", "name", "party", "state", "cqlabel", "x", "y")
+    legis.long.names <- c(legis.long.order, setdiff(colnames(data$legislong), legis.long.order))
+    votes.long.order <- c("id", "icpsr", "vname", "vote")
+    votes.long.names <- c(votes.long.order, setdiff(colnames(data$votelong), votes.long.order))
+    legis.data.order <- c("icpsr", "name", "party", "state", "cqlabel", "ambiguity")
+    legis.data.names <- c(legis.data.order, setdiff(colnames(legis.data), legis.data.order))
+    vote.data.order <- c("vname", "rollnumber", "chamber", "date", "congress", "code.Issue",
+                         "code.Peltzman", "code.Clausen", "description", "yea", "nay",
+                         "nomslope", "nomintercept")
+    vote.data.names <- c(vote.data.order, setdiff(colnames(data$rollcalls), vote.data.order))
+  })
+  
   message(sprintf("Building rollcall object, may take some time..."))
   
   rc <- rollcall(data = votemat,
@@ -592,18 +619,18 @@ voteview2rollcall <- function(data, keeplong = T) {
                  nay = c(4, 5, 6),
                  missing = c(7, 8, 9),
                  notInLegis = 0,
-                 legis.data = legis.data,
+                 legis.data = legis.data[, legis.data.names],
                  legis.names = uniqueicpsr,
-                 vote.data = data$rollcalls,
+                 vote.data = data$rollcalls[, vote.data.names],
                  vote.names = colnames(votemat),
                  source = "Download from VoteView")
   
   rc[["unretrievedids"]] <- data$unretrievedids
   if (keeplong) {
-    rc[["votes.long"]] <- data$votelong
+    rc[["votes.long"]] <- data$votelong[, votes.long.names]
     #data$legislong$id <- row.names(data$legislong)
     #row.names(data$legislong) <- NULL
-    rc[["legis.long.dynamic"]] <- data$legislong
+    rc[["legis.long.dynamic"]] <- data$legislong[, legis.long.names]
   }
   
   return(rc)
