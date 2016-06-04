@@ -2,15 +2,15 @@ library(Rvoteview)
 context('Query voteview database with string, download vote metadata')
 
 test_that('search function hits database', {
-  expect_that(voteview_search('test'), not(throws_error()))
+  expect_error(voteview_search('test'), NA)
 })
 
 test_that('search function options query leela correctly', {
-  expect_that(voteview_search('Iraq', startdate = 2014), not(throws_error()))
-  expect_that(voteview_search('Iraq', startdate = '2013-10-01'), not(throws_error()))
-  expect_that(voteview_search('Iraq', enddate = '2014-10-01'), not(throws_error()))
-  expect_that(voteview_search('Iraq', chamber = "House"), not(throws_error()))
-  expect_that(voteview_search('Iraq', chamber = "House", congress = 110:113), not(throws_error()))
+  expect_error(voteview_search('Iraq', startdate = 2014), NA)
+  expect_error(voteview_search('Iraq', startdate = '2013-10-01'), NA)
+  expect_error(voteview_search('Iraq', enddate = '2014-10-01'), NA)
+  expect_error(voteview_search('Iraq', chamber = "House"), NA)
+  expect_error(voteview_search('Iraq', chamber = "House", congress = 110:113), NA)
 })
 
 test_that('search function returns example dataframe with correct number of votes', {

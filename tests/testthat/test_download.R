@@ -7,7 +7,7 @@ context('Query voteview database with ids, download detailed data')
 # save(res, file = "iraq_search.RData")
 
 test_that('download function opens connection', {
-  expect_that(voteview_getvote(id = "H1110298"), not(throws_error("cannot open the connection")))
+  expect_error(voteview_getvote(id = "H1110298"), NA)
 })
 
 test_that('download converts to voteview', {
@@ -18,7 +18,7 @@ test_that('download converts to voteview', {
 
 test_that('query works for many ids', {
   res <- voteview_search("Iraq")
-  expect_that(rc_big <- voteview_download(ids = res$id[1:100]), not(throws_error()))
+  expect_error(rc_big <- voteview_download(ids = res$id[1:100]), NA)
   expect_equal(rc_big$m, 100)
 })
 
