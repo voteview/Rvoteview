@@ -26,7 +26,7 @@ devtools::install_github("JeffreyBLewis/Rvoteview")
 
 For more thorough documentation, see the help files and the vignette included with the package and [at this link here](https://github.com/JeffreyBLewis/Rvoteview/tree/master/vignettes):
 ```R
-vignette("voteview-vignette")
+vignette("Rvoteview")
 ```
 
 ## Using Rvoteview
