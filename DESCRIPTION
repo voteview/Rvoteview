@@ -12,12 +12,13 @@ Description: Package provides functions to query Voteview database by search
     term or by house bill and return basic metadata or a detailed PSCL rollcall
     object.
 License: GPL (>= 3)
-Imports: 
+Imports:
     pscl,
     rjson,
-    httr
-URL: https://github.com/JeffreyBLewis/Rvoteview, http://voteview.com/
-Suggests: 
+    httr,
+    fastmatch
+URL: https://github.com/JeffreyBLewis/Rvoteview, http://voteview.polisci.ucla.edu/, http://voteview.com/
+Suggests:
     testthat,
     knitr,
     rmarkdown
