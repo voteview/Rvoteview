@@ -2,7 +2,7 @@
 Rvoteview
 =========
 
-**WARNING: This package is under construction. The server and database are currently being revamped. Not all features work, so please limit usage to the simple kind of examples you see below. Also, please limit the number of roll calls you request at a time and be prepared for queries to break or behave strangely.**
+**WARNING: This package is under construction. The server and database are currently being revamped. Some features may break. please limit the number of roll calls you request at a time and be prepared for queries to break or behave strangely.**
 
 This is a package that enables you to query the Voteview database for roll calls and work with data frames or a `pscl` `rollcall` object.
 
@@ -12,7 +12,7 @@ To install this package, ensure you have `devtools` installed. If you do not, ru
 devtools::install_github("JeffreyBLewis/Rvoteview")
 ```
 
-For more thorough documentation, see the help files and the vignette included with the package:
+For more thorough documentation, see the help files and the vignette included with the package and [at this link here](https://github.com/JeffreyBLewis/Rvoteview/tree/master/vignettes):
 
 ``` r
 vignette("voteview-vignette")
@@ -21,20 +21,19 @@ vignette("voteview-vignette")
 Using Rvoteview
 ---------------
 
-To use `Rvoteview`, you generally want to query the database to get a list of vote ids and then use those to return the individual votes. We query the database with a search term and some parameters to constrain the search. For now we take a string that will seach for a bill that has ANY of the words in the string in ANY text field. Additional boolean and targeted searches have been implemented (and will be explained in the vignette and documentation soon).
+To use `Rvoteview`, you generally want to query the database to get a list of vote ids and then use those to return the individual votes. We query the database with a search term and some parameters to constrain the search. For now we take a string that will seach for a bill that has ANY of the words in the string in ANY text field. Additional boolean and targeted searches have been implemented and can be found in the vignette.
 
 ``` r
 library(Rvoteview)
   
 res <- voteview_search("Iraq")
-#> Iraq
-#> No encoding supplied: defaulting to UTF-8.
 #> Query 'Iraq' returned 318 rollcalls...
 names(res)
 #>  [1] "description"      "shortdescription" "date"            
-#>  [4] "bill"             "chamber"          "session"         
+#>  [4] "bill"             "chamber"          "congress"        
 #>  [7] "rollnumber"       "yea"              "nay"             
-#> [10] "support"          "id"
+#> [10] "support"          "id"               "score"           
+#> [13] "result"
   
 ## I will drop description since it is a very long field
 head(res[, -1])
@@ -45,13 +44,20 @@ head(res[, -1])
 #> 4                          WITHDRAW FROM IRAQ BY JULY 1 2007 2006-06-22
 #> 5 SUPPLEMENT APPS IRAQ & AFGHANISTAN -- INTELLIGENCE ON IRAQ 2003-10-17
 #> 6                                               CONDEMN IRAQ 1998-08-03
-#>      bill chamber session rollnumber yea nay   support       id
-#> 1           House     101        654 417   0 100.00000 H1010654
-#> 2 S. 1042  Senate     109        322  40  58  40.81633 S1090322
-#> 3 S. 1042  Senate     109        323  79  19  80.61224 S1090323
-#> 4 S. 2766  Senate     109        547  13  87  13.00000 S1090547
-#> 5    1689  Senate     108        395  67  32  67.67677 S1080395
-#> 6           House     105        998 407   6  98.54722 H1050998
+#>      bill chamber congress rollnumber yea nay   support       id    score
+#> 1           House      101        654 417   0 100.00000 H1010654 1.650000
+#> 2 S. 1042  Senate      109        322  40  58  40.81633 S1090322 1.593750
+#> 3 S. 1042  Senate      109        323  79  19  80.61224 S1090323 1.593750
+#> 4 S. 2766  Senate      109        547  13  87  13.00000 S1090547 1.589130
+#> 5    1689  Senate      108        395  67  32  67.67677 S1080395 1.541667
+#> 6           House      105        998 407   6  98.54722 H1050998 1.539474
+#>   result
+#> 1      1
+#> 2      0
+#> 3      1
+#> 4      0
+#> 5      1
+#> 6      1
 ```
 
 Using `res$id` we can get a `rollcall` object (from the [`pscl` package](https://cran.r-project.org/web/packages/pscl/index.html)) that contains the full set of votes and data for each roll call.
@@ -126,19 +132,17 @@ You can also search by start and end date, congress, and chamber. Please see the
 ## Voteview search with options
 res <- voteview_search("Iraq", chamber = "House", congress = 110,
                        startdate = 2008, enddate = "2008-04-20")
-#> (alltext:Iraq) AND (session:110)
-#> No encoding supplied: defaulting to UTF-8.
-#> Query '(alltext:Iraq) AND (session:110)' returned 1 rollcalls...
+#> Query '(alltext:Iraq) AND (congress:110)' returned 1 rollcalls...
 head(res[, -1])
 #>                                                  shortdescription
 #> 1 IRAQ & AFGHAN. FALLEN MILITARY HEROES POST OFFICE LOUISVILLE KY
-#>         date     bill chamber session rollnumber yea nay support       id
-#> 1 2008-02-28 H R 4454   House     110       1263 404   0     100 H1101263
+#>         date     bill chamber congress rollnumber yea nay support       id
+#> 1 2008-02-28 H R 4454   House      110       1263 404   0     100 H1101263
+#>   result
+#> 1      1
 
 res <- voteview_search("Iraq", congress = 109:112)
-#> (alltext:Iraq) AND (session:109 110 111 112)
-#> No encoding supplied: defaulting to UTF-8.
-#> Query '(alltext:Iraq) AND (session:109 110 111 112)' returned 157 rollcalls...
+#> Query '(alltext:Iraq) AND (congress:109 110 111 112)' returned 157 rollcalls...
 head(res[, -1])
 #>                                             shortdescription       date
 #> 1 SUPPLEMENTAL APPS IRAQ & AFGHANISTAN & KATRINA -- COLOMBIA 2006-03-16
@@ -147,51 +151,70 @@ head(res[, -1])
 #> 4                           DEFENSE APPS -- ARMORED VEHICLES 2005-10-05
 #> 5                            WITHDRAW FROM IRAQ BY JUNE 2009 2008-05-22
 #> 6                INVESTIGATE CONTRACTS IN IRAQ & AFGHANISTAN 2005-09-14
-#>           bill chamber session rollnumber yea nay  support       id
-#> 1     H R 4939   House     109        713 250 172 59.24171 H1090713
-#> 2       S. 470  Senate     110         44  49  48 50.51546 S1100044
-#> 3 S.Con.Res. 2  Senate     110         43   0  97  0.00000 S1100043
-#> 4    H.R. 2863  Senate     109        248  56  43 56.56566 S1090248
-#> 5    H.R. 2642  Senate     110        580  34  64 34.69388 S1100580
-#> 6    H.R. 2862  Senate     109        228  44  53 45.36082 S1090228
+#>           bill chamber congress rollnumber yea nay  support       id
+#> 1     H R 4939   House      109        713 250 172 59.24171 H1090713
+#> 2       S. 470  Senate      110         44  49  48 50.51546 S1100044
+#> 3 S.Con.Res. 2  Senate      110         43   0  97  0.00000 S1100043
+#> 4    H.R. 2863  Senate      109        248  56  43 56.56566 S1090248
+#> 5    H.R. 2642  Senate      110        580  34  64 34.69388 S1100580
+#> 6    H.R. 2862  Senate      109        228  44  53 45.36082 S1090228
+#>   result
+#> 1      1
+#> 2      1
+#> 3      0
+#> 4      1
+#> 5      0
+#> 6      0
 ```
 
-We can also build complex queries manually (note session will be replaced with congress as soon as the database is updated).
+We can also build complex queries manually.
 
 ``` r
 ## Voteview search with options
-res <- voteview_search("((alltext:'estate tax' OR 'death tax') AND session:[100 to 114]) OR (alltext:'property tax' AND session:[95 to 100])")
-#> ((alltext:"estate tax" OR "death tax") AND session:[100 to 114]) OR (alltext:"property tax" AND session:[95 to 100])
-#> No encoding supplied: defaulting to UTF-8.
-#> Query '((alltext:"estate tax" OR "death tax") AND session:[100 to 114]) OR (alltext:"property tax" AND session:[95 to 100])' returned 86 rollcalls...
+res <- voteview_search("(alltext:estate death tax congress:[100 to 114])")
+#> Query '(alltext:estate death tax congress:[100 to 114])' returned 1661 rollcalls...
 head(res[, -1])
-#>                                             shortdescription       date
-#> 1                        BUDGET RECONCILIATION--ESTATE TAXES 1995-10-27
-#> 2                                          REPEAL ESTATE TAX 2000-06-09
-#> 3 REPEAL ESTATE TAX -- NO REPEAL CERTAIN POLITICAL ORGANIZAT 2000-06-09
-#> 4                                          REPEAL ESTATE TAX 2000-09-07
-#> 5                 REPEAL ESTATE TAX -- DEMOCRATIC SUBSTITUTE 2000-06-09
-#> 6                                   REPEAL ESTATE TAX (PROC) 2000-06-08
-#>   bill chamber session rollnumber yea nay  support       id
-#> 1       Senate     104        546  72  27 72.72727 S1040546
-#> 2        House     106        861 279 137 67.06731 H1060861
-#> 3        House     106        860 202 216 48.32536 H1060860
-#> 4        House     106       1064 274 157 63.57309 H1061064
-#> 5        House     106        859 196 222 46.88995 H1060859
-#> 6        House     106        855 225 199 53.06604 H1060855
+#>                                      shortdescription       date
+#> 1                         TAX CUT -- MARRIAGE PENALTY 2001-05-17
+#> 2                        ESTATE TAX EXTENSION (TABLE) 2009-12-03
+#> 3                             HONOR POPE JOHN-PAUL II 2005-04-05
+#> 4                               TAX CUT -- ESTATE TAX 2001-05-22
+#> 5                 REDUCE TAX CUT FUND LAW ENFORCEMENT 2003-03-25
+#> 6 TAX RELIEF FOR MARRIED COUPLES -- PREVIOUS QUESTION 2002-09-25
+#>                bill chamber congress rollnumber yea nay   support       id
+#> 1 1836        S.AMD  Senate      107        113  27  73  27.00000 S1070113
+#> 2          H R 4154   House      111        925 234 186  55.71429 H1110925
+#> 3         S.Res. 95  Senate      109         82  98   0 100.00000 S1090082
+#> 4              1836  Senate      107        134  30  69  30.30303 S1070134
+#> 5       Con.Res. 23  Senate      108         92  49  50  49.49495 S1080092
+#> 6         H RES 547   House      107        919 217 200  52.03837 H1070919
+#>   result
+#> 1      0
+#> 2      1
+#> 3      1
+#> 4      0
+#> 5      0
+#> 6      1
 tail(res[, -1])
-#>                                     shortdescription       date      bill
-#> 81                                                   2015-04-15 H RES 200
-#> 82                                                   2015-04-15 H RES 200
-#> 83                                                   2015-04-16  H R 1105
-#> 84                                                   2015-03-26      None
-#> 85   INCOME TAX CREDIT FOR SUPPORT OF PUBLIC SCHOOLS 1978-08-14   HR12050
-#> 86 PROHIB SOME STATE AD V. PROP TAX ON GAS PIPELINES 1988-10-06          
-#>    chamber session rollnumber yea nay  support       id
-#> 81   House     114        154 242 182 57.07547 H1140154
-#> 82   House     114        153 240 183 56.73759 H1140153
-#> 83   House     114        159 186 232 44.49761 H1140159
-#> 84  Senate     114        114  54  46 54.00000 S1140114
-#> 85  Senate      95        950  21  71 22.82609 S0950950
-#> 86   House     100        915 219 197 52.64423 H1000915
+#>                                   shortdescription       date
+#> 1656          BUDGET RECONCILIATION--CLINICAL LABS 1995-11-17
+#> 1657                   BUDGET RESOLUTION -- AMTRAK 2006-03-15
+#> 1658                           PASS LINE ITEM VETO 1995-02-06
+#> 1659 TAX DEDUCTION FOR DONATING COMPUTER EQUIPMENT 2000-03-01
+#> 1660                      REPEAL ESTATE TAX (PROC) 2006-06-22
+#> 1661                     BUSINESS TAXES -- CLOTURE 2004-03-24
+#>               bill chamber congress rollnumber yea nay  support       id
+#> 1656                Senate      104        583  54  45 54.54545 S1040583
+#> 1657 S.Con.Res. 83  Senate      109        417  44  53 45.36082 S1090417
+#> 1658                 House      104         90 294 134 68.69159 H1040090
+#> 1659                Senate      106        392  96   2 97.95918 S1060392
+#> 1660     H RES 885   House      109        976 226 194 53.80952 H1090976
+#> 1661          1637  Senate      108        519  51  47 52.04082 S1080519
+#>      result
+#> 1656      1
+#> 1657      0
+#> 1658      1
+#> 1659      1
+#> 1660      1
+#> 1661      1
 ```

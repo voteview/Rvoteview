@@ -15,7 +15,7 @@ knitr::opts_chunk$set(
 
 # Rvoteview
 
-**WARNING: This package is under construction. The server and database are currently being revamped. Not all features work, so please limit usage to the simple kind of examples you see below. Also, please limit the number of roll calls you request at a time and be prepared for queries to break or behave strangely.**
+**WARNING: This package is under construction. The server and database are currently being revamped. Some features may break. please limit the number of roll calls you request at a time and be prepared for queries to break or behave strangely.**
 
 This is a package that enables you to query the Voteview database for roll calls and work with data frames or a `pscl` `rollcall` object.
 
@@ -24,14 +24,14 @@ To install this package, ensure you have `devtools` installed. If you do not, ru
 devtools::install_github("JeffreyBLewis/Rvoteview")
 ```
 
-For more thorough documentation, see the help files and the vignette included with the package:
+For more thorough documentation, see the help files and the vignette included with the package and [at this link here](https://github.com/JeffreyBLewis/Rvoteview/tree/master/vignettes):
 ```R
 vignette("voteview-vignette")
 ```
 
 ## Using Rvoteview
 
-To use `Rvoteview`, you generally want to query the database to get a list of vote ids and then use those to return the individual votes. We query the database with a search term and some parameters to constrain the search. For now we take a string that will seach for a bill that has ANY of the words in the string in ANY text field. Additional boolean and targeted searches have been implemented (and will be explained in the vignette and documentation soon).
+To use `Rvoteview`, you generally want to query the database to get a list of vote ids and then use those to return the individual votes. We query the database with a search term and some parameters to constrain the search. For now we take a string that will seach for a bill that has ANY of the words in the string in ANY text field. Additional boolean and targeted searches have been implemented and can be found in the vignette.
 ```{r search}
 library(Rvoteview)
   
@@ -78,11 +78,11 @@ res <- voteview_search("Iraq", congress = 109:112)
 head(res[, -1])
 ```
 
-We can also build complex queries manually (note session will be replaced with congress as soon as the database is updated).
+We can also build complex queries manually.
 
 ```{r search-adv}
 ## Voteview search with options
-res <- voteview_search("((alltext:'estate tax' OR 'death tax') AND session:[100 to 114]) OR (alltext:'property tax' AND session:[95 to 100])")
+res <- voteview_search("(alltext:estate death tax congress:[100 to 114])")
 head(res[, -1])
 tail(res[, -1])
 ```

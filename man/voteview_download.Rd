@@ -55,6 +55,8 @@ This means that perhaps across the votes that you downloaded, a legislator chang
 party, constituency or some other value. When that ambiguity occurs, we fill
 \code{legis.data} with the modal value in \code{legis.long.dynamic} and set
 \code{ambiguity} to 1.
+
+Please note that some rollcalls are coded into two groups by the Issue or Peltzman codes. To deal with this, the code columns in \code{vote.data} data.frame contain concatenated strings where the groups are separated by a semi-colon and a space. For example, if a rollcall has both 'Defense Policy Resolutions' and 'Domestic Social Policy'as Peltzman codes, we return 'Defense Policy Resolutions; Domestic Social Policy' as the Peltzman code for that rollcall.
 }
 \examples{
 
