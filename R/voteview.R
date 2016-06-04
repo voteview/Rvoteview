@@ -54,7 +54,7 @@ trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 #' @details
 #' This function requires at least one argument. The user can use the \code{q} field either to search across all text fields or to pass a more complicated advanced query. This is essentially like a "search box" where the user can just put in some key words, specific phrases in quotes, or can use notation like "support:[10 to 90]" along with boolean logic to build complicated queries.
 #' 
-#' Complete documentatino is forthcoming for the query syntax. You can also see the vignette for other examples. In general, the following syntax is used, \code{field:specific phrase (field:other phrase OR field:second phrase)}. For example, if you wanted to find votes with "war" and either "iraq" or "afghanistan" in any text field, you could set the query to be \code{"alltext:war AND (alltext:iraq OR alltext:afghanistan)"}. Note that the \code{AND} in the above is redundant as fields are joined by \code{AND} by default. If you wanted to do the same query but only return the votes with "defense" in the description field, the query would become \code{"alltext:war (alltext:iraq OR alltext:afghanistan) description:defense"}. Numeric fields can be searched in a similar way, although users can also use square brackets and "to" for ranges of numbers. For example, the query for all votes about taxes in the 100th to 102nd congress could be expressed either using \code{"alltext:taxes congress:100 OR congress:101 OR congress:102"} or using \code{"alltext:taxes congress:[100 to 102]"}. Note that if you want to restrict search to certain dates, the \code{startdate} and \code{enddate} fields shuld still be used. Furthermore, users can specify exact phrases that they want to search like \code{"budget 'estate tax'"}.
+#' Complete documentation is forthcoming for the query syntax. You can also see the vignette for other examples. In general, the following syntax is used, \code{field:specific phrase (field:other phrase OR field:second phrase)}. For example, if you wanted to find votes with "war" and either "iraq" or "afghanistan" in any text field, you could set the query to be \code{"alltext:war AND (alltext:iraq OR alltext:afghanistan)"}. Note that the \code{AND} in the above is redundant as fields are joined by \code{AND} by default. If you wanted to do the same query but only return the votes with "defense" in the description field, the query would become \code{"alltext:war (alltext:iraq OR alltext:afghanistan) description:defense"}. Numeric fields can be searched in a similar way, although users can also use square brackets and "to" for ranges of numbers. For example, the query for all votes about taxes in the 100th to 102nd congress could be expressed either using \code{"alltext:taxes congress:100 OR congress:101 OR congress:102"} or using \code{"alltext:taxes congress:[100 to 102]"}. Note that if you want to restrict search to certain dates, the \code{startdate} and \code{enddate} fields shuld still be used. Furthermore, users can specify exact phrases that they want to search like \code{"budget 'estate tax'"}.
 #' 
 #' The fields that can be searched with text are \code{codes}, \code{code.Clausen}, \code{code.Peltzman}, \code{code.Issue}, \code{description}, \code{shortdescription}, \code{bill}, and \code{alltext}. The code and bill fields are searched exactly using regular expressions while in the other fields words are stemmed and searched anywhere in the field specified (unless the query is in quotes). The fields that can be searched numerically are \code{congress}, \code{yea}, \code{nay}, and \code{support}. Searching by individual legislator will be implemented soon.
 #' 
@@ -106,8 +106,6 @@ voteview_search <- function(q = NULL,
         query_string <- paste0("(", q, ")")
       } else {
         # Query text and arguments and no colon
-        # todo: what if text is not first? what if they added alltext to query
-        # just advise against this in the intro
         query_string <- paste0("(alltext:", q, ")")
       }
     }
@@ -119,6 +117,8 @@ voteview_search <- function(q = NULL,
     query_string <- "()" # This ensures string does not start with boolean
   }
   ## todo:build full query string from options so that user sees full query
+  ## Not done yet because might be misleading as that is not how the server 
+  ## actually receives the query. Date and chamber are indeed different
 
   # Check date is well formatted (2014, "2014-01", "2014-01-30")
   if (!is.null(c(startdate, enddate))) {
@@ -162,8 +162,6 @@ voteview_search <- function(q = NULL,
     if (!(tolower(chamber) %in% c("house", "senate"))) stop("Chamber must be either 'House' or 'Senate'")
   }
   
-  message(query_string) # Print out query to user
-  
   theurl <- "https://voteview.polisci.ucla.edu/api/search"
   resp <- POST(theurl, body = list(q = query_string,
                                    startdate = startdate,
@@ -171,8 +169,8 @@ voteview_search <- function(q = NULL,
                                    chamber = chamber))
   
   # If the return is not JSON, print out result to see error
-  if (substr(content(resp, as = "text"), 1, 1) != "{") {
-    stop(content(resp, as = "text"))
+  if (substr(content(resp, as = "text", encoding = "UTF-8"), 1, 1) != "{") {
+    stop(content(resp, as = "text", encoding = "UTF-8"))
   }
   
   suppressWarnings(resjson <- fromJSON(content(resp,
@@ -181,7 +179,6 @@ voteview_search <- function(q = NULL,
   
   message(sprintf("Query '%s' returned %i rollcalls...\n", query_string, resjson$recordcount))
   
-  # todo: also return in printout the date and chamber parameters
   if(!is.null(resjson$errormessage)) warning(resjson$errormessage)
   if(resjson$recordcount == 0) stop("No rollcalls found")
   
@@ -244,6 +241,8 @@ voteview_getvote <- function(ids) {
 #' party, constituency or some other value. When that ambiguity occurs, we fill
 #' \code{legis.data} with the modal value in \code{legis.long.dynamic} and set
 #' \code{ambiguity} to 1.
+#' 
+#' Please note that some rollcalls are coded into two groups by the Issue or Peltzman codes. To deal with this, the code columns in \code{vote.data} data.frame contain concatenated strings where the groups are separated by a semi-colon and a space. For example, if a rollcall has both 'Defense Policy Resolutions' and 'Domestic Social Policy'as Peltzman codes, we return 'Defense Policy Resolutions; Domestic Social Policy' as the Peltzman code for that rollcall.
 #' 
 #' @seealso
 #' '\link[pscl]{rollcall}','\link{complete_download}','\link{voteview_search}'.
@@ -319,7 +318,7 @@ build_votelist <- function(votelist, ids, perrequest) {
         resp <- voteview_getvote(idchunks[[i]])
         fromJSON(content(resp,
                          as = "text",
-                         encoding = "utf-8"))
+                         encoding = "UTF-8"))
       },
       error = function(e) {
         attempts <<- attempts + 1
@@ -415,10 +414,12 @@ votelist2voteview <- function(dat) {
   
   ## Data to keep from return
   ## todo: check if these fields are consistent, what if first return has missing
-  ## data. Maybe best fixed server side, as in always return most number of fields
+  ## data. Maybe best fixed server side, as in always return most number of fields.
+  ## Will increase amount of data sent but should not slow too much as I can strip
+  ## out fields below
   firstlevelnames <- setdiff(names(votelist[[1]]),
                                c("votes", "apitype", "nominate", "errormessage", "errormeta"))
-  ## Use firstlevel names to get sublist names
+  ## Use firstlevel names to get sublist names (burrow down to get "codes")
   rollcalldatanames <- names(unlist(votelist[[1]][firstlevelnames]))
   votelongdatanames <- c("id", "icpsr", "vote")
   legislongdatanames <- setdiff(names(votelist[[1]]$votes[[1]]),
@@ -469,7 +470,8 @@ votelist2voteview <- function(dat) {
       data$votelong[votelegis, ] <- c(member$id,
                                       member$icpsr,
                                       ## If vote is NA, replace it with 0 for not in legislature
-                                      ## todo: check how missingness is handled in DB
+                                      ## only occurs when there is no record for legislator-vote
+                                      ## meaning it was a congress the legislat
                                       ifelse(is.na(member$vote), 0 , member$vote),
                                       vname)
 
@@ -600,7 +602,7 @@ voteview2rollcall <- function(data, keeplong = T) {
   if (keeplong) {
     rc[["votes.long"]] <- data$votelong
     #data$legislong$id <- row.names(data$legislong)
-    #row.names(data$legslong) <- NULL
+    #row.names(data$legislong) <- NULL
     rc[["legis.long.dynamic"]] <- data$legislong
   }
   
@@ -754,13 +756,16 @@ melt_rollcall <- function(rc,
     
     votes <- rc$votes[, keepvote]
     
-    if(is.null(legiscols)) legiscols <- colnames(rc$legis.data)
+    if(is.null(legiscols)) {
+      legiscols <- setdiff(colnames(rc$legis.data), "icpsr")
+    }
     if(is.null(votecols)) votecols <- colnames(rc$vote.data)
     
     # Modified from reshape2, Hadley Wickham
     # https://github.com/hadley/reshape
     dn <- dimnames(votes)
-    names(dn) <- c("legisid", "voteid")
+    print(dn)
+    names(dn) <- c("icpsr", "vname")
     
     # Build matrix of all legislator-rollcalls
     labels <- expand.grid(dn, KEEP.OUT.ATTRS = FALSE,
@@ -782,13 +787,13 @@ melt_rollcall <- function(rc,
 
     # Add legislator data
     long_rc <- merge(long_rc, rc$legis.data[, legiscols],
-                     by.x = "legisid", by.y = "row.names")
+                     by.x = "icpsr", by.y = "row.names")
 
     # Add roll call data
     long_rc <- merge(long_rc, rc$vote.data[, votecols],
-                     by.x = "voteid", by.y = "vname", sort = F)
-
-    return(long_rc[, c("legisid", "voteid", votecols, legiscols, "vote")])
+                     by.x = "vname", sort = F)
+    
+    return(long_rc[, c("vname", "icpsr", votecols, legiscols, "vote")])
   }
 }
 
