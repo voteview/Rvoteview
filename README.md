@@ -12,11 +12,13 @@ To install this package, ensure you have `devtools` installed. If you do not, ru
 devtools::install_github("JeffreyBLewis/Rvoteview")
 ```
 
-For more thorough documentation, see the help files and the vignette included with the package and [at this link here](https://github.com/JeffreyBLewis/Rvoteview/tree/master/vignettes):
+For more thorough documentation, see the help files and the vignette included with the package:
 
 ``` r
-vignette("voteview-vignette")
+vignette("Rvoteview")
 ```
+
+You can also find the vignette [at this link here](https://github.com/JeffreyBLewis/Rvoteview/tree/master/vignettes).
 
 Using Rvoteview
 ---------------
