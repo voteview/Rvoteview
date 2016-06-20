@@ -415,7 +415,7 @@ votelist2voteview <- function(dat) {
   ## Data to keep from return
   ## todo: check if these fields are consistent, what if first return has missing
   ## data. Maybe best fixed server side, as in always return most number of fields.
-  ## Will increase amount of data sent but should not slow too much as I can strip
+  ## Will increase amount o:x:f data sent but should not slow too much as I can strip
   ## out fields below
   firstlevelnames <- setdiff(names(votelist[[1]]),
                                c("votes", "apitype", "nominate", "errormessage", "errormeta"))
@@ -424,6 +424,9 @@ votelist2voteview <- function(dat) {
   votelongdatanames <- c("id", "icpsr", "vote")
   legislongdatanames <- setdiff(names(votelist[[1]]$votes[[1]]),
                                 c("vote", "id"))
+  
+  print(legislongdatanames)
+  print(rollcalldatanames)
   
   ## use IDs for votenames
   votenames <- c(unlist(sapply(votelist, function(vote) vote$id), F, F))
@@ -592,7 +595,7 @@ voteview2rollcall <- function(data, keeplong = T) {
           2,
           as.numeric)
   data$votelong$vote <- as.numeric(data$votelong$vote)
-  data$legislong[, c("y", "x")] <- apply(data$legislong[, c("y", "x")],
+  data$legislong[, c("nom2", "nom1")] <- apply(data$legislong[, c("nom2", "nom1")],
                                          2,
                                          as.numeric)
 
@@ -600,7 +603,7 @@ voteview2rollcall <- function(data, keeplong = T) {
   ## by using setdiff)
   ## Try to reorder, if some fields explicitly stated aren't returned, then this will be skipped
   try({
-    legis.long.order <- c("id", "icpsr", "name", "party", "state", "cqlabel", "x", "y")
+    legis.long.order <- c("id", "icpsr", "name", "party", "state", "cqlabel", "nom1", "nom2")
     legis.long.names <- c(legis.long.order, setdiff(colnames(data$legislong), legis.long.order))
     votes.long.order <- c("id", "icpsr", "vname", "vote")
     votes.long.names <- c(votes.long.order, setdiff(colnames(data$votelong), votes.long.order))

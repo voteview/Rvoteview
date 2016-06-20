@@ -378,12 +378,12 @@ dadt <- voteview_download(c("H1111621", "S1110678", "H1110222"))
 dadt$vote.data
 ```
 
-Now we want to turn this into a long dataframe, where each row is a legislator-vote. We could also then cast this using a standard cast function or the `reshape2` package to have each row be a legislator, or each row be a legislator-congress and so on. The longer format will serve our purposes for now. Note that `x` and `y` are the positions on the first and second ideological dimensions as estimated by DW-Nominate. They are fixed over the legislator's tenure in office.
+Now we want to turn this into a long dataframe, where each row is a legislator-vote. We could also then cast this using a standard cast function or the `reshape2` package to have each row be a legislator, or each row be a legislator-congress and so on. The longer format will serve our purposes for now. Note that `nom1` and `nom2` are the Common Space DW-Nominate positions on the first and second ideological dimensions. They are fixed over the legislator's tenure in office.
 
 ```{r}
 ## Only retain certain columns with respect to the legislator and the vote
 dadtLong <- melt_rollcall(dadt,
-                          legiscols = c("name", "state","party", "x", "y"),
+                          legiscols = c("name", "state","party", "nom1", "nom2"),
                           votecols = c("vname", "date", "chamber"))
 head(dadtLong)
 ```
@@ -434,11 +434,11 @@ summary(lm(voteYes ~ meanOpinion*republican, data = df))
 ## Control for ideology
 ## Note that ideology here has been estimated using this vote and later votes,
 ## so interpret the results iwth some caution
-summary(lm(voteYes ~ meanOpinion*republican + x + y,
+summary(lm(voteYes ~ meanOpinion*republican + nom1 + nom2,
            data = df))
 
 ## Now let's look just at repealing don't ask don't tell and add chamber fixed effects
-summary(lm(voteYes ~ meanOpinion*republican + x + y + chamber,
+summary(lm(voteYes ~ meanOpinion*republican + nom1 + nom2 + chamber,
            data = df[df$vname != "H1110222", ]))
 ```
 
