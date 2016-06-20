@@ -425,9 +425,6 @@ votelist2voteview <- function(dat) {
   legislongdatanames <- setdiff(names(votelist[[1]]$votes[[1]]),
                                 c("vote", "id"))
   
-  print(legislongdatanames)
-  print(rollcalldatanames)
-  
   ## use IDs for votenames
   votenames <- c(unlist(sapply(votelist, function(vote) vote$id), F, F))
   
@@ -794,7 +791,6 @@ melt_rollcall <- function(rc,
     # Modified from reshape2, Hadley Wickham
     # https://github.com/hadley/reshape
     dn <- dimnames(votes)
-    print(dn)
     names(dn) <- c("icpsr", "vname")
     
     # Build matrix of all legislator-rollcalls
