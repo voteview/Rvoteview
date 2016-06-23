@@ -101,13 +101,7 @@ voteview_search <- function(q = NULL,
       query_string <- q
     } else {
       # Query text and arguments
-      if (grepl(":", q)) {
-        # Query text and arguments and colon
-        query_string <- paste0("(", q, ")")
-      } else {
-        # Query text and arguments and no colon
-        query_string <- paste0("(alltext:", q, ")")
-      }
+      query_string <- sprintf("(%s)", q)
     }
     ## Replace single quotes ' with double quotes for parser, try to avoid
     ## apostrophes
@@ -137,7 +131,7 @@ voteview_search <- function(q = NULL,
     }
     
     # Add congress to query (if congress is one number, ignores second paste)
-    query_string <- paste0(query_string, " AND (congress:", paste(congress, collapse = " "), ")")
+    query_string <- sprintf("%s AND (congress:%s)", query_string, paste(congress, collapse = " "))
   }
   
   
@@ -153,20 +147,20 @@ voteview_search <- function(q = NULL,
     
     if (maxsupport < minsupport) stop("maxsupport must be greater than minsupport")
     
-    query_string <- paste0(query_string, " AND (support:[", paste(c(minsupport, maxsupport), collapse = " to "), "])")
+    query_string <- sprintf("%s AND (support:[%s to %s])", query_string, minsupport, maxsupport)
   }
   
   
   # Check input for chamber
   if (!is.null(chamber)) {
     if (!(tolower(chamber) %in% c("house", "senate"))) stop("Chamber must be either 'House' or 'Senate'")
+    query_string <- sprintf("%s AND (chamber:%s)", query_string, tolower(chamber))
   }
   
   theurl <- "https://voteview.polisci.ucla.edu/api/search"
   resp <- POST(theurl, body = list(q = query_string,
                                    startdate = startdate,
-                                   enddate = enddate,
-                                   chamber = chamber))
+                                   enddate = enddate))
   
   # If the return is not JSON, print out result to see error
   if (substr(content(resp, as = "text", encoding = "UTF-8"), 1, 1) != "{") {
