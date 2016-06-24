@@ -15,7 +15,7 @@ knitr::opts_chunk$set(comment = "#>", fig.align='center',
 library(Rvoteview)
 ```
 
-This package provides tools to query and download from the VoteView database. This vignette will demonstrate the different types of queries that can be used, how `Rvoteview` can be used to do ideal point estimation on a subset of votes using the `pscl` package, and how `Rvoteview` facilitates regression analyses of congressional voting behavior.
+This package provides tools to query and download from the VoteView database. This vignette will demonstrate the different types of queries that can be used, how `Rvoteview` can be used to do ideal point estimation on a subset of votes using the `pscl` package and the `wnominate` package, and how `Rvoteview` facilitates regression analyses of congressional voting behavior.
 
 # Installation
 
@@ -29,7 +29,7 @@ For a quick start, see the README in the GitHub repository [here](https://github
 
 # Querying the database with `voteview_search`
 
-The first main function of this package is to allow users to search for roll calls. Using a custom query parser, we allow both simple and complex queries to be made to the VoteView database. The simple way uses a set of arguments to build a query within the `R` package while the complex way allows the user to build a specific query with nested, boolean logic. Both can also be used simultaneously.
+The first main function of this package is to allow users to search for roll calls. Using a custom query parser, we allow both simple and complex queries to be made to the VoteView database. The simple way uses a set of arguments to build a query within the `R` package while the complex way allows the user to build a specific query with nested, boolean logic. Both can also be used simultaneously. You can find the full documentation for the query parser [here](https://github.com/JeffreyBLewis/Rvoteview/wiki/Query-Documentation).
 
 ## Simple text queries
 
@@ -180,7 +180,7 @@ This section details three different possible uses of the `Rvoteview` package, s
 
 Imagine that we want to estimate ideal points for all legislators voting on foreign policy and defense issues from 2008 until today. We will use all roll calls that fit the Clausen category "Foreign and Defense Policy" and are somewhat competitive, meaning between 15 and 85 percent of votes on the floor were yeas.
 
-```{r defense-search, cache = T, results='hide'}
+```{r defense-search, results='hide'}
 ## Load packages
 library(ggplot2)   # Load this first so that Rvoteview can use %+%
 library(Rvoteview)
@@ -200,12 +200,29 @@ rc <- voteview_download(res$id)
 summary(rc)
 ```
 
-Now we use the `pscl` package to run an ideal point estimation. Warning, this is somewhat slow.
+Now we use the `wnominate` package to run an ideal point estimation. Warning, this is somewhat slow and is thus not run in the vignette.
+```{r defense-ideal-wnominate, eval = F}
+library(wnominate)
+# Find extreme legislators for polarity argument
+cons1 <- rc$legis.long.dynamic[which.max(rc$legis.long.dynamic$nom1), "name"]
+cons2 <- rc$legis.long.dynamic[which.min(rc$legis.long.dynamic$nom2), "name"]
+defIdeal <- wnominate(rc,
+                      polarity = list("icpsr", c(29570, 20523)))
+```
 
-```{r defense-ideal, cache=T, message = F, results='hide'}
+The `rollcall` objects we build can also be easily used in the `ideal` function in the `pscl` package.
+
+```{r defense-ideal-show, eval = F}
 library(pscl)
 defIdeal <- ideal(rc,
                   d = 2)
+```
+```{r defense-ideal, cache=T, message = F, results='hide', echo = F}
+defIdeal <- ideal(rc,
+                 d = 2,
+                 maxiter = 5000,
+                 thin = 10,
+                 burnin = 1000)
 ```
 
 In this case we get a vector of ideal points along two dimensions. We can use the default `plot` method provided by `pscl` to get a quick look at the estimated points:
@@ -327,10 +344,21 @@ rc$votes[grepl("14009|15429|40904", rownames(rc$votes)), (ncol(rc$votes)-4):ncol
 
 As you can see, Al Franken is missing votes from the 110th, as is the reelected version of Dick Durbin. In the 111th votes, the old version of Dick Durbin, "14009_110", is missing votes. Now let's do some ideal point estimation:
 
-```{r, cache = T}
+```{r, eval = F}
 id <- pscl::ideal(rc,
                   d = 2)
+```
+```{r ideal-lgbt, echo = F, results = 'hide', warnings = F, cache = T}
+id <- pscl::ideal(rc,
+                  d = 2,
+                  maxiter = 5000,
+                  thin = 10,
+                  burnin = 1000)
+```
 
+Let's plot the output.
+
+```{r plot-ideal-lgbt}
 ## Add custom ideal points to legislator data
 idealdf <- cbind(rc$legis.data, id$xbar)
 idealdf$reelected <- grepl("_", idealdf$icpsr)
