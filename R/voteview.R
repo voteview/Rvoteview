@@ -671,8 +671,7 @@ complete_download <- function(rc) {
   if (is.null(rc$unretrievedids)) 
     stop("No unretrieved ids associated with this rollcall object.")
   
-  if (is.null(rc$votes.long))
-    keeplong <- F
+  keeplong <- !is.null(rc$votes.long)
   
   rc_new <- voteview_download(rc$unretrievedids, keeplong = keeplong)
   
