@@ -109,7 +109,7 @@ attr(res, "qstring")
 As previewed before, users can use the `q` argument to specify complex queries by specifying which fields to search and how to combine fields using boolean logic. The [complete documentation can be found here](https://github.com/JeffreyBLewis/Rvoteview/wiki/Query-Documentation). In general, the following syntax is used, `field:specific phrase (field:other phrase OR field:second phrase)`.
 
 For example, if you wanted to find votes with "war" and either "iraq" or "afghanistan" in the description field, you could set the query to:
-```{r or-text, eval = F}
+```{r or-text}
 qString <- "description:'war' (description:'iraq' OR description:'afghanistan')"
 res <- voteview_search(q = qString)
 ```

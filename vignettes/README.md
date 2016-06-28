@@ -121,6 +121,8 @@ qString <- "description:'war' (description:'iraq' OR description:'afghanistan')"
 res <- voteview_search(q = qString)
 ```
 
+    #> Query 'description:"war" (description:"iraq" OR description:"afghanistan")' returned 36 rollcalls...
+
 Numeric fields can be searched in a similar way, although users can also use square brackets and "to" for ranges of numbers. For example, the query for all votes about taxes in the 100th to 102nd congress could be expressed either using `"alltext:taxes congress:100 OR congress:101 OR congress:102"` or using `"alltext:taxes congress:[100 to 102]"`. Note that if you want to restrict search to certain dates, the `startdate` and `enddate` arguments in the function should be used.
 
 For example,
