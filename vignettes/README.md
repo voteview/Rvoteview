@@ -1,5 +1,18 @@
 This package provides tools to query and download from the VoteView database. This vignette will demonstrate the different types of queries that can be used, how `Rvoteview` can be used to do ideal point estimation on a subset of votes using the `pscl` package and the `wnominate` package, and how `Rvoteview` facilitates regression analyses of congressional voting behavior.
 
+1.  [Installation](#installation)
+2.  [Querying the database with `voteview_search`](#querying-the-database-with-voteview_search)
+3.  [Downloading roll call data with `voteview_download`](#downloading-roll-call-data%20with-voteview_download)
+4.  [Additional Methods](#additional-methods)
+    1.  [Joining two `rollcall` objects](#joining-two-rollcall-objects)
+    2.  [Melting `rollcall` objects](#melting-rollcall-objects)
+    3.  [Completing interrupted downloads](#completing-interrupted-downloads)
+
+5.  [Examples](#examples)
+    1.  [Ideal point estimation](#ideal-point-estimation)
+    2.  [Analyzing ideal points across reelection](#analyzing-ideal-points-across-reelection)
+    3.  [Regression analysis of roll call behavior](#regression-analysis-of-roll-call-behavior)
+
 Installation
 ============
 
@@ -157,7 +170,7 @@ Second, we include `votes.long`, a data frame where the rows are legislator-roll
 Additional Methods
 ==================
 
-We also add two methods that can be used on `rollcall` objects created by our package.
+We also add three methods that can be used on `rollcall` objects created by our package.
 
 Joining two `rollcall` objects
 ------------------------------
@@ -231,6 +244,23 @@ rc_long[1:3, ]
     #> 1    99 (POTUS) -0.340 -0.031
     #> 2    31    (IA)  0.372 -0.318
     #> 3    24    (OH)  0.213 -0.280
+
+Completing interrupted downloads
+--------------------------------
+
+If your internet connection drops in the middle of a download or you have to interrupt a download for some reason, the `voteview_download` function should try to complete building the `rollcall` object with whatever data it has successfully downloaded. While manually interrupting functions in `R` is tricky and we cannot catch interrupts perfectly, if it does succeed or if your connection does drop, then we store the roll call ids that you were unable to retrieve in the `unretrievedids` slot of our modified `rollcall` object. Users can then use the `complete_download` function to download the unretrieved ids and create a complete `rollcall` object. For example, imagine the following download stalls as your wireless cuts out at this cute coffee shop that has beans roasted in house but cannot manage a good wireless conenction:
+
+``` r
+rc_fail <- voteview_download(res$id)
+```
+
+If this fails but still manages to build a `rollcall` object with whatever ids it was able to retrieve, then we can complete the download with a simple command:
+
+``` r
+rc <- complete_download(rc_fail)
+```
+
+Again, because of the difficulty with properly catching interrupts in `R`, this will not always work with manual interrupts, but should work with dropped internet connections.
 
 Examples
 ========

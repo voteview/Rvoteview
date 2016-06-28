@@ -11,7 +11,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 
-<meta name="date" content="2016-06-23" />
+<meta name="date" content="2016-06-28" />
 
 <title>Using the Rvoteview API</title>
 
@@ -50,11 +50,28 @@ code > span.er { color: #ff0000; font-weight: bold; }
 
 
 <h1 class="title toc-ignore">Using the Rvoteview API</h1>
-<h4 class="date"><em>2016-06-23</em></h4>
+<h4 class="date"><em>2016-06-28</em></h4>
 
 
 
 <p>This package provides tools to query and download from the VoteView database. This vignette will demonstrate the different types of queries that can be used, how <code>Rvoteview</code> can be used to do ideal point estimation on a subset of votes using the <code>pscl</code> package and the <code>wnominate</code> package, and how <code>Rvoteview</code> facilitates regression analyses of congressional voting behavior.</p>
+<ol style="list-style-type: decimal">
+<li><a href="#installation">Installation</a></li>
+<li><a href="#querying-the-database-with-voteview_search">Querying the database with <code>voteview_search</code></a></li>
+<li><a href="#downloading-roll-call-data%20with-voteview_download">Downloading roll call data with <code>voteview_download</code></a></li>
+<li><a href="#additional-methods">Additional Methods</a>
+<ol style="list-style-type: lower-alpha">
+<li><a href="#joining-two-rollcall-objects">Joining two <code>rollcall</code> objects</a></li>
+<li><a href="#melting-rollcall-objects">Melting <code>rollcall</code> objects</a></li>
+<li><a href="#completing-interrupted-downloads">Completing interrupted downloads</a></li>
+</ol></li>
+<li><a href="#examples">Examples</a>
+<ol style="list-style-type: lower-alpha">
+<li><a href="#ideal-point-estimation">Ideal point estimation</a></li>
+<li><a href="#analyzing-ideal-points-across-reelection">Analyzing ideal points across reelection</a></li>
+<li><a href="#regression-analysis-of-roll-call-behavior">Regression analysis of roll call behavior</a></li>
+</ol></li>
+</ol>
 <div id="installation" class="section level1">
 <h1>Installation</h1>
 <p>To install this package, ensure you have <code>devtools</code> installed. If you do not, run <code>install.packages(&quot;devtools&quot;)</code> and then install from GitHub using</p>
@@ -69,7 +86,7 @@ code > span.er { color: #ff0000; font-weight: bold; }
 <p>The <code>q</code> argument should be treated similarly to a search box online. You can put in text search terms, specific fields with parameters, or it can be left blank if other arguments are used. The simple usage is to treat the <code>q</code> argument as a way to search all text fields. If you want to search a specific phrase, put the query in quotes. This will essentially look for that exact phrase in any of the text fields in the database. Alternatively, if you search without using quotes, the word will be lemmatized (shortened) and will search an index of the text fields. For example, we can search for “terrorism” exactly or loosely using the index:</p>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(Rvoteview)
 res &lt;-<span class="st"> </span><span class="kw">voteview_search</span>(<span class="st">&quot;'terrorism'&quot;</span>)
-## 164 found rollcalls
+## 165 found rollcalls
 res &lt;-<span class="st"> </span><span class="kw">voteview_search</span>(<span class="st">&quot;terrorism&quot;</span>)
 ## 238 found rollcalls</code></pre>
 <p>You can also search for multiple words:</p>
@@ -106,7 +123,7 @@ res &lt;-<span class="st"> </span><span class="kw">voteview_search</span>(<span 
 </div>
 <div id="building-complex-queries" class="section level2">
 <h2>Building complex queries</h2>
-<p>As previewed before, users can use the <code>q</code> argument to specify complex queries by specifying which fields to search and how to combine fields using boolean logic. The complete documentation is forthcoming. In general, the following syntax is used, <code>field:specific phrase (field:other phrase OR field:second phrase)</code>.</p>
+<p>As previewed before, users can use the <code>q</code> argument to specify complex queries by specifying which fields to search and how to combine fields using boolean logic. The <a href="https://github.com/JeffreyBLewis/Rvoteview/wiki/Query-Documentation">complete documentation can be found here</a>. In general, the following syntax is used, <code>field:specific phrase (field:other phrase OR field:second phrase)</code>.</p>
 <p>For example, if you wanted to find votes with “war” and either “iraq” or “afghanistan” in the description field, you could set the query to:</p>
 <pre class="sourceCode r"><code class="sourceCode r">qString &lt;-<span class="st"> &quot;description:'war' (description:'iraq' OR description:'afghanistan')&quot;</span>
 res &lt;-<span class="st"> </span><span class="kw">voteview_search</span>(<span class="dt">q =</span> qString)</code></pre>
@@ -164,7 +181,7 @@ rc &lt;-<span class="st"> </span><span class="kw">voteview_download</span>(res$i
 </div>
 <div id="additional-methods" class="section level1">
 <h1>Additional Methods</h1>
-<p>We also add two methods that can be used on <code>rollcall</code> objects created by our package.</p>
+<p>We also add three methods that can be used on <code>rollcall</code> objects created by our package.</p>
 <div id="joining-two-rollcall-objects" class="section level2">
 <h2>Joining two <code>rollcall</code> objects</h2>
 <p>The first function allows for a full outer join of two <code>rollcall</code> objects downloaded from the VoteView database, creating a new <code>rollcall</code> object that is a union of the two. It is called by using the <code>%+%</code> operator. This is especially useful if the user downloaded two roll call objects at separate times and wants to join them together rather than re-download all of the votes at the same time.</p>
@@ -224,12 +241,20 @@ rc_long[<span class="dv">1</span>:<span class="dv">3</span>, ]</code></pre>
 #&gt; 2    31    (IA)  0.372 -0.318
 #&gt; 3    24    (OH)  0.213 -0.280</code></pre>
 </div>
+<div id="completing-interrupted-downloads" class="section level2">
+<h2>Completing interrupted downloads</h2>
+<p>If your internet connection drops in the middle of a download or you have to interrupt a download for some reason, the <code>voteview_download</code> function should try to complete building the <code>rollcall</code> object with whatever data it has successfully downloaded. While manually interrupting functions in <code>R</code> is tricky and we cannot catch interrupts perfectly, if it does succeed or if your connection does drop, then we store the roll call ids that you were unable to retrieve in the <code>unretrievedids</code> slot of our modified <code>rollcall</code> object. Users can then use the <code>complete_download</code> function to download the unretrieved ids and create a complete <code>rollcall</code> object. For example, imagine the following download stalls as your wireless cuts out at this cute coffee shop that has beans roasted in house but cannot manage a good wireless conenction:</p>
+<pre class="sourceCode r"><code class="sourceCode r">rc_fail &lt;-<span class="st"> </span><span class="kw">voteview_download</span>(res$id)</code></pre>
+<p>If this fails but still manages to build a <code>rollcall</code> object with whatever ids it was able to retrieve, then we can complete the download with a simple command:</p>
+<pre class="sourceCode r"><code class="sourceCode r">rc &lt;-<span class="st"> </span><span class="kw">complete_download</span>(rc_fail)</code></pre>
+<p>Again, because of the difficulty with properly catching interrupts in <code>R</code>, this will not always work with manual interrupts, but should work with dropped internet connections.</p>
+</div>
 </div>
 <div id="examples" class="section level1">
 <h1>Examples</h1>
 <p>This section details three different possible uses of the <code>Rvoteview</code> package, showing users from beginning to end how to conduct their own ideal point estimation and use <code>Rvoteview</code> in more traditional regression analysis.</p>
-<div id="ideal-point-estimation-using-pscl" class="section level2">
-<h2>Ideal point estimation using <code>pscl</code></h2>
+<div id="ideal-point-estimation" class="section level2">
+<h2>Ideal point estimation</h2>
 <p>Imagine that we want to estimate ideal points for all legislators voting on foreign policy and defense issues from 2008 until today. We will use all roll calls that fit the Clausen category “Foreign and Defense Policy” and are somewhat competitive, meaning between 15 and 85 percent of votes on the floor were yeas.</p>
 <pre class="sourceCode r"><code class="sourceCode r">## Load packages
 <span class="kw">library</span>(ggplot2)   <span class="co"># Load this first so that Rvoteview can use %+%</span></code></pre>
@@ -243,7 +268,7 @@ rc_long[<span class="dv">1</span>:<span class="dv">3</span>, ]</code></pre>
 ## Search database for votes that meet our criteria
 res &lt;-<span class="st"> </span><span class="kw">voteview_search</span>(<span class="st">&quot;code.Clausen:Foreign and Defense Policy support:[15 to 85]&quot;</span>,
                        <span class="dt">startdate =</span> <span class="st">&quot;2008-01-01&quot;</span>)</code></pre>
-<pre><code>#&gt; Query '(code.Clausen:Foreign and Defense Policy support:[15 to 85])' returned 740 rollcalls...</code></pre>
+<pre><code>#&gt; Query '(code.Clausen:Foreign and Defense Policy support:[15 to 85]) AND (startdate:2008-01-01)' returned 740 rollcalls...</code></pre>
 <p>Large downloads can be quite slow for now, so be patient. We are working on improving speed. You can always download the full database yourself.</p>
 <pre class="sourceCode r"><code class="sourceCode r">## Download votes into rollcall object
 rc &lt;-<span class="st"> </span><span class="kw">voteview_download</span>(res$id)</code></pre>
@@ -434,62 +459,62 @@ res &lt;-<span class="st"> </span><span class="kw">voteview_search</span>(<span 
 <pre><code>#&gt; Query 'code.Issue:Homosexuality congress:111' returned 18 rollcalls...</code></pre>
 <pre class="sourceCode r"><code class="sourceCode r">res</code></pre>
 <pre><code>#&gt;                                                                                                                                                                                      description
-#&gt; 1                                                                                                                                                       Don&lt;U+0092&gt;t Ask, Don&lt;U+0092&gt;t Tell Repeal Act of 2010
-#&gt; 2                                                                                                                                                   Department of Defense Authorization, FY 2010
-#&gt; 3                                                                                                                                                   Department of Defense Authorization, FY 2010
-#&gt; 4                                             Providing for consideration of H.R. 1913, to provide Federal assistance to States, local jurisdictions, and Indian tribes to prosecute hate crimes
-#&gt; 5                                             Providing for consideration of H.R. 1913, to provide Federal assistance to States, local jurisdictions, and Indian tribes to prosecute hate crimes
-#&gt; 6                                                                                                                                                   Department of Defense Authorization, FY 2010
-#&gt; 7                                                                                                                                                                                               
-#&gt; 8                                                                                                                                               Local Law Enforcement Hate Crimes Prevention Act
-#&gt; 9                                                                                                                                               Local Law Enforcement Hate Crimes Prevention Act
-#&gt; 10                                                                                                                              Providing for consideration of the Senate amendment to H.R. 2965
-#&gt; 11                                                                                             Conference Report to Accompany H.R. 2647; National Defense Authorization Act for Fiscal Year 2010
-#&gt; 12                                        Motion to Invoke Cloture on the Motion to Concur in the House Amendment to the Senate Amendment to H.R. 2965; Don't Ask, Don't Tell Repeal Act of 2010
-#&gt; 13                                                              Brownback Amdt. No. 1610; To clarify that the amendment shall not be construed or applied to infringe on First Amendment rights.
-#&gt; 14                                                   Upon Reconsideration, Motion to Invoke Cloture on the Motion to Proceed to S. 3454; National Defense Authorization Act for Fiscal Year 2011
-#&gt; 15 Motion to Waive All Applicable Budgetary Discipline Re: Bennett Amdt. No. 3568; To protect the democratic process and the right of the people of the District of Columbia to define marriage.
-#&gt; 16                                                                                                                       Hatch Amdt. No. 1611; To prevent duplication in the Federal government.
-#&gt; 17                                                                        Motion to Concur in the House Amendment to the Senate Amendment to H.R. 2965; Don't Ask, Don't Tell Repeal Act of 2010
-#&gt; 18                                                                         Motion to Invoke Cloture on the Motion to Proceed to S. 3454; National Defense Authorization Act for Fiscal Year 2011
+#&gt; 1                                                                                              Conference Report to Accompany H.R. 2647; National Defense Authorization Act for Fiscal Year 2010
+#&gt; 2                                         Motion to Invoke Cloture on the Motion to Concur in the House Amendment to the Senate Amendment to H.R. 2965; Don't Ask, Don't Tell Repeal Act of 2010
+#&gt; 3                                                               Brownback Amdt. No. 1610; To clarify that the amendment shall not be construed or applied to infringe on First Amendment rights.
+#&gt; 4                                                    Upon Reconsideration, Motion to Invoke Cloture on the Motion to Proceed to S. 3454; National Defense Authorization Act for Fiscal Year 2011
+#&gt; 5  Motion to Waive All Applicable Budgetary Discipline Re: Bennett Amdt. No. 3568; To protect the democratic process and the right of the people of the District of Columbia to define marriage.
+#&gt; 6                                                                                                                        Hatch Amdt. No. 1611; To prevent duplication in the Federal government.
+#&gt; 7                                                                         Motion to Concur in the House Amendment to the Senate Amendment to H.R. 2965; Don't Ask, Don't Tell Repeal Act of 2010
+#&gt; 8                                                                          Motion to Invoke Cloture on the Motion to Proceed to S. 3454; National Defense Authorization Act for Fiscal Year 2011
+#&gt; 9                                                                                                                                                       Don&lt;U+0092&gt;t Ask, Don&lt;U+0092&gt;t Tell Repeal Act of 2010
+#&gt; 10                                                                                                                                                  Department of Defense Authorization, FY 2010
+#&gt; 11                                                                                                                                                  Department of Defense Authorization, FY 2010
+#&gt; 12                                            Providing for consideration of H.R. 1913, to provide Federal assistance to States, local jurisdictions, and Indian tribes to prosecute hate crimes
+#&gt; 13                                            Providing for consideration of H.R. 1913, to provide Federal assistance to States, local jurisdictions, and Indian tribes to prosecute hate crimes
+#&gt; 14                                                                                                                                                  Department of Defense Authorization, FY 2010
+#&gt; 15                                                                                                                                                                                              
+#&gt; 16                                                                                                                                              Local Law Enforcement Hate Crimes Prevention Act
+#&gt; 17                                                                                                                                              Local Law Enforcement Hate Crimes Prevention Act
+#&gt; 18                                                                                                                              Providing for consideration of the Senate amendment to H.R. 2965
 #&gt;                                          shortdescription       date
-#&gt; 1                           END DONT ASK DONT TELL (PASS) 2010-12-15
-#&gt; 2                DEFENSE AUTH WITH HATE CRIMES ATTACHMENT 2009-10-08
-#&gt; 3    DEFENSE AUTH WITH HATE CRIMES ATTACHMENT -- RECOMMIT 2009-10-08
-#&gt; 4                                      HATE CRIMES (PROC) 2009-04-29
-#&gt; 5                                     HATE CRIMES -- RULE 2009-04-29
-#&gt; 6                                      HATE CRIMES (PROC) 2009-10-06
-#&gt; 7         DEFENSE AUTH -- END DON'T ASK DON'T TELL POLICY 2010-05-27
-#&gt; 8                                      HATE CRIMES (PASS) 2009-04-29
-#&gt; 9                                 HATE CRIMES -- RECOMMIT 2009-04-29
-#&gt; 10                         END DONT ASK DONT TELL -- RULE 2010-12-15
-#&gt; 11                    DEFENSE AUTH AND HATE CRIMES (PASS) 2009-10-22
-#&gt; 12                      END DONT ASK DONT TELL -- CLOTURE 2010-12-18
-#&gt; 13                                            HATE CRIMES 2009-07-16
-#&gt; 14         DEFENSE AUTH &amp; DON'T ASK DON'T TELL -- CLOTURE 2010-12-09
-#&gt; 15 HEALTH CARE OVERHAUL RECONCILIATION -- DC GAY MARRIAGE 2010-03-25
-#&gt; 16                                            HATE CRIMES 2009-07-16
-#&gt; 17                          END DONT ASK DONT TELL (PASS) 2010-12-18
-#&gt; 18           DEFENSE AUTH &amp; DONT ASK DONT TELL -- CLOTURE 2010-09-21
+#&gt; 1                     DEFENSE AUTH AND HATE CRIMES (PASS) 2009-10-22
+#&gt; 2                       END DONT ASK DONT TELL -- CLOTURE 2010-12-18
+#&gt; 3                                             HATE CRIMES 2009-07-16
+#&gt; 4          DEFENSE AUTH &amp; DON'T ASK DON'T TELL -- CLOTURE 2010-12-09
+#&gt; 5  HEALTH CARE OVERHAUL RECONCILIATION -- DC GAY MARRIAGE 2010-03-25
+#&gt; 6                                             HATE CRIMES 2009-07-16
+#&gt; 7                           END DONT ASK DONT TELL (PASS) 2010-12-18
+#&gt; 8            DEFENSE AUTH &amp; DONT ASK DONT TELL -- CLOTURE 2010-09-21
+#&gt; 9                           END DONT ASK DONT TELL (PASS) 2010-12-15
+#&gt; 10               DEFENSE AUTH WITH HATE CRIMES ATTACHMENT 2009-10-08
+#&gt; 11   DEFENSE AUTH WITH HATE CRIMES ATTACHMENT -- RECOMMIT 2009-10-08
+#&gt; 12                                     HATE CRIMES (PROC) 2009-04-29
+#&gt; 13                                    HATE CRIMES -- RULE 2009-04-29
+#&gt; 14                                     HATE CRIMES (PROC) 2009-10-06
+#&gt; 15        DEFENSE AUTH -- END DON'T ASK DON'T TELL POLICY 2010-05-27
+#&gt; 16                                     HATE CRIMES (PASS) 2009-04-29
+#&gt; 17                                HATE CRIMES -- RECOMMIT 2009-04-29
+#&gt; 18                         END DONT ASK DONT TELL -- RULE 2010-12-15
 #&gt;          bill chamber congress rollnumber yea nay  support       id
-#&gt; 1    H R 2965   House      111       1621 251 175 58.92019 H1111621
-#&gt; 2    H R 2647   House      111        768 281 146 65.80796 H1110768
-#&gt; 3    H R 2647   House      111        767 208 216 49.05660 H1110767
-#&gt; 4   H RES 372   House      111        218 234 181 56.38554 H1110218
-#&gt; 5   H RES 372   House      111        219 234 190 55.18868 H1110219
-#&gt; 6    H R 2647   House      111        752 178 234 43.20388 H1110752
-#&gt; 7    H R 5136   House      111       1302 230 194 54.24528 H1111302
-#&gt; 8    H R 1913   House      111        222 249 175 58.72642 H1110222
-#&gt; 9    H R 1913   House      111        221 185 241 43.42723 H1110221
-#&gt; 10 H RES 1764   House      111       1618 232 180 56.31068 H1111618
-#&gt; 11  H.R. 2647  Senate      111        327  68  29 70.10309 S1110327
-#&gt; 12  H.R. 2965  Senate      111        676  63  33 65.62500 S1110676
-#&gt; 13    S. 1390  Senate      111        232  78  13 85.71429 S1110232
-#&gt; 14    S. 3454  Senate      111        667  57  40 58.76289 S1110667
-#&gt; 15  H.R. 4872  Senate      111        486  36  59 37.89474 S1110486
-#&gt; 16    S. 1390  Senate      111        231  29  62 31.86813 S1110231
-#&gt; 17  H.R. 2965  Senate      111        678  66  31 68.04124 S1110678
-#&gt; 18    S. 3454  Senate      111        635  56  43 56.56566 S1110635</code></pre>
+#&gt; 1   H.R. 2647  Senate      111        327  68  29 70.10309 S1110327
+#&gt; 2   H.R. 2965  Senate      111        676  63  33 65.62500 S1110676
+#&gt; 3     S. 1390  Senate      111        232  78  13 85.71429 S1110232
+#&gt; 4     S. 3454  Senate      111        667  57  40 58.76289 S1110667
+#&gt; 5   H.R. 4872  Senate      111        486  36  59 37.89474 S1110486
+#&gt; 6     S. 1390  Senate      111        231  29  62 31.86813 S1110231
+#&gt; 7   H.R. 2965  Senate      111        678  66  31 68.04124 S1110678
+#&gt; 8     S. 3454  Senate      111        635  56  43 56.56566 S1110635
+#&gt; 9    H R 2965   House      111       1621 251 175 58.92019 H1111621
+#&gt; 10   H R 2647   House      111        768 281 146 65.80796 H1110768
+#&gt; 11   H R 2647   House      111        767 208 216 49.05660 H1110767
+#&gt; 12  H RES 372   House      111        218 234 181 56.38554 H1110218
+#&gt; 13  H RES 372   House      111        219 234 190 55.18868 H1110219
+#&gt; 14   H R 2647   House      111        752 178 234 43.20388 H1110752
+#&gt; 15   H R 5136   House      111       1302 230 194 54.24528 H1111302
+#&gt; 16   H R 1913   House      111        222 249 175 58.72642 H1110222
+#&gt; 17   H R 1913   House      111        221 185 241 43.42723 H1110221
+#&gt; 18 H RES 1764   House      111       1618 232 180 56.31068 H1111618</code></pre>
 <pre class="sourceCode r"><code class="sourceCode r">res2 &lt;-<span class="st"> </span><span class="kw">voteview_search</span>(<span class="st">&quot;gay lesbian congress:111&quot;</span>)</code></pre>
 <pre><code>#&gt; Query 'gay lesbian congress:111' returned 1 rollcalls...</code></pre>
 <pre class="sourceCode r"><code class="sourceCode r">res2</code></pre>
