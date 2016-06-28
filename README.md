@@ -14,10 +14,12 @@ devtools::install_github("JeffreyBLewis/Rvoteview")
 
 For more thorough documentation, see the help files for individual functions and the vignette [at this link here](https://github.com/JeffreyBLewis/Rvoteview/tree/master/vignettes). Lastly, there is complete documentation for the searches you can make [at the wiki here](https://github.com/JeffreyBLewis/Rvoteview/wiki/Query-Documentation).
 
-Using Rvoteview
----------------
+Quick Start: Using Rvoteview
+----------------------------
 
-To use `Rvoteview`, you generally want to query the database to get a list of vote ids and then use those to return the individual votes. We query the database with a search term and some parameters to constrain the search [(full documentation for the search here)](https://github.com/JeffreyBLewis/Rvoteview/wiki/Query-Documentation). For now we take a string that will seach for a bill that has ANY of the words in the string in ANY text field. Additional boolean and targeted searches have been implemented and can be found in the vignette.
+To use `Rvoteview`, you generally want to search the database to get a list of vote ids and then use those to return the individual votes. We query the database with a search term and some parameters to constrain the search. The default behavior is to search any words as key words, returning the roll calls that best match any key words you enter. Again, for full documentation for the search [see here](https://github.com/JeffreyBLewis/Rvoteview/wiki/Query-Documentation). There are further examples in the [vignette](https://github.com/JeffreyBLewis/Rvoteview/tree/master/vignettes).
+
+So let's start with a search for roll calls with the key word "Iraq".
 
 ``` r
 library(Rvoteview)
@@ -114,6 +116,26 @@ rcAll$m # rc$m + rc2$m - 1 because of the one vote overlap
 #> [1] 11
 ```
 
+You also have lots of metadata on roll calls and legislators in various data frames. For example, we can see some legislator metadata:
+
+``` r
+head(rcAll$legis.long.dynamic)
+#>           id icpsr                    name party state cqlabel   nom1
+#> 1 MH00633101   633 Bennett, Charles Edward   100    43  (FL-3) -0.086
+#> 2 MH01077101  1077     Brooks, Jack Bascom   100    49  (TX-9) -0.402
+#> 3 MH01087101  1087   Broomfield, William S   200    23 (MI-18)  0.227
+#> 4 MH02009101  2009      Conte, Silvio Otto   200     3  (MA-1) -0.025
+#> 5 MH02605101  2605 Dingell, John David Jr.   100    23 (MI-16) -0.448
+#> 6 MH03078101  3078    Fascell, Dante Bruno   100    43 (FL-19) -0.400
+#>     nom2
+#> 1  0.412
+#> 2  0.707
+#> 3 -0.305
+#> 4 -0.677
+#> 5  0.321
+#> 6  0.230
+```
+
 You can also search by start and end date, congress, and chamber. Please see the help files for each function after you install the package to see a little more about how they work.
 
 ``` r
@@ -148,7 +170,7 @@ head(res[, -1])
 #> 6      110        711 399  24 94.32624 H1100711 1.437500
 ```
 
-We can also build complex queries manually.
+We can also build complex queries manually. Here's one example where we look for all roll calls with the key words "estate", "death", or "tax" and was held in the 100th to the 114th Congress.
 
 ``` r
 ## Voteview search with options
@@ -184,8 +206,13 @@ tail(res[, -1])
 #> 1659        360  60  38  61.22449 S1030360 0.5015674
 #> 1660        350 100   0 100.00000 S1030350 0.5015432
 #> 1661        698 390  25  93.97590 H1030698 0.5013298
-res <- voteview_search("(alltext:war on terror startdate:2008-01-01)")
-#> Query '(alltext:war on terror startdate:2008-01-01)' returned 99 rollcalls...
+```
+
+We can also search for all bills with the keywords "war" and "terror" on or after 2008.
+
+``` r
+res <- voteview_search("(alltext:war terror startdate:2008-01-01)")
+#> Query '(alltext:war terror startdate:2008-01-01)' returned 99 rollcalls...
 head(res[, -1])
 #>                                  shortdescription       date      bill
 #> 1 SALUTE 69TH INFANTRY REGIMENT FOR WAR ON TERROR 2008-03-13 H RES 991
