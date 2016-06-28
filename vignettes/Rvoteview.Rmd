@@ -82,7 +82,7 @@ Unfortunately, the full text index cannot be accessed more than once at a time. 
 ## Using additional arguments
 
 Users can also use other arguments to search only roll calls that are in a certain chamber of Congress, within a date range, within a certain set of congresses, and within a level of support, defined as the percent of total valid votes that were yea vote. This is especially useful if users only want to return competitive votes. Note that all fields are joined using "AND" logic; for example you search for roll calls using the keyword "tax" AND are in the House but not votes that either use the keyword "tax" OR were held in the House. Also note that the congress field uses "OR" logic within the numeric vector that specifices which congress to search. No roll call can be in two congresses, so it makes no sense to search for roll calls that are in one congress AND in another congress.
-```{r search-ex4, eval=F}
+```{r search-ex4, results='hide'}
 ## Search for votes with a start date
 ## Note that because tax is not in quotes, it searches the text index and not for
 ## exact matches
@@ -96,6 +96,12 @@ res <- voteview_search("tax",
                        startdate = "2000-12-20",
                        congress = c(110, 112),
                        chamber = "House")
+```
+
+You can always see exactly what search was used to create a set of roll calls by retrieving the 'qstring' attribute of the returned data frame:
+
+```{r attribute}
+attr(res, "qstring")
 ```
 
 ## Building complex queries

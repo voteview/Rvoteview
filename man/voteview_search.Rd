@@ -54,6 +54,10 @@ value assigned to a roll call when searching using key words. Higher scores
 mean better matches for the key words used in the search.
 \code{voteview} to query the individual congress people's votes and other
 details.}
+
+Also returned as the "qstring" attribute of the data.frame is the exact
+query string used in the search that can be copied in to the web interface
+or used in future queries.
 }
 }
 \description{
@@ -73,6 +77,9 @@ The fields that can be searched with text are \code{codes}, \code{code.Clausen},
 ## Search for example roll calls
 res <- voteview_search("Iraq")
 res
+
+## Return exact string used in search
+attr(res, "qstring")
 
 \dontrun{
 ## Search for votes with a start date

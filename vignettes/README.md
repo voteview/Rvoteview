@@ -80,16 +80,34 @@ Users can also use other arguments to search only roll calls that are in a certa
 ## Note that because tax is not in quotes, it searches the text index and not for
 ## exact matches
 res <- voteview_search("tax", startdate = "2005-01-01")
+```
 
+    #> Query '(tax) AND (startdate:2005-01-01)' returned 581 rollcalls...
+
+``` r
 ## Search for votes with an end date in just the House
 res <- voteview_search("tax", enddate = "2005-01-01", chamber = "House")
+```
 
+    #> Query '(tax) AND (enddate:2005-01-01) AND (chamber:house)' returned 1518 rollcalls...
+
+``` r
 ## Search for votes with a start date in just the house in the 110th or 112th Congress
 res <- voteview_search("tax",
                        startdate = "2000-12-20",
                        congress = c(110, 112),
                        chamber = "House")
 ```
+
+    #> Query '(tax) AND (startdate:2000-12-20) AND (congress:110 112) AND (chamber:house)' returned 113 rollcalls...
+
+You can always see exactly what search was used to create a set of roll calls by retrieving the 'qstring' attribute of the returned data frame:
+
+``` r
+attr(res, "qstring")
+```
+
+    #> [1] "(tax) AND (startdate:2000-12-20) AND (congress:110 112) AND (chamber:house)"
 
 Building complex queries
 ------------------------

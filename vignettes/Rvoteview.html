@@ -110,16 +110,20 @@ res &lt;-<span class="st"> </span><span class="kw">voteview_search</span>(<span 
 <pre class="sourceCode r"><code class="sourceCode r">## Search for votes with a start date
 ## Note that because tax is not in quotes, it searches the text index and not for
 ## exact matches
-res &lt;-<span class="st"> </span><span class="kw">voteview_search</span>(<span class="st">&quot;tax&quot;</span>, <span class="dt">startdate =</span> <span class="st">&quot;2005-01-01&quot;</span>)
-
-## Search for votes with an end date in just the House
-res &lt;-<span class="st"> </span><span class="kw">voteview_search</span>(<span class="st">&quot;tax&quot;</span>, <span class="dt">enddate =</span> <span class="st">&quot;2005-01-01&quot;</span>, <span class="dt">chamber =</span> <span class="st">&quot;House&quot;</span>)
-
-## Search for votes with a start date in just the house in the 110th or 112th Congress
+res &lt;-<span class="st"> </span><span class="kw">voteview_search</span>(<span class="st">&quot;tax&quot;</span>, <span class="dt">startdate =</span> <span class="st">&quot;2005-01-01&quot;</span>)</code></pre>
+<pre><code>#&gt; Query '(tax) AND (startdate:2005-01-01)' returned 581 rollcalls...</code></pre>
+<pre class="sourceCode r"><code class="sourceCode r">## Search for votes with an end date in just the House
+res &lt;-<span class="st"> </span><span class="kw">voteview_search</span>(<span class="st">&quot;tax&quot;</span>, <span class="dt">enddate =</span> <span class="st">&quot;2005-01-01&quot;</span>, <span class="dt">chamber =</span> <span class="st">&quot;House&quot;</span>)</code></pre>
+<pre><code>#&gt; Query '(tax) AND (enddate:2005-01-01) AND (chamber:house)' returned 1518 rollcalls...</code></pre>
+<pre class="sourceCode r"><code class="sourceCode r">## Search for votes with a start date in just the house in the 110th or 112th Congress
 res &lt;-<span class="st"> </span><span class="kw">voteview_search</span>(<span class="st">&quot;tax&quot;</span>,
                        <span class="dt">startdate =</span> <span class="st">&quot;2000-12-20&quot;</span>,
                        <span class="dt">congress =</span> <span class="kw">c</span>(<span class="dv">110</span>, <span class="dv">112</span>),
                        <span class="dt">chamber =</span> <span class="st">&quot;House&quot;</span>)</code></pre>
+<pre><code>#&gt; Query '(tax) AND (startdate:2000-12-20) AND (congress:110 112) AND (chamber:house)' returned 113 rollcalls...</code></pre>
+<p>You can always see exactly what search was used to create a set of roll calls by retrieving the ‘qstring’ attribute of the returned data frame:</p>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">attr</span>(res, <span class="st">&quot;qstring&quot;</span>)</code></pre>
+<pre><code>#&gt; [1] &quot;(tax) AND (startdate:2000-12-20) AND (congress:110 112) AND (chamber:house)&quot;</code></pre>
 </div>
 <div id="building-complex-queries" class="section level2">
 <h2>Building complex queries</h2>

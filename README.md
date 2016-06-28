@@ -170,7 +170,14 @@ head(res[, -1])
 #> 6      110        711 399  24 94.32624 H1100711 1.437500
 ```
 
-We can also build complex queries manually. Here's one example where we look for all roll calls with the key words "estate", "death", or "tax" and was held in the 100th to the 114th Congress.
+We can print out the exact query that the function builds using all of these arguments by retrieving the 'qstring' attribute of the returned data frame:
+
+``` r
+attr(res, "qstring")
+#> [1] "(Iraq) AND (congress:109 110 111 112)"
+```
+
+We can assemble and use these complex queries ourselves. Here's one example where we look for all roll calls with the key words "estate", "death", or "tax" and was held in the 100th to the 114th Congress.
 
 ``` r
 ## Voteview search with options

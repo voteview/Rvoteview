@@ -83,7 +83,13 @@ res <- voteview_search("Iraq", congress = 109:112)
 head(res[, -1])
 ```
 
-We can also build complex queries manually. Here's one example where we look for all roll calls with the key words "estate", "death", or "tax" and was held in the 100th to the 114th Congress.
+We can print out the exact query that the function builds using all of these arguments by retrieving the 'qstring' attribute of the returned data frame:
+
+```{r attribute}
+attr(res, "qstring")
+```
+
+We can assemble and use these complex queries ourselves. Here's one example where we look for all roll calls with the key words "estate", "death", or "tax" and was held in the 100th to the 114th Congress.
 
 ```{r search-adv}
 ## Voteview search with options

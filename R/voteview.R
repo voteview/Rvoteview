@@ -52,6 +52,10 @@ trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 #' mean better matches for the key words used in the search.
 #' \code{voteview} to query the individual congress people's votes and other
 #' details.}
+#' 
+#' Also returned as the "qstring" attribute of the data.frame is the exact
+#' query string used in the search that can be copied in to the web interface
+#' or used in future queries.
 #' }
 #' @details
 #' This function requires at least one argument. The user can use the \code{q} field either to search across all text fields or to pass a more complicated advanced query. This is essentially like a "search box" where the user can just put in some key words, specific phrases in quotes, or can use notation like "support:[10 to 90]" along with boolean logic to build complicated queries.
@@ -67,6 +71,9 @@ trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 #' ## Search for example roll calls
 #' res <- voteview_search("Iraq")
 #' res
+#' 
+#' ## Return exact string used in search
+#' attr(res, "qstring")
 #' 
 #' \dontrun{
 #' ## Search for votes with a start date
@@ -182,8 +189,11 @@ voteview_search <- function(q = NULL,
   if(!is.null(resjson$errormessage)) warning(resjson$errormessage)
   if(resjson$recordcount == 0) stop("No rollcalls found")
   
-  # todo: add ability to store the final mongo query string
-  return( vlist2df(resjson$rollcalls) )
+  resdf <- vlist2df(resjson$rollcalls)
+  
+  attr(resdf, "qstring") <- query_string
+    
+  return( resdf )
 }
 
 # Internal function to get a roll call from the web api
