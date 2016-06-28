@@ -1,4 +1,4 @@
-This package provides tools to query and download from the VoteView database. This vignette will demonstrate the different types of queries that can be used, how `Rvoteview` can be used to do ideal point estimation on a subset of votes using the `pscl` package, and how `Rvoteview` facilitates regression analyses of congressional voting behavior.
+This package provides tools to query and download from the VoteView database. This vignette will demonstrate the different types of queries that can be used, how `Rvoteview` can be used to do ideal point estimation on a subset of votes using the `pscl` package and the `wnominate` package, and how `Rvoteview` facilitates regression analyses of congressional voting behavior.
 
 Installation
 ============
@@ -14,7 +14,7 @@ For a quick start, see the README in the GitHub repository [here](https://github
 Querying the database with `voteview_search`
 ============================================
 
-The first main function of this package is to allow users to search for roll calls. Using a custom query parser, we allow both simple and complex queries to be made to the VoteView database. The simple way uses a set of arguments to build a query within the `R` package while the complex way allows the user to build a specific query with nested, boolean logic. Both can also be used simultaneously.
+The first main function of this package is to allow users to search for roll calls. Using a custom query parser, we allow both simple and complex queries to be made to the VoteView database. The simple way uses a set of arguments to build a query within the `R` package while the complex way allows the user to build a specific query with nested, boolean logic. Both can also be used simultaneously. You can find the full documentation for the query parser [here](https://github.com/JeffreyBLewis/Rvoteview/wiki/Query-Documentation).
 
 Simple text queries
 -------------------
@@ -212,7 +212,7 @@ rc_long[1:3, ]
     #> 1  93   1       NA           NA 99903                             100
     #> 2  93   1       NA           NA  4382 Hickenlooper, Bourke Blak   200
     #> 3  93   1       NA           NA  5500       Lausche, Frank John   100
-    #>   state cqlabel      x      y
+    #>   state cqlabel   nom1   nom2
     #> 1    99 (POTUS) -0.340 -0.031
     #> 2    31    (IA)  0.372 -0.318
     #> 3    24    (OH)  0.213 -0.280
@@ -227,7 +227,7 @@ rc_long[1:3, ]
     #> 1 MH99903088    1  Senate       88 99903                             100
     #> 2 MS04382088    1  Senate       88  4382 Hickenlooper, Bourke Blak   200
     #> 3 MS05500088    1  Senate       88  5500       Lausche, Frank John   100
-    #>   state cqlabel      x      y
+    #>   state cqlabel   nom1   nom2
     #> 1    99 (POTUS) -0.340 -0.031
     #> 2    31    (IA)  0.372 -0.318
     #> 3    24    (OH)  0.213 -0.280
@@ -262,7 +262,7 @@ res <- voteview_search("code.Clausen:Foreign and Defense Policy support:[15 to 8
                        startdate = "2008-01-01")
 ```
 
-    #> Query '(code.Clausen:Foreign and Defense Policy support:[15 to 85])' returned 740 rollcalls...
+    #> Query '(code.Clausen:Foreign and Defense Policy support:[15 to 85]) AND (startdate:2008-01-01)' returned 740 rollcalls...
 
 Large downloads can be quite slow for now, so be patient. We are working on improving speed. You can always download the full database yourself.
 
@@ -301,7 +301,18 @@ summary(rc)
     #> 
     #> Use summary(rc,verbose=TRUE) for more detailed information.
 
-Now we use the `pscl` package to run an ideal point estimation. Warning, this is somewhat slow.
+Now we use the `wnominate` package to run an ideal point estimation. Warning, this is somewhat slow and is thus not run in the vignette.
+
+``` r
+library(wnominate)
+# Find extreme legislators for polarity argument
+cons1 <- rc$legis.long.dynamic[which.max(rc$legis.long.dynamic$nom1), "name"]
+cons2 <- rc$legis.long.dynamic[which.min(rc$legis.long.dynamic$nom2), "name"]
+defIdeal <- wnominate(rc,
+                      polarity = list("icpsr", c(29570, 20523)))
+```
+
+The `rollcall` objects we build can also be easily used in the `ideal` function in the `pscl` package.
 
 ``` r
 library(pscl)
@@ -315,7 +326,7 @@ In this case we get a vector of ideal points along two dimensions. We can use th
 plot(defIdeal)
 ```
 
-<img src="Rvoteview_files/figure-markdown_github/plot-ideal-1.png" style="display: block; margin: auto;" />
+<img src="README_files/figure-markdown_github/plot-ideal-1.png" style="display: block; margin: auto;" />
 
 This ideal point estimation also returns estimated points in a matrix that has has the same row names as the `rc$legis.data` data frame, which are ICPSR numbers. They are also in the same order so it is easy to bring the ideal points to the rest of the data. Let's do that and create a custom plot.
 
@@ -334,7 +345,7 @@ ggplot(idealdf, aes(x=D1, y=D2, color=partyName, label=cqlabel)) +
   theme_bw()
 ```
 
-<img src="Rvoteview_files/figure-markdown_github/explore-ideal-1.png" style="display: block; margin: auto;" />
+<img src="README_files/figure-markdown_github/explore-ideal-1.png" style="display: block; margin: auto;" />
 
 We see the usual split between Republicans and Democrats. Furthermore, we see that Bernie Sanders (Independent Senator from Vermont) and Rand Paul (Republican Senator from Kentucky) are very similar along the second dimension while they are very different along the first dimension.
 
@@ -349,7 +360,7 @@ senateRes <- voteview_search(chamber = "Senate",
                              congress = c(110, 111))
 ```
 
-    #> Query '() AND (congress:110 111)' returned 1353 rollcalls...
+    #> Query '() AND (congress:110 111) AND (chamber:senate)' returned 1353 rollcalls...
 
 In order to allow senators who were reelected to move across congresses, we have to construct a roll call object that treats those that were reelected as different legislators. We can use the internal functions of the package to help us with this.
 
@@ -457,10 +468,10 @@ To see what we have built, let's see the vote matrix for three kinds of legislat
 rc$votes[grepl("14009|15429|40904", rownames(rc$votes)), 1:5]
 ```
 
-    #>           S1100046 S1100251 S1100253 S1100256 S1100257
-    #> 14009_110        1        6        6        1        1
+    #>           S1100088 S1100089 S1100452 S1100453 S1100454
+    #> 14009_110        1        1        1        6        6
     #> 14009_111       NA       NA       NA       NA       NA
-    #> 15429            6        9        6        1        1
+    #> 15429            1        1        6        6        6
     #> 40904           NA       NA       NA       NA       NA
 
 ``` r
@@ -468,11 +479,11 @@ rc$votes[grepl("14009|15429|40904", rownames(rc$votes)), 1:5]
 rc$votes[grepl("14009|15429|40904", rownames(rc$votes)), (ncol(rc$votes)-4):ncol(rc$votes)]
 ```
 
-    #>           S1110058 S1110121 S1110500 S1110501 S1110503
+    #>           S1110139 S1110680 S1110681 S1110682 S1110683
     #> 14009_110       NA       NA       NA       NA       NA
-    #> 14009_111        1        1        6        6        6
-    #> 15429            1        1        6        6        6
-    #> 40904            0        0        1        1        1
+    #> 14009_111        1        1        1        1        1
+    #> 15429            1        1        1        1        1
+    #> 40904            0        6        1        6        6
 
 As you can see, Al Franken is missing votes from the 110th, as is the reelected version of Dick Durbin. In the 111th votes, the old version of Dick Durbin, "14009\_110", is missing votes. Now let's do some ideal point estimation:
 
@@ -481,81 +492,7 @@ id <- pscl::ideal(rc,
                   d = 2)
 ```
 
-    #> ideal: analysis of roll call data via Markov chain Monte Carlo methods.
-    #> 
-    #> normalize option is only meaningful when d=1
-    #> convertCodes: not all rollcall votes converted to 0, 1, NA.
-    #> convertCodes: information in codes not exhaustive.
-    #> convertCodes: setting remaining 9289 votes to NA
-    #> Ideal Point Estimation
-    #> 
-    #> Number of Legislators         151 
-    #> Number of Items           1225 
-    #> 
-    #> 
-    #> Starting MCMC Iterations...
-    #> 
-    #>   [1]  1.6087163013 -0.2717532543  0.6495034359 -0.5008490476 -0.4810573087
-    #>   [6] -0.6933583268  1.0454139094  1.9020591906 -0.2882937383  0.5157730803
-    #>  [11]  0.6142956875  0.9977637202 -0.4973681660  1.1269326850  1.3009053962
-    #>  [16]  1.1452197516  1.0112441119  0.8580144597 -0.5017983672 -0.3122316978
-    #>  [21]  0.6140389409 -0.0079265543  0.9100585802  1.1260518564 -0.2876369391
-    #>  [26] -0.6616756750  0.6655747876 -0.5236499732 -0.4064908131 -0.7396022777
-    #>  [31]  1.1747107983  0.9094468380 -0.0564003500  0.8225733113  1.1986382654
-    #>  [36]  1.0383708376  1.2236868516  0.9943725501 -0.6938689661 -0.7177708271
-    #>  [41]  0.6355194795  0.8415020825  0.9620533152  0.5955642184  1.2684208169
-    #>  [46]  1.2831947246 -0.6889445357  0.8642411515 -0.8908910960  1.1112003438
-    #>  [51] -1.0230017719 -1.0229514129  0.5162196905  0.7863998802 -0.8442393075
-    #>  [56] -0.4684142257  0.6419361744 -0.8719940110  0.7341697912  0.5194840427
-    #>  [61] -0.4626693477  1.1911363895 -0.9414958110  0.9137180604  1.4853980929
-    #>  [66]  1.2354887246  0.3738375497 -0.6700505325  1.1198973163  1.1012178333
-    #>  [71] -0.6730574127 -0.7154291810 -0.7064866798 -0.5277318209 -0.6570413036
-    #>  [76] -0.8202943768 -0.7954730606 -1.3070255424 -0.6540690857 -0.6277029442
-    #>  [81]  0.9102757742 -0.4572159306 -0.6571751646  0.6486899996 -0.6764690683
-    #>  [86] -0.7616713578  1.0526281757 -1.2798501513  0.7400399003  0.1868244017
-    #>  [91]  1.1368055188 -0.3255251605  0.3833675988  0.4825890548 -0.1458184776
-    #>  [96] -0.5024826203 -0.4725935572 -0.4781128160 -0.7782685447 -0.8642640791
-    #> [101]  0.5560441577 -0.4300514745  0.8471514540  0.6886028488  0.5336484102
-    #> [106]  0.5839116763  0.7178544974  1.1660323411 -0.4958233565  0.4594834722
-    #> [111] -0.9381695002 -0.7033804013  0.6180159257  1.0398033438 -0.7464549966
-    #> [116]  1.1347352448  1.0598307432 -0.5996922187  0.7919854860  0.6032667469
-    #> [121]  1.0041918109  0.6102318906  0.6209119652 -0.4789835294  1.1246478141
-    #> [126] -0.2243425224  0.7534020415  0.4292911638  1.0520941076  0.8446193619
-    #> [131]  0.8443050745 -0.5436909313 -0.5786750547  0.9199368231  0.6380495856
-    #> [136] -0.6891485024 -0.7813630330  0.2428138928  0.6174197944 -0.0656507140
-    #> [141] -0.0216429835 -0.3983445788 -0.1047586055 -0.8984966076 -0.7460306428
-    #> [146]  0.2946217051 -0.1521602967 -0.5748997244  0.7749473833 -0.8045800850
-    #> [151]  1.1235958710 -0.6381875207 -0.1894497611  0.1501964176 -0.1910887545
-    #> [156] -0.2661486616 -0.1616338936 -0.1187235354 -0.9306545174 -0.1299177775
-    #> [161]  0.1416056624 -0.0419141947 -0.1719882920  0.0632147359  0.1496181922
-    #> [166]  0.0533577881  0.0728935762 -0.2241911431 -0.1474455929 -0.0453372272
-    #> [171] -0.0679671620  0.0444044666  0.0006985807 -0.0409825169  0.0224532873
-    #> [176] -0.0853791810 -0.0967476378  0.1192506096 -0.0346999447 -0.0701760198
-    #> [181] -0.2062735799 -0.1936915421  0.1069024582 -0.0910373946 -0.0235766005
-    #> [186] -0.1356210239 -0.0355808637 -0.2213194286 -0.2015510474 -0.0630062330
-    #> [191] -0.0584270632  0.0556392464 -0.0721861968 -0.0536590698 -0.0150071737
-    #> [196] -0.2828481210 -0.0738082727  0.0764618493 -0.3304930449 -0.0287383119
-    #> [201] -0.0654126713  0.0846237606 -0.1226534400 -0.0584434982 -0.1032453039
-    #> [206]  0.0618934685 -0.2431160361  0.0927997333  0.0036916652 -0.0042807521
-    #> [211] -0.1828677136  0.1654680365 -0.0515524903 -0.0089830420 -0.0458364444
-    #> [216] -0.4082322385  0.2404630362  0.0349201234 -0.0496507779 -0.0942209182
-    #> [221]  0.0542684142 -0.0038749337  0.1176235091 -0.1003734690 -0.0546908965
-    #> [226] -0.1865033025  0.0871166000  0.0475500433  0.3565037425  0.0083673315
-    #> [231]  0.1125326552  0.0104878499  0.0397489201  0.0937210327  0.1108271781
-    #> [236] -0.0015585947 -0.0200970141  0.0668740954  0.2317786540  0.0680575224
-    #> [241]  0.0112721462 -0.1728734090 -0.1643138422 -0.0073898830  0.0167157170
-    #> [246] -0.0360870851  0.0020700461 -0.0771318634 -0.1705290788  0.0009068882
-    #> [251]  0.0613521624 -0.0431754110 -0.0974084360 -0.0248449255  0.1169013951
-    #> [256]  0.3005911370  0.0963893072  0.0036035640 -0.1310626338  0.0339306971
-    #> [261]  0.0610529991  0.1424568564  0.0961636033  0.0208332304  0.1414629751
-    #> [266] -0.0365728134 -0.1349671598  0.0988020752  0.0603767223 -0.0123090987
-    #> [271]  0.0729021186  0.1854776235  0.0213997540  0.1666136605  0.0781811225
-    #> [276]  0.0112596740 -0.1256407815  0.0954915417 -0.0084487706 -0.0669634432
-    #> [281] -0.1526495267 -0.0854111501 -0.0548609784 -0.2368492986 -0.0755695928
-    #> [286]  0.4345206175  0.0491429566  0.1062218667  0.0396092265 -0.0290341620
-    #> [291]  0.0547078105 -0.1185136393 -0.0056932528  0.0278185241  0.1293530946
-    #> [296]  0.1466559714  0.2018660406 -0.0617301338 -0.1461735057  0.0700214410
-    #> [301]  0.2311294805 -0.2771260130
+Let's plot the output.
 
 ``` r
 ## Add custom ideal points to legislator data
@@ -583,7 +520,7 @@ ggplot(idealdf, aes(x=D1, y=D2, color=partyName, label=icpsr, shape = congress))
   theme_bw()
 ```
 
-<img src="Rvoteview_files/figure-markdown_github/unnamed-chunk-10-1.png" style="display: block; margin: auto;" />
+<img src="README_files/figure-markdown_github/plot-ideal-lgbt-1.png" style="display: block; margin: auto;" />
 
 Regression analysis of roll call behavior
 -----------------------------------------
@@ -606,60 +543,60 @@ res
     #>                                                                                                                                                                                      description
     #> 1                                                                                              Conference Report to Accompany H.R. 2647; National Defense Authorization Act for Fiscal Year 2010
     #> 2                                         Motion to Invoke Cloture on the Motion to Concur in the House Amendment to the Senate Amendment to H.R. 2965; Don't Ask, Don't Tell Repeal Act of 2010
-    #> 3                                                                                                                                                       Don<U+0092>t Ask, Don<U+0092>t Tell Repeal Act of 2010
-    #> 4                                                               Brownback Amdt. No. 1610; To clarify that the amendment shall not be construed or applied to infringe on First Amendment rights.
-    #> 5                                                    Upon Reconsideration, Motion to Invoke Cloture on the Motion to Proceed to S. 3454; National Defense Authorization Act for Fiscal Year 2011
-    #> 6  Motion to Waive All Applicable Budgetary Discipline Re: Bennett Amdt. No. 3568; To protect the democratic process and the right of the people of the District of Columbia to define marriage.
-    #> 7                                                                                                                                                   Department of Defense Authorization, FY 2010
-    #> 8                                                                                                                                                   Department of Defense Authorization, FY 2010
-    #> 9                                                                                                                        Hatch Amdt. No. 1611; To prevent duplication in the Federal government.
-    #> 10                                            Providing for consideration of H.R. 1913, to provide Federal assistance to States, local jurisdictions, and Indian tribes to prosecute hate crimes
-    #> 11                                            Providing for consideration of H.R. 1913, to provide Federal assistance to States, local jurisdictions, and Indian tribes to prosecute hate crimes
-    #> 12                                                                        Motion to Concur in the House Amendment to the Senate Amendment to H.R. 2965; Don't Ask, Don't Tell Repeal Act of 2010
-    #> 13                                                                                                                                                  Department of Defense Authorization, FY 2010
-    #> 14                                                                                                                                                                                              
-    #> 15                                                                                                                                              Local Law Enforcement Hate Crimes Prevention Act
+    #> 3                                                               Brownback Amdt. No. 1610; To clarify that the amendment shall not be construed or applied to infringe on First Amendment rights.
+    #> 4                                                    Upon Reconsideration, Motion to Invoke Cloture on the Motion to Proceed to S. 3454; National Defense Authorization Act for Fiscal Year 2011
+    #> 5  Motion to Waive All Applicable Budgetary Discipline Re: Bennett Amdt. No. 3568; To protect the democratic process and the right of the people of the District of Columbia to define marriage.
+    #> 6                                                                                                                        Hatch Amdt. No. 1611; To prevent duplication in the Federal government.
+    #> 7                                                                         Motion to Concur in the House Amendment to the Senate Amendment to H.R. 2965; Don't Ask, Don't Tell Repeal Act of 2010
+    #> 8                                                                          Motion to Invoke Cloture on the Motion to Proceed to S. 3454; National Defense Authorization Act for Fiscal Year 2011
+    #> 9                                                                                                                                                       Don<U+0092>t Ask, Don<U+0092>t Tell Repeal Act of 2010
+    #> 10                                                                                                                                                  Department of Defense Authorization, FY 2010
+    #> 11                                                                                                                                                  Department of Defense Authorization, FY 2010
+    #> 12                                            Providing for consideration of H.R. 1913, to provide Federal assistance to States, local jurisdictions, and Indian tribes to prosecute hate crimes
+    #> 13                                            Providing for consideration of H.R. 1913, to provide Federal assistance to States, local jurisdictions, and Indian tribes to prosecute hate crimes
+    #> 14                                                                                                                                                  Department of Defense Authorization, FY 2010
+    #> 15                                                                                                                                                                                              
     #> 16                                                                                                                                              Local Law Enforcement Hate Crimes Prevention Act
-    #> 17                                                                                                                              Providing for consideration of the Senate amendment to H.R. 2965
-    #> 18                                                                         Motion to Invoke Cloture on the Motion to Proceed to S. 3454; National Defense Authorization Act for Fiscal Year 2011
+    #> 17                                                                                                                                              Local Law Enforcement Hate Crimes Prevention Act
+    #> 18                                                                                                                              Providing for consideration of the Senate amendment to H.R. 2965
     #>                                          shortdescription       date
     #> 1                     DEFENSE AUTH AND HATE CRIMES (PASS) 2009-10-22
     #> 2                       END DONT ASK DONT TELL -- CLOTURE 2010-12-18
-    #> 3                           END DONT ASK DONT TELL (PASS) 2010-12-15
-    #> 4                                             HATE CRIMES 2009-07-16
-    #> 5          DEFENSE AUTH & DON'T ASK DON'T TELL -- CLOTURE 2010-12-09
-    #> 6  HEALTH CARE OVERHAUL RECONCILIATION -- DC GAY MARRIAGE 2010-03-25
-    #> 7                DEFENSE AUTH WITH HATE CRIMES ATTACHMENT 2009-10-08
-    #> 8    DEFENSE AUTH WITH HATE CRIMES ATTACHMENT -- RECOMMIT 2009-10-08
-    #> 9                                             HATE CRIMES 2009-07-16
-    #> 10                                     HATE CRIMES (PROC) 2009-04-29
-    #> 11                                    HATE CRIMES -- RULE 2009-04-29
-    #> 12                          END DONT ASK DONT TELL (PASS) 2010-12-18
-    #> 13                                     HATE CRIMES (PROC) 2009-10-06
-    #> 14        DEFENSE AUTH -- END DON'T ASK DON'T TELL POLICY 2010-05-27
-    #> 15                                     HATE CRIMES (PASS) 2009-04-29
-    #> 16                                HATE CRIMES -- RECOMMIT 2009-04-29
-    #> 17                         END DONT ASK DONT TELL -- RULE 2010-12-15
-    #> 18           DEFENSE AUTH & DONT ASK DONT TELL -- CLOTURE 2010-09-21
-    #>          bill chamber congress rollnumber yea nay  support       id result
-    #> 1   H.R. 2647  Senate      111        327  68  29 70.10309 S1110327      1
-    #> 2   H.R. 2965  Senate      111        676  63  33 65.62500 S1110676      1
-    #> 3    H R 2965   House      111       1621 251 175 58.92019 H1111621      1
-    #> 4     S. 1390  Senate      111        232  78  13 85.71429 S1110232      1
-    #> 5     S. 3454  Senate      111        667  57  40 58.76289 S1110667      1
-    #> 6   H.R. 4872  Senate      111        486  36  59 37.89474 S1110486      0
-    #> 7    H R 2647   House      111        768 281 146 65.80796 H1110768      1
-    #> 8    H R 2647   House      111        767 208 216 49.05660 H1110767      0
-    #> 9     S. 1390  Senate      111        231  29  62 31.86813 S1110231      0
-    #> 10  H RES 372   House      111        218 234 181 56.38554 H1110218      1
-    #> 11  H RES 372   House      111        219 234 190 55.18868 H1110219      1
-    #> 12  H.R. 2965  Senate      111        678  66  31 68.04124 S1110678      1
-    #> 13   H R 2647   House      111        752 178 234 43.20388 H1110752      0
-    #> 14   H R 5136   House      111       1302 230 194 54.24528 H1111302      1
-    #> 15   H R 1913   House      111        222 249 175 58.72642 H1110222      1
-    #> 16   H R 1913   House      111        221 185 241 43.42723 H1110221      0
-    #> 17 H RES 1764   House      111       1618 232 180 56.31068 H1111618      1
-    #> 18    S. 3454  Senate      111        635  56  43 56.56566 S1110635      1
+    #> 3                                             HATE CRIMES 2009-07-16
+    #> 4          DEFENSE AUTH & DON'T ASK DON'T TELL -- CLOTURE 2010-12-09
+    #> 5  HEALTH CARE OVERHAUL RECONCILIATION -- DC GAY MARRIAGE 2010-03-25
+    #> 6                                             HATE CRIMES 2009-07-16
+    #> 7                           END DONT ASK DONT TELL (PASS) 2010-12-18
+    #> 8            DEFENSE AUTH & DONT ASK DONT TELL -- CLOTURE 2010-09-21
+    #> 9                           END DONT ASK DONT TELL (PASS) 2010-12-15
+    #> 10               DEFENSE AUTH WITH HATE CRIMES ATTACHMENT 2009-10-08
+    #> 11   DEFENSE AUTH WITH HATE CRIMES ATTACHMENT -- RECOMMIT 2009-10-08
+    #> 12                                     HATE CRIMES (PROC) 2009-04-29
+    #> 13                                    HATE CRIMES -- RULE 2009-04-29
+    #> 14                                     HATE CRIMES (PROC) 2009-10-06
+    #> 15        DEFENSE AUTH -- END DON'T ASK DON'T TELL POLICY 2010-05-27
+    #> 16                                     HATE CRIMES (PASS) 2009-04-29
+    #> 17                                HATE CRIMES -- RECOMMIT 2009-04-29
+    #> 18                         END DONT ASK DONT TELL -- RULE 2010-12-15
+    #>          bill chamber congress rollnumber yea nay  support       id
+    #> 1   H.R. 2647  Senate      111        327  68  29 70.10309 S1110327
+    #> 2   H.R. 2965  Senate      111        676  63  33 65.62500 S1110676
+    #> 3     S. 1390  Senate      111        232  78  13 85.71429 S1110232
+    #> 4     S. 3454  Senate      111        667  57  40 58.76289 S1110667
+    #> 5   H.R. 4872  Senate      111        486  36  59 37.89474 S1110486
+    #> 6     S. 1390  Senate      111        231  29  62 31.86813 S1110231
+    #> 7   H.R. 2965  Senate      111        678  66  31 68.04124 S1110678
+    #> 8     S. 3454  Senate      111        635  56  43 56.56566 S1110635
+    #> 9    H R 2965   House      111       1621 251 175 58.92019 H1111621
+    #> 10   H R 2647   House      111        768 281 146 65.80796 H1110768
+    #> 11   H R 2647   House      111        767 208 216 49.05660 H1110767
+    #> 12  H RES 372   House      111        218 234 181 56.38554 H1110218
+    #> 13  H RES 372   House      111        219 234 190 55.18868 H1110219
+    #> 14   H R 2647   House      111        752 178 234 43.20388 H1110752
+    #> 15   H R 5136   House      111       1302 230 194 54.24528 H1111302
+    #> 16   H R 1913   House      111        222 249 175 58.72642 H1110222
+    #> 17   H R 1913   House      111        221 185 241 43.42723 H1110221
+    #> 18 H RES 1764   House      111       1618 232 180 56.31068 H1111618
 
 ``` r
 res2 <- voteview_search("gay lesbian congress:111")
@@ -675,8 +612,10 @@ res2
     #> 1 Motion to Waive All Applicable Budgetary Discipline Re: Bennett Amdt. No. 3568; To protect the democratic process and the right of the people of the District of Columbia to define marriage.
     #>                                         shortdescription       date
     #> 1 HEALTH CARE OVERHAUL RECONCILIATION -- DC GAY MARRIAGE 2010-03-25
-    #>        bill chamber congress rollnumber yea nay  support       id result
-    #> 1 H.R. 4872  Senate      111        486  36  59 37.89474 S1110486      0
+    #>        bill chamber congress rollnumber yea nay  support       id
+    #> 1 H.R. 4872  Senate      111        486  36  59 37.89474 S1110486
+    #>       score
+    #> 1 0.5714286
 
 To focus on actual bills that were of some consequence, let's take the House and Senate don't ask don't tell votes and the hate crimes bill from the House.
 
@@ -685,12 +624,12 @@ dadt <- voteview_download(c("H1111621", "S1110678", "H1110222"))
 dadt$vote.data
 ```
 
-Now we want to turn this into a long dataframe, where each row is a legislator-vote. We could also then cast this using a standard cast function or the `reshape2` package to have each row be a legislator, or each row be a legislator-congress and so on. The longer format will serve our purposes for now. Note that `x` and `y` are the positions on the first and second ideological dimensions as estimated by DW-Nominate. They are fixed over the legislator's tenure in office.
+Now we want to turn this into a long dataframe, where each row is a legislator-vote. We could also then cast this using a standard cast function or the `reshape2` package to have each row be a legislator, or each row be a legislator-congress and so on. The longer format will serve our purposes for now. Note that `nom1` and `nom2` are the Common Space DW-Nominate positions on the first and second ideological dimensions. They are fixed over the legislator's tenure in office.
 
 ``` r
 ## Only retain certain columns with respect to the legislator and the vote
 dadtLong <- melt_rollcall(dadt,
-                          legiscols = c("name", "state","party", "x", "y"),
+                          legiscols = c("name", "state","party", "nom1", "nom2"),
                           votecols = c("vname", "date", "chamber"))
 head(dadtLong)
 ```
@@ -702,7 +641,7 @@ head(dadtLong)
     #> 4 MH20340111    9 H1110222   House 2009-04-29      Butterfield, G. K.
     #> 5 MH15628111    6 H1110222   House 2009-04-29         Tanner, John S.
     #> 6 MH12036111    1 H1110222   House 2009-04-29          Obey, David R.
-    #>   state party      x      y
+    #>   state party   nom1   nom2
     #> 1    23   100 -0.448  0.321
     #> 2    43   200  0.558 -0.060
     #> 3    23   100 -0.666 -0.475
@@ -738,7 +677,7 @@ head(df)
     #> 4   alabama    41 MS49700111    6 S1110678  Senate 2010-12-18
     #> 5   alabama    41 MS94659111    6 S1110678  Senate 2010-12-18
     #> 6   alabama    41 MH29701111    6 H1111621   House 2010-12-15
-    #>                    name party      x     y secondParentAdoption hateCrimes
+    #>                    name party   nom1  nom2 secondParentAdoption hateCrimes
     #> 1       Rogers, Mike D.   200  0.334 0.482                   29         61
     #> 2      Griffith, Parker   100 -0.046 0.554                   29         61
     #> 3   Aderholt, Robert B.   200  0.359 0.649                   29         61
@@ -833,13 +772,14 @@ summary(lm(voteYes ~ meanOpinion*republican, data = df))
 ## Control for ideology
 ## Note that ideology here has been estimated using this vote and later votes,
 ## so interpret the results iwth some caution
-summary(lm(voteYes ~ meanOpinion*republican + x + y,
+summary(lm(voteYes ~ meanOpinion*republican + nom1 + nom2,
            data = df))
 ```
 
     #> 
     #> Call:
-    #> lm(formula = voteYes ~ meanOpinion * republican + x + y, data = df)
+    #> lm(formula = voteYes ~ meanOpinion * republican + nom1 + nom2, 
+    #>     data = df)
     #> 
     #> Residuals:
     #>      Min       1Q   Median       3Q      Max 
@@ -850,8 +790,8 @@ summary(lm(voteYes ~ meanOpinion*republican + x + y,
     #> (Intercept)             0.616029   0.104545   5.892 5.30e-09 ***
     #> meanOpinion             0.003671   0.001802   2.038   0.0419 *  
     #> republican             -0.694767   0.143694  -4.835 1.55e-06 ***
-    #> x                      -0.350535   0.055877  -6.273 5.39e-10 ***
-    #> y                      -0.269910   0.029344  -9.198  < 2e-16 ***
+    #> nom1                   -0.350535   0.055877  -6.273 5.39e-10 ***
+    #> nom2                   -0.269910   0.029344  -9.198  < 2e-16 ***
     #> meanOpinion:republican  0.002760   0.002485   1.110   0.2671    
     #> ---
     #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
@@ -863,14 +803,14 @@ summary(lm(voteYes ~ meanOpinion*republican + x + y,
 
 ``` r
 ## Now let's look just at repealing don't ask don't tell and add chamber fixed effects
-summary(lm(voteYes ~ meanOpinion*republican + x + y + chamber,
+summary(lm(voteYes ~ meanOpinion*republican + nom1 + nom2 + chamber,
            data = df[df$vname != "H1110222", ]))
 ```
 
     #> 
     #> Call:
-    #> lm(formula = voteYes ~ meanOpinion * republican + x + y + chamber, 
-    #>     data = df[df$vname != "H1110222", ])
+    #> lm(formula = voteYes ~ meanOpinion * republican + nom1 + nom2 + 
+    #>     chamber, data = df[df$vname != "H1110222", ])
     #> 
     #> Residuals:
     #>      Min       1Q   Median       3Q      Max 
@@ -881,8 +821,8 @@ summary(lm(voteYes ~ meanOpinion*republican + x + y + chamber,
     #> (Intercept)             0.750381   0.140026   5.359 1.27e-07 ***
     #> meanOpinion             0.002029   0.002405   0.844  0.39925    
     #> republican             -0.969660   0.189075  -5.128 4.15e-07 ***
-    #> x                      -0.227909   0.073925  -3.083  0.00216 ** 
-    #> y                      -0.285644   0.038865  -7.350 7.87e-13 ***
+    #> nom1                   -0.227909   0.073925  -3.083  0.00216 ** 
+    #> nom2                   -0.285644   0.038865  -7.350 7.87e-13 ***
     #> chamberSenate           0.061405   0.026637   2.305  0.02155 *  
     #> meanOpinion:republican  0.005780   0.003278   1.764  0.07841 .  
     #> ---
