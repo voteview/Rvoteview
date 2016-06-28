@@ -12,7 +12,7 @@ trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 #' 
 #' Searches the Voteview database for roll calls and returns a data frame with
 #' bill IDs, the breakdown of voting, and other descriptive information. Takes
-#' any one or more of the arguments.
+#' any one or more of the arguments. See \href{https://github.com/JeffreyBLewis/Rvoteview/wiki/Query-Documentation}{the GitHub Wiki here} for more complete documentation.
 #' 
 #' @param q A string that is passed directly to the Voteview query parser. It
 #' can either specify parameters for the search, incorporate complex boolean
@@ -26,11 +26,11 @@ trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 #' search to. The default NULL value returns results from all congresses.
 #' @param chamber A string in \code{c("House", "Senate")}. The default
 #' NULL value returns results from both chambers of congress.
+#' @param minsupport A number specifying the minimum 
+#' support allowed for returned votes.
 #' @param maxsupport Support is the share of Yea votes 
 #' over total Yea and Nay votes. \code{maxsupport} is a number specifying the 
 #' maximum support allowed for returned votes.
-#' @param minsupport A number specifying the minimum 
-#' support allowed for returned votes.
 #' @return A data.frame with the following columns: 
 #' \itemize{
 #' \item{\code{description} }{Official description of the bill.}
@@ -47,16 +47,18 @@ trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 #' \item{\code{support} }{Percent of 'Yea' votes out of all 'Yea' or 'Nay' 
 #' votes (excludes absent).}
 #' \item{\code{id} }{Unique identifier for the roll call that allows
-#' \item Other columns that depend on the query
+#' \item Other columns that depend on the query. For example \code{score} is the
+#' value assigned to a roll call when searching using key words. Higher scores
+#' mean better matches for the key words used in the search.
 #' \code{voteview} to query the individual congress people's votes and other
 #' details.}
 #' }
 #' @details
 #' This function requires at least one argument. The user can use the \code{q} field either to search across all text fields or to pass a more complicated advanced query. This is essentially like a "search box" where the user can just put in some key words, specific phrases in quotes, or can use notation like "support:[10 to 90]" along with boolean logic to build complicated queries.
 #' 
-#' Complete documentation for the query syntax can be found at \href{https://github.com/JeffreyBLewis/Rvoteview/wiki/Query-Documentation}{the GitHub Wiki here}. You can also see the vignette for other examples. In general, the following syntax is used, \code{field:specific phrase (field:other phrase OR field:second phrase)}. For example, if you wanted to find votes with "war" and either "iraq" or "afghanistan" in any text field, you could set the query to be \code{"alltext:war AND (alltext:iraq OR alltext:afghanistan)"}. Note that the \code{AND} in the above is redundant as fields are joined by \code{AND} by default. If you wanted to do the same query but only return the votes with "defense" in the description field, the query would become \code{"alltext:war (alltext:iraq OR alltext:afghanistan) description:defense"}. Numeric fields can be searched in a similar way, although users can also use square brackets and "to" for ranges of numbers. For example, the query for all votes about taxes in the 100th to 102nd congress could be expressed either using \code{"alltext:taxes congress:100 OR congress:101 OR congress:102"} or using \code{"alltext:taxes congress:[100 to 102]"}. Note that if you want to restrict search to certain dates, the \code{startdate} and \code{enddate} fields shuld still be used. Furthermore, users can specify exact phrases that they want to search like \code{"budget 'estate tax'"}.
+#' Complete documentation for the query syntax can be found at \href{https://github.com/JeffreyBLewis/Rvoteview/wiki/Query-Documentation}{the GitHub Wiki here}. You can also see the vignette for other examples. In general, the following syntax is used, \code{field:specific phrase (field:other phrase OR field:second phrase)}. For example, if you wanted to find votes with "war" and either "iraq" or "afghanistan" in any text field, you could set the query to be \code{"alltext:war AND (alltext:iraq OR alltext:afghanistan)"}. Note that the \code{AND} in the above is redundant as fields are joined by \code{AND} by default. Numeric fields can be searched in a similar way, although users can also use square brackets and "to" for ranges of numbers. For example, the query for all votes about taxes in the 100th to 102nd congress could be expressed either using \code{"alltext:taxes congress:100 OR congress:101 OR congress:102"} or using \code{"alltext:taxes congress:[100 to 102]"}. Furthermore, users can specify exact phrases that they want to search like \code{"description:'estate tax'"}.
 #' 
-#' The fields that can be searched with text are \code{codes}, \code{code.Clausen}, \code{code.Peltzman}, \code{code.Issue}, \code{description}, \code{shortdescription}, \code{bill}, and \code{alltext}. The code and bill fields are searched exactly using regular expressions while in the other fields words are stemmed and searched anywhere in the field specified (unless the query is in quotes). The fields that can be searched numerically are \code{congress}, \code{yea}, \code{nay}, and \code{support}. Searching by individual legislator will be implemented soon.
+#' The fields that can be searched with text are \code{codes}, \code{code.Clausen}, \code{code.Peltzman}, \code{code.Issue}, \code{description}, \code{shortdescription}, \code{bill}, and \code{alltext}. The code and bill fields are searched exactly using regular expressions while in the other fields words are stemmed and searched anywhere in the field specified (unless the query is in quotes). The fields that can be searched numerically are \code{congress}, \code{yea}, \code{nay}, and \code{support}. Users can also search for stashed votes using the \code{saved} field. Searching by individual legislator will be implemented soon.
 #' 
 #' @seealso
 #' '\link{voteview_download}'.
@@ -76,8 +78,8 @@ trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 #' ## Search for votes with a start date in just the house in the 110th or 112th congress
 #' res <- voteview_search("Iraq", startdate = "2005-01-01", congress = c(110, 112), chamber = "House")
 #' 
-#' ## Search for "war on terrorism" AND iraq
-#' res <- voteview_search("'war on terrorism' iraq")
+#' ## Search for "war on terror" AND iraq
+#' res <- voteview_search("description:'war on terror' alltext:iraq")
 #' 
 #' }
 #' @export
