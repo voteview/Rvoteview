@@ -2,7 +2,7 @@
 Rvoteview
 =========
 
-**WARNING: This package is under construction. The server and database are currently being revamped. Some features may break. please limit the number of roll calls you request at a time and be prepared for queries to break or behave strangely.**
+**WARNING: This package is under construction. Please be patient and feel free to contact [Luke Sonnet](mailto:luke.sonnet@gmail.com) with any questions.**
 
 This is a package that enables you to query the Voteview database for roll calls and work with data frames or a `pscl` `rollcall` object.
 
@@ -12,18 +12,12 @@ To install this package, ensure you have `devtools` installed. If you do not, ru
 devtools::install_github("JeffreyBLewis/Rvoteview")
 ```
 
-For more thorough documentation, see the help files and the vignette included with the package:
-
-``` r
-vignette("Rvoteview")
-```
-
-You can also find the vignette [at this link here](https://github.com/JeffreyBLewis/Rvoteview/tree/master/vignettes).
+For more thorough documentation, see the help files for individual functions and the vignette [at this link here](https://github.com/JeffreyBLewis/Rvoteview/tree/master/vignettes). Lastly, there is complete documentation for the searches you can make [at the wiki here](https://github.com/JeffreyBLewis/Rvoteview/wiki/Query-Documentation).
 
 Using Rvoteview
 ---------------
 
-To use `Rvoteview`, you generally want to query the database to get a list of vote ids and then use those to return the individual votes. We query the database with a search term and some parameters to constrain the search. For now we take a string that will seach for a bill that has ANY of the words in the string in ANY text field. Additional boolean and targeted searches have been implemented and can be found in the vignette.
+To use `Rvoteview`, you generally want to query the database to get a list of vote ids and then use those to return the individual votes. We query the database with a search term and some parameters to constrain the search [(full documentation for the search here)](https://github.com/JeffreyBLewis/Rvoteview/wiki/Query-Documentation). For now we take a string that will seach for a bill that has ANY of the words in the string in ANY text field. Additional boolean and targeted searches have been implemented and can be found in the vignette.
 
 ``` r
 library(Rvoteview)
@@ -34,8 +28,7 @@ names(res)
 #>  [1] "description"      "shortdescription" "date"            
 #>  [4] "bill"             "chamber"          "congress"        
 #>  [7] "rollnumber"       "yea"              "nay"             
-#> [10] "support"          "id"               "score"           
-#> [13] "result"
+#> [10] "support"          "id"               "score"
   
 ## I will drop description since it is a very long field
 head(res[, -1])
@@ -48,18 +41,11 @@ head(res[, -1])
 #> 6                                               CONDEMN IRAQ 1998-08-03
 #>      bill chamber congress rollnumber yea nay   support       id    score
 #> 1           House      101        654 417   0 100.00000 H1010654 1.650000
-#> 2 S. 1042  Senate      109        322  40  58  40.81633 S1090322 1.593750
-#> 3 S. 1042  Senate      109        323  79  19  80.61224 S1090323 1.593750
+#> 2 S. 1042  Senate      109        323  79  19  80.61224 S1090323 1.593750
+#> 3 S. 1042  Senate      109        322  40  58  40.81633 S1090322 1.593750
 #> 4 S. 2766  Senate      109        547  13  87  13.00000 S1090547 1.589130
 #> 5    1689  Senate      108        395  67  32  67.67677 S1080395 1.541667
 #> 6           House      105        998 407   6  98.54722 H1050998 1.539474
-#>   result
-#> 1      1
-#> 2      0
-#> 3      1
-#> 4      0
-#> 5      1
-#> 6      1
 ```
 
 Using `res$id` we can get a `rollcall` object (from the [`pscl` package](https://cran.r-project.org/web/packages/pscl/index.html)) that contains the full set of votes and data for each roll call.
@@ -134,39 +120,32 @@ You can also search by start and end date, congress, and chamber. Please see the
 ## Voteview search with options
 res <- voteview_search("Iraq", chamber = "House", congress = 110,
                        startdate = 2008, enddate = "2008-04-20")
-#> Query '(alltext:Iraq) AND (congress:110)' returned 1 rollcalls...
+#> Query '(Iraq) AND (startdate:2008) AND (enddate:2008-04-20) AND (congress:110) AND (chamber:house)' returned 1 rollcalls...
 head(res[, -1])
 #>                                                  shortdescription
 #> 1 IRAQ & AFGHAN. FALLEN MILITARY HEROES POST OFFICE LOUISVILLE KY
 #>         date     bill chamber congress rollnumber yea nay support       id
 #> 1 2008-02-28 H R 4454   House      110       1263 404   0     100 H1101263
-#>   result
-#> 1      1
+#>      score
+#> 1 1.105556
 
 res <- voteview_search("Iraq", congress = 109:112)
-#> Query '(alltext:Iraq) AND (congress:109 110 111 112)' returned 157 rollcalls...
+#> Query '(Iraq) AND (congress:109 110 111 112)' returned 157 rollcalls...
 head(res[, -1])
-#>                                             shortdescription       date
-#> 1 SUPPLEMENTAL APPS IRAQ & AFGHANISTAN & KATRINA -- COLOMBIA 2006-03-16
-#> 2                                   OPPOSE THE SURGE IN IRAQ 2007-02-05
-#> 3                                   OPPOSE THE SURGE IN IRAQ 2007-02-01
-#> 4                           DEFENSE APPS -- ARMORED VEHICLES 2005-10-05
-#> 5                            WITHDRAW FROM IRAQ BY JUNE 2009 2008-05-22
-#> 6                INVESTIGATE CONTRACTS IN IRAQ & AFGHANISTAN 2005-09-14
-#>           bill chamber congress rollnumber yea nay  support       id
-#> 1     H R 4939   House      109        713 250 172 59.24171 H1090713
-#> 2       S. 470  Senate      110         44  49  48 50.51546 S1100044
-#> 3 S.Con.Res. 2  Senate      110         43   0  97  0.00000 S1100043
-#> 4    H.R. 2863  Senate      109        248  56  43 56.56566 S1090248
-#> 5    H.R. 2642  Senate      110        580  34  64 34.69388 S1100580
-#> 6    H.R. 2862  Senate      109        228  44  53 45.36082 S1090228
-#>   result
-#> 1      1
-#> 2      1
-#> 3      0
-#> 4      1
-#> 5      0
-#> 6      0
+#>                      shortdescription       date      bill chamber
+#> 1                  WITHDRAW FROM IRAQ 2005-11-15   S. 1042  Senate
+#> 2                  WITHDRAW FROM IRAQ 2005-11-15   S. 1042  Senate
+#> 3   WITHDRAW FROM IRAQ BY JULY 1 2007 2006-06-22   S. 2766  Senate
+#> 4    FORMULATE IRAQ WITHDRAWAL POLICY 2006-06-15   S. 2766  Senate
+#> 5   HAS CIVIL WAR BROKEN OUT IN IRAQ? 2006-09-06 H.R. 5631  Senate
+#> 6 NO PERMANENT MILITARY BASES IN IRAQ 2007-07-25  H R 2929   House
+#>   congress rollnumber yea nay  support       id    score
+#> 1      109        323  79  19 80.61224 S1090323 1.593750
+#> 2      109        322  40  58 40.81633 S1090322 1.593750
+#> 3      109        547  13  87 13.00000 S1090547 1.589130
+#> 4      109        540  93   6 93.93939 S1090540 1.468750
+#> 5      109        599  54  44 55.10204 S1090599 1.458333
+#> 6      110        711 399  24 94.32624 H1100711 1.437500
 ```
 
 We can also build complex queries manually.
@@ -176,47 +155,65 @@ We can also build complex queries manually.
 res <- voteview_search("(alltext:estate death tax congress:[100 to 114])")
 #> Query '(alltext:estate death tax congress:[100 to 114])' returned 1661 rollcalls...
 head(res[, -1])
-#>                                      shortdescription       date
-#> 1                         TAX CUT -- MARRIAGE PENALTY 2001-05-17
-#> 2                        ESTATE TAX EXTENSION (TABLE) 2009-12-03
-#> 3                             HONOR POPE JOHN-PAUL II 2005-04-05
-#> 4                               TAX CUT -- ESTATE TAX 2001-05-22
-#> 5                 REDUCE TAX CUT FUND LAW ENFORCEMENT 2003-03-25
-#> 6 TAX RELIEF FOR MARRIED COUPLES -- PREVIOUS QUESTION 2002-09-25
-#>                bill chamber congress rollnumber yea nay   support       id
-#> 1 1836        S.AMD  Senate      107        113  27  73  27.00000 S1070113
-#> 2          H R 4154   House      111        925 234 186  55.71429 H1110925
-#> 3         S.Res. 95  Senate      109         82  98   0 100.00000 S1090082
-#> 4              1836  Senate      107        134  30  69  30.30303 S1070134
-#> 5       Con.Res. 23  Senate      108         92  49  50  49.49495 S1080092
-#> 6         H RES 547   House      107        919 217 200  52.03837 H1070919
-#>   result
-#> 1      0
-#> 2      1
-#> 3      1
-#> 4      0
-#> 5      0
-#> 6      1
+#>                         shortdescription       date              bill
+#> 1        BUDGET RESOLUTION -- ESTATE TAX 2007-03-23     S.Con.Res. 21
+#> 2                TAX CUT -- ESTATE TAXES 2001-05-21 1836        S.AMD
+#> 3 TAX CUT -- CREDIT FOR STATE ESTATE TAX 2001-05-22 1836        S.AMD
+#> 4                  TAX CUT -- ESTATE TAX 2001-05-22 1836        S.AMD
+#> 5    BUDGET RECONCILIATION--ESTATE TAXES 1995-10-27                  
+#> 6        BUDGET RESOLUTION -- ESTATE TAX 2009-04-02     S.Con.Res. 13
+#>   chamber congress rollnumber yea nay  support       id    score
+#> 1  Senate      110        102  48  51 48.48485 S1100102 3.625000
+#> 2  Senate      107        120  39  60 39.39394 S1070120 3.450000
+#> 3  Senate      107        150  42  57 42.42424 S1070150 3.442029
+#> 4  Senate      107        135  48  51 48.48485 S1070135 3.392857
+#> 5  Senate      104        546  72  27 72.72727 S1040546 3.154412
+#> 6  Senate      111        147  56  43 56.56566 S1110147 3.128049
 tail(res[, -1])
-#>                                   shortdescription       date
-#> 1656          BUDGET RECONCILIATION--CLINICAL LABS 1995-11-17
-#> 1657                   BUDGET RESOLUTION -- AMTRAK 2006-03-15
-#> 1658                           PASS LINE ITEM VETO 1995-02-06
-#> 1659 TAX DEDUCTION FOR DONATING COMPUTER EQUIPMENT 2000-03-01
-#> 1660                      REPEAL ESTATE TAX (PROC) 2006-06-22
-#> 1661                     BUSINESS TAXES -- CLOTURE 2004-03-24
-#>               bill chamber congress rollnumber yea nay  support       id
-#> 1656                Senate      104        583  54  45 54.54545 S1040583
-#> 1657 S.Con.Res. 83  Senate      109        417  44  53 45.36082 S1090417
-#> 1658                 House      104         90 294 134 68.69159 H1040090
-#> 1659                Senate      106        392  96   2 97.95918 S1060392
-#> 1660     H RES 885   House      109        976 226 194 53.80952 H1090976
-#> 1661          1637  Senate      108        519  51  47 52.04082 S1080519
-#>      result
-#> 1656      1
-#> 1657      0
-#> 1658      1
-#> 1659      1
-#> 1660      1
-#> 1661      1
+#>                          shortdescription       date bill chamber congress
+#> 1656 BUDGET RECONCILIATION--CLINICAL LABS 1995-11-17       Senate      104
+#> 1657  WELFARE REFORM -- EN BLOC AMENDMENT 1995-03-22        House      104
+#> 1658       OUTLAW CERTAIN ASSAULT WEAPONS 1993-11-17       Senate      103
+#> 1659    JUVENILES DRUGS AND GANG ACTIVITY 1993-11-09       Senate      103
+#> 1660                    CHILD PORNOGRAPHY 1993-11-04       Senate      103
+#> 1661             CRIME CONTROL AMENDMENTS 1994-04-14        House      103
+#>      rollnumber yea nay   support       id     score
+#> 1656        583  54  45  54.54545 S1040583 0.5020833
+#> 1657        250 249 177  58.45070 H1040250 0.5017668
+#> 1658        375  57  43  57.00000 S1030375 0.5015873
+#> 1659        360  60  38  61.22449 S1030360 0.5015674
+#> 1660        350 100   0 100.00000 S1030350 0.5015432
+#> 1661        698 390  25  93.97590 H1030698 0.5013298
+res <- voteview_search("(alltext:war on terror startdate:2008-01-01)")
+#> Query '(alltext:war on terror startdate:2008-01-01)' returned 99 rollcalls...
+head(res[, -1])
+#>                                  shortdescription       date      bill
+#> 1 SALUTE 69TH INFANTRY REGIMENT FOR WAR ON TERROR 2008-03-13 H RES 991
+#> 2          ACQUIRE REVOLUTIONARY & 1812 WAR SITES 2009-03-03   H R 146
+#> 3                      TERRORISM INSURANCE (PASS) 2014-12-10    S 2244
+#> 4                      TERRORISM INSURANCE (PASS) 2014-07-17   S. 2244
+#> 5          PRESERVE CIVIL WAR BATTLEFIELDS (PASS) 2013-04-09  H R 1033
+#> 6                         HONOR COLD WAR VETERANS 2010-03-21 H RES 900
+#>   chamber congress rollnumber yea nay   support       id    score
+#> 1   House      110       1317 406   0 100.00000 H1101317 2.243590
+#> 2   House      111         90 394  13  96.80590 H1110090 1.564286
+#> 3   House      113       1195 417   7  98.34906 H1131195 1.532051
+#> 4  Senate      113        522  93   4  95.87629 S1130522 1.523810
+#> 5   House      113         90 283 122  69.87654 H1130090 1.443750
+#> 6   House      111       1146 429   0 100.00000 H1111146 1.426724
+tail(res[, -1])
+#>                                shortdescription       date         bill
+#> 94                                              2015-06-17 H CON RES 55
+#> 95 USE OF CAPITOL VISITOR CENTER TO AWARD MEDAL 2011-09-21 S CON RES 28
+#> 96   EXTEND CERTAIN SECTIONS PATRIOT ACT (PASS) 2011-02-15     H.R. 514
+#> 97            NO GROUND FORCES IN LIBYA -- RULE 2011-06-03    H RES 294
+#> 98                                              2016-01-12    H RES 583
+#> 99                                              2016-01-12    H RES 583
+#>    chamber congress rollnumber yea nay   support       id     score
+#> 94   House      114        369 139 288  32.55269 H1140369 0.5161290
+#> 95   House      112        713 424   0 100.00000 H1120713 0.5156250
+#> 96  Senate      112         19  86  12  87.75510 S1120019 0.5147059
+#> 97   House      112        408 257 156  62.22760 H1120408 0.5135135
+#> 98   House      114        738 233 173  57.38916 H1140738 0.5135135
+#> 99   House      114        739 239 183  56.63507 H1140739 0.5135135
 ```

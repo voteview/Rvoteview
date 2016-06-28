@@ -15,7 +15,7 @@ knitr::opts_chunk$set(
 
 # Rvoteview
 
-**WARNING: This package is under construction. The server and database are currently being revamped. Some features may break. please limit the number of roll calls you request at a time and be prepared for queries to break or behave strangely.**
+**WARNING: This package is under construction. Please be patient and feel free to contact [Luke Sonnet](mailto:luke.sonnet@gmail.com) with any questions.**
 
 This is a package that enables you to query the Voteview database for roll calls and work with data frames or a `pscl` `rollcall` object.
 
@@ -24,11 +24,11 @@ To install this package, ensure you have `devtools` installed. If you do not, ru
 devtools::install_github("JeffreyBLewis/Rvoteview")
 ```
 
-For more thorough documentation, see the help files for individual functions and the vignette [at this link here](https://github.com/JeffreyBLewis/Rvoteview/tree/master/vignettes).
+For more thorough documentation, see the help files for individual functions and the vignette [at this link here](https://github.com/JeffreyBLewis/Rvoteview/tree/master/vignettes). Lastly, there is complete documentation for the searches you can make [at the wiki here](https://github.com/JeffreyBLewis/Rvoteview/wiki/Query-Documentation).
 
 ## Using Rvoteview
 
-To use `Rvoteview`, you generally want to query the database to get a list of vote ids and then use those to return the individual votes. We query the database with a search term and some parameters to constrain the search. For now we take a string that will seach for a bill that has ANY of the words in the string in ANY text field. Additional boolean and targeted searches have been implemented and can be found in the vignette.
+To use `Rvoteview`, you generally want to query the database to get a list of vote ids and then use those to return the individual votes. We query the database with a search term and some parameters to constrain the search [(full documentation for the search here)](https://github.com/JeffreyBLewis/Rvoteview/wiki/Query-Documentation). For now we take a string that will seach for a bill that has ANY of the words in the string in ANY text field. Additional boolean and targeted searches have been implemented and can be found in the vignette.
 ```{r search}
 library(Rvoteview)
   
@@ -80,6 +80,9 @@ We can also build complex queries manually.
 ```{r search-adv}
 ## Voteview search with options
 res <- voteview_search("(alltext:estate death tax congress:[100 to 114])")
+head(res[, -1])
+tail(res[, -1])
+res <- voteview_search("(alltext:war on terror startdate:2008-01-01)")
 head(res[, -1])
 tail(res[, -1])
 ```
