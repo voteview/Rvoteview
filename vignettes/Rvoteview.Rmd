@@ -37,7 +37,7 @@ The `q` argument should be treated similarly to a search box online. You can put
 ```{r search-ex1, eval=F}
 library(Rvoteview)
 res <- voteview_search("'terrorism'")
-## 164 found rollcalls
+## 165 found rollcalls
 res <- voteview_search("terrorism")
 ## 238 found rollcalls
 ```
@@ -88,7 +88,7 @@ res <- voteview_search("tax",
 
 ## Building complex queries
 
-As previewed before, users can use the `q` argument to specify complex queries by specifying which fields to search and how to combine fields using boolean logic. The complete documentation is forthcoming. In general, the following syntax is used, `field:specific phrase (field:other phrase OR field:second phrase)`.
+As previewed before, users can use the `q` argument to specify complex queries by specifying which fields to search and how to combine fields using boolean logic. The [complete documentation can be found here](https://github.com/JeffreyBLewis/Rvoteview/wiki/Query-Documentation). In general, the following syntax is used, `field:specific phrase (field:other phrase OR field:second phrase)`.
 
 For example, if you wanted to find votes with "war" and either "iraq" or "afghanistan" in the description field, you could set the query to:
 ```{r or-text, eval = F}
@@ -176,7 +176,7 @@ rc_long[1:3, ]
 
 This section details three different possible uses of the `Rvoteview` package, showing users from beginning to end how to conduct their own ideal point estimation and use `Rvoteview` in more traditional regression analysis.
 
-## Ideal point estimation using `pscl`
+## Ideal point estimation
 
 Imagine that we want to estimate ideal points for all legislators voting on foreign policy and defense issues from 2008 until today. We will use all roll calls that fit the Clausen category "Foreign and Defense Policy" and are somewhat competitive, meaning between 15 and 85 percent of votes on the floor were yeas.
 
