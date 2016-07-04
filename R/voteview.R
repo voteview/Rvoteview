@@ -759,14 +759,23 @@ melt_rollcall <- function(rc,
       votelongcols <- colnames(rc$votes.long)
       votecols <- colnames(rc$vote.data)
     } else {
-      ## Otherwise, find the ones they specified if they exist
+      ## Otherwise, find the ones they specified if they exist and warn if they do not
+      votecolsMissing <- setdiff(votecols, c(colnames(rc$vote.data), colnames(rc$legis.long.dynamic)))
+      if(length(votecolsMissing) > 0)
+        warning(sprintf("Following specified votecols (%s) not found in the rollcall object.", paste0(votecolsMissing, collapse = ", ")))
+        
       votelongcols <- intersect(colnames(rc$legis.long.dynamic), votecols)
       votecols <- intersect(colnames(rc$vote.data), votecols)
-      ## todo: add warning about columns specified by user but not found
     }
     
     if(is.null(legiscols)) {
       legiscols <- colnames(rc$legis.long.dynamic)
+    } else {
+      legiscolsMissing <- setdiff(legiscols, c(colnames(rc$legis.long.dynamic)))
+      if(length(legiscolsMissing) > 0)
+        warning(sprintf("Following specified legiscols (%s) not found in the rollcall object.", paste0(legiscolsMissing, collapse = ", ")))
+      
+      legiscols <- intersect(colnames(rc$legis.long.dynamic), legiscols)
     }
     
     ## Only keep icpsr once
@@ -779,23 +788,43 @@ melt_rollcall <- function(rc,
     
     ## Only keep votes user wants
     votedat <- rc$votes.long[rc$votes.long$vname %in% keepvote,
-                             names(rc$votes.long) != "icpsr"] 
+                             names(rc$votes.long) != "icpsr",
+                             drop = F] 
     ## Otherwise icpsr duplicates in merge below
     
-    long_rc <- merge(votedat, rc$legis.long.dynamic[, legiscols],
+    long_rc <- merge(votedat, rc$legis.long.dynamic[, legiscols, drop = F],
                      by = "id")
-    long_rc <- merge(long_rc, rc$vote.data[, unique(c(votecols, "vname"))],
+    long_rc <- merge(long_rc, rc$vote.data[, unique(c(votecols, "vname")), drop = F],
                      by = "vname", sort = F)
     
-    return(long_rc[, unique(c("id", "vote", votecols, votelongcols, legiscols))])
+    return(long_rc[, unique(c("id", "vname", "vote", votecols, votelongcols, legiscols))])
   } else {
     
-    votes <- rc$votes[, keepvote]
+    votes <- rc$votes[, keepvote,  drop = F]
     
+    ## If not user specified, return all legislator metadata
     if(is.null(legiscols)) {
       legiscols <- setdiff(colnames(rc$legis.data), "icpsr")
+    } else {
+      ## If specified, check for any requests not in data, return all metadata found
+      legiscolsMissing <- setdiff(legiscols, colnames(rc$legis.data))
+      if(length(legiscolsMissing) > 0)
+        warning(sprintf("Following specified legiscols (%s) not found in the rollcall object.", paste0(legiscolsMissing, collapse = ", ")))
+      
+      legiscols <- intersect(colnames(rc$legis.data), legiscols)
     }
-    if(is.null(votecols)) votecols <- colnames(rc$vote.data)
+    
+    ## If not user specified, return all roll call metadata
+    if(is.null(votecols)) {
+      votecols <- colnames(rc$vote.data)
+    } else {
+      ## If specified, check for any requests not in data, return all metadata found
+      votecolsMissing <- setdiff(votecols, colnames(rc$vote.data))
+      if(length(votecolsMissing) > 0)
+        warning(sprintf("Following specified votecols (%s) not found in the rollcall object.", paste0(votecolsMissing, collapse = ", ")))
+      
+      votecols <- intersect(colnames(rc$vote.data), votecols)
+    }
     
     # Modified from reshape2, Hadley Wickham
     # https://github.com/hadley/reshape
@@ -821,14 +850,14 @@ melt_rollcall <- function(rc,
     long_rc <- cbind(labels, value_df)
 
     # Add legislator data
-    long_rc <- merge(long_rc, rc$legis.data[, legiscols],
+    long_rc <- merge(long_rc, rc$legis.data[, legiscols, drop = F],
                      by.x = "icpsr", by.y = "row.names")
 
     # Add roll call data
-    long_rc <- merge(long_rc, rc$vote.data[, votecols],
-                     by.x = "vname", sort = F)
+    long_rc <- merge(long_rc, rc$vote.data[, unique(c("vname", votecols)), drop = F],
+                     by = "vname", sort = F)
     
-    return(long_rc[, c("vname", "icpsr", votecols, legiscols, "vote")])
+    return(long_rc[, c("icpsr", "vname", "vote", votecols, legiscols)])
   }
 }
 
