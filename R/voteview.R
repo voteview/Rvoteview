@@ -751,6 +751,16 @@ melt_rollcall <- function(rc,
   
   if(class(rc) != "rollcall") stop("melt_rollcall only takes rollcall objects.")
   
+  # Check vote names (keepvote)
+  if(length(intersect(keepvote, rownames(rc$vote.data))) == 0) {
+    stop("No votes requested by keepvote are found in rollcall object")
+  }
+  if(length(setdiff(keepvote, rownames(rc$vote.data))) > 0) {
+    warning("Argument keepvote has some votes not found in rollcall object.")
+    
+    keepvote <- intersect(keepvote, rownames(rc$vote.data))
+  }
+  
   ## If long versions of the data are available, use them
   if(!is.null(rc$votes.long)) {
     
@@ -798,9 +808,9 @@ melt_rollcall <- function(rc,
                      by = "vname", sort = F)
     
     return(long_rc[, unique(c("id", "vname", "vote", votecols, votelongcols, legiscols))])
-  } else {
+  } else { # If keeplong = F
     
-    votes <- rc$votes[, keepvote,  drop = F]
+    votes <- rc$votes[, keepvote, drop = F]
     
     ## If not user specified, return all legislator metadata
     if(is.null(legiscols)) {
