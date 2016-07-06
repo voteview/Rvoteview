@@ -119,9 +119,6 @@ voteview_search <- function(q = NULL,
   } else {
     query_string <- "()" # This ensures string does not start with boolean
   }
-  ## todo:build full query string from options so that user sees full query
-  ## Not done yet because might be misleading as that is not how the server 
-  ## actually receives the query. Date and chamber are indeed different
 
   # Check date is well formatted (2014, "2014-01", "2014-01-30")
   if (!is.null(c(startdate, enddate))) {
@@ -314,8 +311,8 @@ build_votelist <- function(votelist, ids, perrequest) {
   ## Needed so that we do not augment place in output list when a retrieval fails
   place <- 0
   
-  idchunks <- split(ids, ceiling(seq_along(ids)/perrequest))
-  
+  idchunks <- split(ids, ceiling(seq_along(ids) / perrequest))
+   
   # Download votes
   for (i in 1:length(idchunks)) {
     attempts <- 1
@@ -777,10 +774,11 @@ melt_rollcall <- function(rc,
       votelongcols <- intersect(colnames(rc$legis.long.dynamic), votecols)
       votecols <- intersect(colnames(rc$vote.data), votecols)
     }
-    
+    ## If no specified columns, take all of them
     if(is.null(legiscols)) {
       legiscols <- colnames(rc$legis.long.dynamic)
     } else {
+      ## Otherwise, find the ones they specified if they exist and warn if they do not
       legiscolsMissing <- setdiff(legiscols, c(colnames(rc$legis.long.dynamic)))
       if(length(legiscolsMissing) > 0)
         warning(sprintf("Following specified legiscols (%s) not found in the rollcall object.", paste0(legiscolsMissing, collapse = ", ")))
@@ -972,7 +970,7 @@ vlist2df <- function(rcs) {
    if(!is.null(rc1$legis.long.dynamic)) {
      idsfound <- fmatch(rc2$legis.long.dynamic$id, rc1$legis.long.dynamic$id)
 
-     newlegis.long.dynamic <- rbind(rc1$legis.long.dynamic[-idsfound[!is.na(idsfound)],],
+     newlegis.long.dynamic <- rbind(rc1$legis.long.dynamic[-idsfound[!is.na(idsfound)], ],
                                     rc2$legis.long.dynamic)
      
 
