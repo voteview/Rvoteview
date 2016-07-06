@@ -685,9 +685,48 @@ complete_download <- function(rc) {
   return(rc %+% rc_new)
 }
 
-# Forthcoming, function to get member data
-# voteview_getmember <- function(id, congress = NULL, perrequest = 20) {
-# }
+#' Query the Voteview Database for Members
+#' 
+#' This function is under construction. Use with caution.
+#' 
+#' @param name The name you wish to search
+#' @return A data.frame with data for members of Congress. Each row is a unique member in our database.
+#' 
+#' @details 
+#' This function searches the database for specific members.
+#' 
+#' @seealso
+#' '\link{voteview_search}'.
+#' @examples
+#' 
+#' ## Search for obama
+#' res <- member_search("obama")
+#' 
+#' @export
+#' 
+member_search <- function(name = NULL,
+                          icpsr = NULL,
+                          state = NULL,
+                          congress = NULL,
+                          cqlabel = NULL,
+                          chamber = NULL) {
+  
+  # todo: input checking and allow for similar syntax searches
+  
+  theurl <- "https://voteview.polisci.ucla.edu/api/getmembers"
+  resp <- POST(theurl, body = list(name = name,
+                                   icpsr = icpsr,
+                                   state = state,
+                                   congress = congress,
+                                   cqlabel = cqlabel,
+                                   chamber = chamber))
+  
+  res <- fromJSON(content(resp,
+                              as = "text",
+                              encoding = "UTF-8"))$results
+  
+  return(res)
+}
 
 # Function to turn roll call object into long_rollcall object
 #' Melt rollcall object to long rollcall data frame
