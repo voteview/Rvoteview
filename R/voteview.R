@@ -185,8 +185,11 @@ voteview_search <- function(q = NULL,
   
   if(!is.null(resjson$errormessage)) warning(resjson$errormessage)
   if(resjson$recordcount == 0) stop("No rollcalls found")
-  
-  resdf <- vlist2df(resjson$rollcalls)
+
+  resdf <- jlist2df(resjson$rollcalls,
+                    ordercols = c("description", "shortdescription", "date",
+                                  "bill", "chamber", "congress",  "rollnumber",
+                                  "yea", "nay", "support", "id"))
   
   attr(resdf, "qstring") <- query_string
     
@@ -725,7 +728,8 @@ member_search <- function(name = NULL,
                               as = "text",
                               encoding = "UTF-8"))$results
   
-  return(res)
+  return(jlist2df(res,
+                  "id"))
 }
 
 # Function to turn roll call object into long_rollcall object
@@ -912,45 +916,44 @@ melt_rollcall <- function(rc,
 #' Transform vector of lists to data frame
 #' 
 #' This is a helper function to transform the vector of lists that were
-#' constructed by \code{voteview_search} in to a data frame that
-#' \code{voteview_search} returns. This function should probably not be called
-#' by itself. See \code{voteview_search} for more information.
+#' constructed by \code{voteview_search} and \code{member_search} in to a data frame.
+#' This function should probably not be called
+#' by itself. See \code{voteview_search} and \code{member_search} for more information.
 #' 
 #' 
-#' @param rcs A vector of lists that is built within \code{voteview_search},
-#' where each list corresponds to a roll call.
+#' @param rcs A vector of lists that is built in a json download
+#' where each list corresponds to a roll call or a member depending on the
+#' function that called it.
+#' @param ordercols A order of columns so that the returned data.frame is easy
+#' to read.
 #'
-#' @seealso '\link{voteview_search}'.
+#' @seealso '\link{voteview_search}', '\link{member_search}'.
 #' @export
 #' 
-vlist2df <- function(rcs) {
-  df <- list()
+jlist2df <- function(rcs, ordercols) {
+  res <- list()
   # drop lists from return for now
   notlists <- sapply(rcs[[1]], function(x) class(x) != "list")
   flds <- names(rcs[[1]][notlists])
   
   for (f in flds) {
     md <- ifelse(class(rcs[[1]][[f]]) == "character", "character", "integer")
-    df[[f]] <- vector(mode = md,length = length(rcs))
+    res[[f]] <- vector(mode = md,length = length(rcs))
   }
   
   for (i in 1:length(rcs)) {
     for (f in flds) {
       if(!is.null(rcs[[i]][[f]])) {
-        df[[f]][i] <- rcs[[i]][[f]]
+        res[[f]][i] <- rcs[[i]][[f]]
       }
     }
   }
   
   # reorder columns explicitly
-  df <- as.data.frame(df, stringsAsFactors = FALSE)
+  res <- as.data.frame(res, stringsAsFactors = FALSE)
   
-  ## To return the following in order
-  orderCols <- c("description", "shortdescription", "date", "bill", "chamber",
-                 "congress",  "rollnumber", "yea", "nay", "support", "id")
-  
-  ## Returns it with those columns first in order and append remaining data
-  return( df[, c(orderCols, setdiff(names(df), orderCols))] )
+  ## Returns it with ordercols first and append remaining data
+  return( res[, c(ordercols, setdiff(names(res), ordercols))] )
 }
 
 # Joins two rollcall objects
