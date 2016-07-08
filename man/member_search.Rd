@@ -5,23 +5,50 @@
 \title{Query the Voteview Database for Members}
 \usage{
 member_search(name = NULL, icpsr = NULL, state = NULL, congress = NULL,
-  cqlabel = NULL, chamber = NULL)
+  cqlabel = NULL, chamber = NULL, distinct = 0)
 }
 \arguments{
-\item{name}{The name you wish to search}
+\item{name}{A string with the name of the member of congress that you would like to search.
+If it is only one word, it searches by last name. If there are multiple words
+it uses a text index of all of the name fields and returns the best matches.}
+
+\item{icpsr}{A string or number with the icpsr number you would like to search
+by. Can also be the internal id that we use for unique legislator-congress-party records.}
+
+\item{state}{A string or number that is either be the ICPSR state number, the two letter state code,
+or the full state name.}
+
+\item{congress}{A numeric vector of the congresses to constrain the 
+search to.}
+
+\item{cqlabel}{A string with the cqlabel "(PA-1)".}
+
+\item{chamber}{A string that is either "House" or "Senate".}
+
+\item{distinct}{Either a 0 or a 1. A 0 Returns all records that match your query
+while a 1 only returns the first record that has a specific icpsr number. Note
+that our database has multple records per icpsr number as our records are
+unique to legislator-congress-party while icpsr number construction tries
+to follow a legislator through congresses and across meaningless party 
+switches.}
 }
 \value{
-A data.frame with data for members of Congress. Each row is a unique member in our database.
+A data.frame with data for members of Congress. The columns will be
+described in forthcoming data documentation. Importantly, \code{id} is the
+internal id that our system uses.
 }
 \description{
-This function is under construction. Use with caution.
+This function allows you to search for various members of congress and 
+presidents using several key fields.
 }
 \details{
-This function searches the database for specific members.
+The arguments are joined by an AND command, and all arguments can only be of
+length 1 except for the congress argument which can take a vector. This method
+will only return 5000 records at a time.
 }
 \examples{
 
-## Search for obama
+## Search for Obama
 res <- member_search("obama")
 
 }
