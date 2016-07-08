@@ -1,1 +1,2 @@
 ^README\.Rmd$       # An Rmarkdown file used to generate README.md
+^data-raw$          # The raw data compilation
