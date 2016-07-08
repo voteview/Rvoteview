@@ -220,7 +220,41 @@ member_search <- function(name = NULL,
                           cqlabel = NULL,
                           chamber = NULL) {
   
-  # todo: input checking and allow for similar syntax searches
+  ## Input validation
+  if(is.null(c(name, icpsr, state, congress, cqlabel, chamber))) {
+    stop("Must specify at least one field.")
+  }
+  
+  if(any(sapply(c(name, icpsr, state, cqlabel, chamber), length) > 1)) {
+    stop("All arguments besides congress only take strings, not vectors of length >= 2.")
+  }
+  
+  ##Check for numeric state 
+  if(!is.null(state)) {
+    suppressWarnings({stateNum <- as.numeric(state)})
+    if(!is.na(stateNum)) {
+      data(states, envir=environment())
+      stateAbbr <- states[states$stateICPSR == stateNum, "stateMail"]
+      if(length(stateAbbr)) {
+        state <- stateAbbr
+      } else {
+        stop("State ICPSR number not found. Consider using two letter state abbreviations instead.")
+      }
+    }
+  }
+  
+  # Check congress within range
+  if (!is.null(congress)) {
+
+    if (any(congress < 0 | congress > 999)) {
+      stop("Congress must be a positive number or vector of positive numbers greater than 0 and less than 1000")
+    }
+    
+    # turn vector in to 
+    congress <- paste(congress, collapse = " ")
+  }
+  
+  # todo: should we consider similar searches?
   
   theurl <- "https://voteview.polisci.ucla.edu/api/getmembers"
   resp <- POST(theurl, body = list(name = name,
@@ -228,14 +262,17 @@ member_search <- function(name = NULL,
                                    state = state,
                                    congress = congress,
                                    cqlabel = cqlabel,
-                                   chamber = chamber))
+                                   chamber = chamber,
+                                   api = "R"))
   
   res <- fromJSON(content(resp,
                           as = "text",
                           encoding = "UTF-8"))$results
   
+  ordercols <- c("id")
+  
   return(jlist2df(res,
-                  "id"))
+                  ordercols))
 }
 
 # Helper function that transforms a vector of lists into a dataframe
@@ -256,7 +293,7 @@ member_search <- function(name = NULL,
 #' @seealso '\link{voteview_search}', '\link{member_search}'.
 #' @export
 #' 
-jlist2df <- function(rcs, ordercols) {
+jlist2df <- function(rcs, ordercols = NULL) {
   res <- list()
   # drop lists from return for now
   notlists <- sapply(rcs[[1]], function(x) class(x) != "list")

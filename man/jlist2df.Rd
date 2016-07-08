@@ -4,7 +4,7 @@
 \alias{jlist2df}
 \title{Transform vector of lists to data frame}
 \usage{
-jlist2df(rcs, ordercols)
+jlist2df(rcs, ordercols = NULL)
 }
 \arguments{
 \item{rcs}{A vector of lists that is built in a json download
