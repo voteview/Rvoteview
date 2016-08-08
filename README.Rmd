@@ -106,3 +106,19 @@ head(res[, -1])
 tail(res[, -1])
 ```
 
+You can also search for member data using the `member_search` function.
+
+```{r member-search}
+res <- member_search("Paul",
+                     state = "KY")
+
+## Drop the bio field because it is quite long
+head(res[, names(res) != "bio"])
+
+res <- member_search("Paul",
+                     state = "KY",
+                     distinct = 1)
+
+## Drop the bio field because it is quite long
+head(res[, names(res) != "bio"])
+```

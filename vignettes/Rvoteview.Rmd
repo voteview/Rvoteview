@@ -24,7 +24,8 @@ This package provides tools to query and download from the VoteView database. Th
     a. [Joining two `rollcall` objects](#joining-two-rollcall-objects)
     b. [Melting `rollcall` objects](#melting-rollcall-objects)
     c. [Completing interrupted downloads](#completing-interrupted-downloads)
-5. [Examples](#examples)
+    d. [Retrieving member data](#retrieving-member-data)
+5. [Extended Examples](#extended-examples)
     a. [Ideal point estimation](#ideal-point-estimation)
     b. [Analyzing ideal points across reelection](#analyzing-ideal-points-across-reelection)
     c. [Regression analysis of roll call behavior](#regression-analysis-of-roll-call-behavior)
@@ -206,7 +207,45 @@ rc <- complete_download(rc_fail)
 
 Again, because of the difficulty with properly catching interrupts in `R`, this will not always work with manual interrupts, but should work with dropped internet connections.
 
-# Examples
+## Retrieving member data
+
+There is also the ability to search the database for members (House Representatives, Senators, and Presidents) using the `member_search` function. Unfortunately, the syntax is not identical to the syntax when searching for roll calls. Nonetheless, the usage in `R` is quite simple. There are fields to search members' names, icpsr number, state (either ICPSR state number, two letter postal code, or the full name), the range of congresses to search within, the CQ label of the member, and the chamber to search within.
+
+The function returns a data frame of metadata, with one row for each legislator-congress that is found (these are the unique entries in the database of members). Therefore, if we want to return all unique legislator-congresses where the name 'clinton' appears anywhere in the name fields, we can use the following search:
+
+```{r member-search-ex}
+clintons <- member_search("clinton")
+
+## Drop the bio field because it is quite long
+clintons[1:7, names(clintons) != "bio"]
+```
+
+It is important to note that if there is no white space in the name field, the database is searched for exact matches for that one word. If there are multiple words we use a text index of all of the name fields and return the best matches.
+
+If you only want to return the first record per ICPSR number, you can set the distinct flag equal to one. This is useful because it limits the size of the object returned and most data is duplicated within ICPSR number. For example, CS DW-NOMINATE scores are constant within ICPSR number, as are names and (usually) party.
+
+```{r member-search-ex-distinct}
+clintons <- member_search("clinton",
+                          state = "NY",
+                          distinct = 1)
+
+## Drop the bio field because it is quite long
+clintons[, names(clintons) != "bio"]
+```
+
+Some other fields that are not unique to ICPSR number but may vary are the chamber of the representative, their CQ label, and the number of votes they cast. Let's get all the records for Bernie Sanders.
+
+```{r bernie}
+sanders <- member_search("sanders",
+                         state = "VT")
+
+## Drop the bio field because it is quite long
+sanders[, names(sanders) != "bio"]
+```
+
+As you can see Sanders changes chambers between the 109th and 110th congresses. Furthermore, the number of votes they cast will vary accross
+
+# Extended Examples
 
 This section details three different possible uses of the `Rvoteview` package, showing users from beginning to end how to conduct their own ideal point estimation and use `Rvoteview` in more traditional regression analysis.
 

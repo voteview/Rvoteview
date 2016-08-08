@@ -343,6 +343,9 @@ jlist2df <- function(rcs, ordercols = NULL) {
   # reorder columns explicitly
   res <- as.data.frame(res, stringsAsFactors = FALSE)
   
+  if(nrow(res) == 0)
+    stop("No results found.")
+  
   ## Returns it with ordercols first and append remaining data
   return( res[, c(ordercols, setdiff(names(res), ordercols))] )
 }

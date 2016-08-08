@@ -7,8 +7,9 @@ This package provides tools to query and download from the VoteView database. Th
     1.  [Joining two `rollcall` objects](#joining-two-rollcall-objects)
     2.  [Melting `rollcall` objects](#melting-rollcall-objects)
     3.  [Completing interrupted downloads](#completing-interrupted-downloads)
+    4.  [Retrieving member data](#retrieving-member-data)
 
-5.  [Examples](#examples)
+5.  [Extended Examples](#extended-examples)
     1.  [Ideal point estimation](#ideal-point-estimation)
     2.  [Analyzing ideal points across reelection](#analyzing-ideal-points-across-reelection)
     3.  [Regression analysis of roll call behavior](#regression-analysis-of-roll-call-behavior)
@@ -82,7 +83,7 @@ Users can also use other arguments to search only roll calls that are in a certa
 res <- voteview_search("tax", startdate = "2005-01-01")
 ```
 
-    #> Query '(tax) AND (startdate:2005-01-01)' returned 581 rollcalls...
+    #> Query '(tax) AND (startdate:2005-01-01)' returned 585 rollcalls...
 
 ``` r
 ## Search for votes with an end date in just the House
@@ -225,30 +226,30 @@ rc_long <- melt_rollcall(rcall)
 rc_long[1:3, ]
 ```
 
-    #>           id vote    vname rollnumber chamber       date congress
-    #> 1 MH99903088    1 S0880411        411  Senate 1964-06-23       88
-    #> 2 MS04382088    1 S0880411        411  Senate 1964-06-23       88
-    #> 3 MS05500088    1 S0880411        411  Senate 1964-06-23       88
-    #>                     code.Issue              code.Peltzman
-    #> 1 Fish and Wildlife; Tax rates Foreign Policy Resolutions
-    #> 2 Fish and Wildlife; Tax rates Foreign Policy Resolutions
-    #> 3 Fish and Wildlife; Tax rates Foreign Policy Resolutions
-    #>                 code.Clausen
-    #> 1 Foreign and Defense Policy
-    #> 2 Foreign and Defense Policy
-    #> 3 Foreign and Defense Policy
-    #>                                                                                                                                                                                                                              description
-    #> 1 EXECS A AND B, 88TH CONG., 2ND SESS. EXEC A REVISED THE 1950 ESTATE TAX CONVENTION BETWEN THE U.S. AND GREECE.  EXEC B BROUGHT HARP & HOOD SEALS UNDER CONSERVATION PROVISIONS OF THE NORTHWEST ATLANTIC FISHERIES CONVENTION OF 1949.
-    #> 2 EXECS A AND B, 88TH CONG., 2ND SESS. EXEC A REVISED THE 1950 ESTATE TAX CONVENTION BETWEN THE U.S. AND GREECE.  EXEC B BROUGHT HARP & HOOD SEALS UNDER CONSERVATION PROVISIONS OF THE NORTHWEST ATLANTIC FISHERIES CONVENTION OF 1949.
-    #> 3 EXECS A AND B, 88TH CONG., 2ND SESS. EXEC A REVISED THE 1950 ESTATE TAX CONVENTION BETWEN THE U.S. AND GREECE.  EXEC B BROUGHT HARP & HOOD SEALS UNDER CONSERVATION PROVISIONS OF THE NORTHWEST ATLANTIC FISHERIES CONVENTION OF 1949.
-    #>   yea nay nomslope nomintercept icpsr                      name party
-    #> 1  93   1       NA           NA 99903                             100
-    #> 2  93   1       NA           NA  4382 Hickenlooper, Bourke Blak   200
-    #> 3  93   1       NA           NA  5500       Lausche, Frank John   100
-    #>   state cqlabel   nom1   nom2
-    #> 1    99 (POTUS) -0.340 -0.031
-    #> 2    31    (IA)  0.372 -0.318
-    #> 3    24    (OH)  0.213 -0.280
+    #>           id    vname vote rollnumber chamber       date congress
+    #> 1 MH99902087 S0870209    1        209  Senate 1962-01-31       87
+    #> 2 MS02803087 S0870209    1        209  Senate 1962-01-31       87
+    #> 3 MS01365087 S0870209    1        209  Senate 1962-01-31       87
+    #>                                              code.Issue
+    #> 1 Fish and Wildlife; Airlines/Airports/Airline Industry
+    #> 2 Fish and Wildlife; Airlines/Airports/Airline Industry
+    #> 3 Fish and Wildlife; Airlines/Airports/Airline Industry
+    #>           code.Peltzman               code.Clausen
+    #> 1 Foreign Policy Budget Foreign and Defense Policy
+    #> 2 Foreign Policy Budget Foreign and Defense Policy
+    #> 3 Foreign Policy Budget Foreign and Defense Policy
+    #>                                                                                                                                                                                                       description
+    #> 1 EXECS G, M, AND N, 87TH CONG., 1ST SESS:  ESTATE TAX CONVEN- TION W/CANADA (G), UNDERSTANDING REGARDING N.W. ATLANTIC FISHERIES CONVENTION (M), AND AMEND. TO 1944 INTERNATIONAL CIVIL AVIATION CONVENTION (N).
+    #> 2 EXECS G, M, AND N, 87TH CONG., 1ST SESS:  ESTATE TAX CONVEN- TION W/CANADA (G), UNDERSTANDING REGARDING N.W. ATLANTIC FISHERIES CONVENTION (M), AND AMEND. TO 1944 INTERNATIONAL CIVIL AVIATION CONVENTION (N).
+    #> 3 EXECS G, M, AND N, 87TH CONG., 1ST SESS:  ESTATE TAX CONVEN- TION W/CANADA (G), UNDERSTANDING REGARDING N.W. ATLANTIC FISHERIES CONVENTION (M), AND AMEND. TO 1944 INTERNATIONAL CIVIL AVIATION CONVENTION (N).
+    #>   yea nay nomslope nomintercept icpsr                     name party state
+    #> 1 100   0       NA           NA 99902                            100    99
+    #> 2 100   0       NA           NA  2803 Dworshak, Henry Clarence   200    63
+    #> 3 100   0       NA           NA  1365        Byrd, Harry Flood   100    40
+    #>   cqlabel   nom1   nom2
+    #> 1 (POTUS) -0.479 -0.462
+    #> 2    (ID)  0.401  0.051
+    #> 3    (VA)  0.190  0.559
 
 ``` r
 ## Retaining fewer columns
@@ -256,14 +257,14 @@ rc_long <- melt_rollcall(rcall, votecols = c("chamber", "congress"))
 rc_long[1:3, ]
 ```
 
-    #>           id vote chamber congress icpsr                      name party
-    #> 1 MH99903088    1  Senate       88 99903                             100
-    #> 2 MS04382088    1  Senate       88  4382 Hickenlooper, Bourke Blak   200
-    #> 3 MS05500088    1  Senate       88  5500       Lausche, Frank John   100
-    #>   state cqlabel   nom1   nom2
-    #> 1    99 (POTUS) -0.340 -0.031
-    #> 2    31    (IA)  0.372 -0.318
-    #> 3    24    (OH)  0.213 -0.280
+    #>           id    vname vote chamber congress icpsr                     name
+    #> 1 MH99902087 S0870209    1  Senate       87 99902                         
+    #> 2 MS02803087 S0870209    1  Senate       87  2803 Dworshak, Henry Clarence
+    #> 3 MS01365087 S0870209    1  Senate       87  1365        Byrd, Harry Flood
+    #>   party state cqlabel   nom1   nom2
+    #> 1   100    99 (POTUS) -0.479 -0.462
+    #> 2   200    63    (ID)  0.401  0.051
+    #> 3   100    40    (VA)  0.190  0.559
 
 Completing interrupted downloads
 --------------------------------
@@ -282,8 +283,205 @@ rc <- complete_download(rc_fail)
 
 Again, because of the difficulty with properly catching interrupts in `R`, this will not always work with manual interrupts, but should work with dropped internet connections.
 
-Examples
-========
+Retrieving member data
+----------------------
+
+There is also the ability to search the database for members (House Representatives, Senators, and Presidents) using the `member_search` function. Unfortunately, the syntax is not identical to the syntax when searching for roll calls. Nonetheless, the usage in `R` is quite simple. There are fields to search members' names, icpsr number, state (either ICPSR state number, two letter postal code, or the full name), the range of congresses to search within, the CQ label of the member, and the chamber to search within.
+
+The function returns a data frame of metadata, with one row for each legislator-congress that is found (these are the unique entries in the database of members). Therefore, if we want to return all unique legislator-congresses where the name 'clinton' appears anywhere in the name fields, we can use the following search:
+
+``` r
+clintons <- member_search("clinton")
+
+## Drop the bio field because it is quite long
+clintons[1:7, names(clintons) != "bio"]
+```
+
+    #>           id icpsr                           bioName
+    #> 1 MS40105111 40105           CLINTON, Hillary Rodham
+    #> 2 MS40105110 40105           CLINTON, Hillary Rodham
+    #> 3 MS40105109 40105           CLINTON, Hillary Rodham
+    #> 4 MS40105108 40105           CLINTON, Hillary Rodham
+    #> 5 MS40105107 40105           CLINTON, Hillary Rodham
+    #> 6 MH99909106 99909 CLINTON, William Jefferson (Bill)
+    #> 7 MH99909105 99909 CLINTON, William Jefferson (Bill)
+    #>                     fname partyname cqlabel   stateName born startdate
+    #> 1 Clinton, Hillary Rodham  Democrat    (NY)    New York 1947         0
+    #> 2 Clinton, Hillary Rodham  Democrat    (NY)    New York 1947         0
+    #> 3 Clinton, Hillary Rodham  Democrat    (NY)    New York 1947         0
+    #> 4 Clinton, Hillary Rodham  Democrat    (NY)    New York 1947         0
+    #> 5 Clinton, Hillary Rodham  Democrat    (NY)    New York 1947         0
+    #> 6                          Democrat (POTUS) (President)    0         0
+    #> 7                          Democrat (POTUS) (President)    0         0
+    #>   stateAbbr lastmeans occupancy state party districtCode congress
+    #> 1        NY         1         1    13   100            0      111
+    #> 2        NY         1         0    13   100            0      110
+    #> 3        NY         1         0    13   100            0      109
+    #> 4        NY         1         0    13   100            0      108
+    #> 5        NY         1         0    13   100            0      107
+    #> 6     POTUS         0              99   100            0      106
+    #> 7     POTUS         0         0    99   100            0      105
+    #>   bioNameChanged voteCount                        bioNameOld geo enddate
+    #> 1              0         5           CLINTON, Hillary Rodham   0       0
+    #> 2              0       449           CLINTON, Hillary Rodham   0       0
+    #> 3              0       629           CLINTON, Hillary Rodham   0       0
+    #> 4              0       656           CLINTON, Hillary Rodham   0       0
+    #> 5              0       628           CLINTON, Hillary Rodham   0       0
+    #> 6              0       170 CLINTON, William Jefferson (Bill)   0       0
+    #> 7              0       243 CLINTON, William Jefferson (Bill)   0       0
+    #>      name chamber dimweight stateCode
+    #> 1 CLINTON  Senate    0.4156         0
+    #> 2 CLINTON  Senate    0.4156         0
+    #> 3 CLINTON  Senate    0.4156         0
+    #> 4 CLINTON  Senate    0.4156         0
+    #> 5 CLINTON  Senate    0.4156         0
+    #> 6 CLINTON            0.4156         0
+    #> 7 CLINTON            0.4156         0
+
+It is important to note that if there is no white space in the name field, the database is searched for exact matches for that one word. If there are multiple words we use a text index of all of the name fields and return the best matches.
+
+If you only want to return the first record per ICPSR number, you can set the distinct flag equal to one. This is useful because it limits the size of the object returned and most data is duplicated within ICPSR number. For example, CS DW-NOMINATE scores are constant within ICPSR number, as are names and (usually) party.
+
+``` r
+clintons <- member_search("clinton",
+                          state = "NY",
+                          distinct = 1)
+
+## Drop the bio field because it is quite long
+clintons[, names(clintons) != "bio"]
+```
+
+    #>           id icpsr                     bioName                     fname
+    #> 1 MS40105111 40105     CLINTON, Hillary Rodham   Clinton, Hillary Rodham
+    #> 2 MH05875044  5875  MacDOUGALL, Clinton Dugald Macdougall, Clinton Dugal
+    #> 3 MH06426043  6426       MERRIAM, Clinton Levi     Merriam, Clinton Levi
+    #> 4 MH05707038  5707 LITTLEJOHN, De Witt Clinton Littlejohn, De Witt Clint
+    #> 5 MH01850028  1850       CLINTON, James Graham     Clinton, James Graham
+    #> 6 MH06044023  6044   MARTINDALE, Henry Clinton Martindale, Henry Clinton
+    #> 7 MH01849010  1849             CLINTON, George           Clinton, George
+    #> 8 MS01847008  1847            CLINTON, De Witt          Clinton, De Witt
+    #>             partyname cqlabel stateName born startdate stateAbbr lastmeans
+    #> 1            Democrat    (NY)  New York 1947         0        NY         1
+    #> 2          Republican (NY-26)  New York 1839         0        NY         1
+    #> 3          Republican (NY-21)  New York 1824         0        NY         1
+    #> 4          Republican (NY-22)  New York 1818         0        NY         1
+    #> 5            Democrat  (NY-9)  New York 1804         0        NY         1
+    #> 6        Anti Masonic (NY-12)  New York 1780         0        NY         1
+    #> 7 Democrat-Republican  (NY-2)  New York 1771         0        NY         1
+    #> 8 Democrat-Republican    (NY)  New York 1769         0        NY         3
+    #>   occupancy state party districtCode congress bioNameChanged voteCount
+    #> 1         1    13   100            0      111              0         5
+    #> 2         0    13   200           26       44              0       236
+    #> 3         0    13   200           21       43              0       410
+    #> 4         0    13   200           22       38              0       267
+    #> 5         0    13   100            9       28              0       395
+    #> 6         0    13    26           12       23              0       294
+    #> 7         0    13    13            2       10              0        24
+    #> 8         1    13    13            0        8              0         1
+    #>                    bioNameOld geo enddate        name chamber dimweight
+    #> 1     CLINTON, Hillary Rodham   0       0     CLINTON  Senate    0.4156
+    #> 2  MacDOUGALL, Clinton Dugald   0       0  MACDOUGALL   House    0.4156
+    #> 3       MERRIAM, Clinton Levi   0       0     MERRIAM   House    0.4156
+    #> 4 LITTLEJOHN, De Witt Clinton   0       0  LITTLEJOHN   House    0.4156
+    #> 5       CLINTON, James Graham   0       0     CLINTON   House    0.4156
+    #> 6   MARTINDALE, Henry Clinton   0       0  MARTINDALE   House    0.4156
+    #> 7             CLINTON, George   0       0 CLINTON, G.   House    0.4156
+    #> 8            CLINTON, De Witt   0       0 CLINTON, D.  Senate    0.4156
+    #>   stateCode
+    #> 1         0
+    #> 2         0
+    #> 3         0
+    #> 4         0
+    #> 5         0
+    #> 6         0
+    #> 7         0
+    #> 8         0
+
+Some other fields that are not unique to ICPSR number but may vary are the chamber of the representative, their CQ label, and the number of votes they cast. Let's get all the records for Bernie Sanders.
+
+``` r
+sanders <- member_search("sanders",
+                         state = "VT")
+
+## Drop the bio field because it is quite long
+sanders[, names(sanders) != "bio"]
+```
+
+    #>            id icpsr          bioName            fname   partyname cqlabel
+    #> 1  MS29147114 29147 SANDERS, Bernard Sanders, Bernard Independent    (VT)
+    #> 2  MS29147113 29147 SANDERS, Bernard Sanders, Bernard Independent    (VT)
+    #> 3  MS29147112 29147 SANDERS, Bernard Sanders, Bernard Independent    (VT)
+    #> 4  MS29147111 29147 SANDERS, Bernard Sanders, Bernard Independent    (VT)
+    #> 5  MS29147110 29147 SANDERS, Bernard Sanders, Bernard Independent    (VT)
+    #> 6  MH29147109 29147 SANDERS, Bernard Sanders, Bernard Independent  (VT-1)
+    #> 7  MH29147108 29147 SANDERS, Bernard Sanders, Bernard Independent  (VT-1)
+    #> 8  MH29147107 29147 SANDERS, Bernard Sanders, Bernard Independent  (VT-1)
+    #> 9  MH29147106 29147 SANDERS, Bernard Sanders, Bernard Independent  (VT-1)
+    #> 10 MH29147105 29147 SANDERS, Bernard Sanders, Bernard Independent  (VT-1)
+    #> 11 MH29147104 29147 SANDERS, Bernard Sanders, Bernard Independent  (VT-1)
+    #> 12 MH29147103 29147 SANDERS, Bernard Sanders, Bernard Independent  (VT-1)
+    #> 13 MH29147102 29147 SANDERS, Bernard Sanders, Bernard Independent  (VT-1)
+    #>    stateName born startdate stateAbbr lastmeans occupancy state party
+    #> 1    Vermont 1941         0        VT         1         0     6   328
+    #> 2    Vermont 1941         0        VT         1         0     6   328
+    #> 3    Vermont 1941         0        VT         1         0     6   328
+    #> 4    Vermont 1941         0        VT         1         0     6   328
+    #> 5    Vermont 1941         0        VT         1         0     6   328
+    #> 6    Vermont 1941         0        VT         1         0     6   328
+    #> 7    Vermont 1941         0        VT         1         0     6   328
+    #> 8    Vermont 1941         0        VT         1         0     6   328
+    #> 9    Vermont 1941         0        VT         1         0     6   328
+    #> 10   Vermont 1941         0        VT         1         0     6   328
+    #> 11   Vermont 1941         0        VT         1         0     6   328
+    #> 12   Vermont 1941         0        VT         1         0     6   328
+    #> 13   Vermont 1941         0        VT         1         0     6   328
+    #>                           website districtCode congress bioNameChanged
+    #> 1  http://www.sanders.senate.gov/            0      114              0
+    #> 2  http://www.sanders.senate.gov/            0      113              0
+    #> 3  http://www.sanders.senate.gov/            0      112              0
+    #> 4  http://www.sanders.senate.gov/            0      111              0
+    #> 5  http://www.sanders.senate.gov/            0      110              0
+    #> 6  http://www.sanders.senate.gov/            1      109              0
+    #> 7  http://www.sanders.senate.gov/            1      108              0
+    #> 8  http://www.sanders.senate.gov/            1      107              0
+    #> 9  http://www.sanders.senate.gov/            1      106              0
+    #> 10 http://www.sanders.senate.gov/            1      105              0
+    #> 11 http://www.sanders.senate.gov/            1      104              0
+    #> 12 http://www.sanders.senate.gov/            1      103              0
+    #> 13 http://www.sanders.senate.gov/            1      102              0
+    #>    voteCount       bioNameOld geo enddate    name chamber dimweight
+    #> 1        334 SANDERS, Bernard   0       0 SANDERS  Senate    0.4156
+    #> 2        614 SANDERS, Bernard   0       0 SANDERS  Senate    0.4156
+    #> 3        470 SANDERS, Bernard   0       0 SANDERS  Senate    0.4156
+    #> 4        687 SANDERS, Bernard   0       0 SANDERS  Senate    0.4156
+    #> 5        651 SANDERS, Bernard   0       0 SANDERS  Senate    0.4156
+    #> 6       1159 SANDERS, Bernard   0       0 SANDERS   House    0.4156
+    #> 7       1146 SANDERS, Bernard   0       0 SANDERS   House    0.4156
+    #> 8        930 SANDERS, Bernard   0       0 SANDERS   House    0.4156
+    #> 9       1160 SANDERS, Bernard   0       0 SANDERS   House    0.4156
+    #> 10      1128 SANDERS, Bernard   0       0 SANDERS   House    0.4156
+    #> 11      1290 SANDERS, Bernard   0       0 SANDERS   House    0.4156
+    #> 12      1040 SANDERS, Bernard   0       0 SANDERS   House    0.4156
+    #> 13       836 SANDERS, Bernard   0       0 SANDERS   House    0.4156
+    #>    stateCode
+    #> 1          0
+    #> 2          0
+    #> 3          0
+    #> 4          0
+    #> 5          0
+    #> 6          0
+    #> 7          0
+    #> 8          0
+    #> 9          0
+    #> 10         0
+    #> 11         0
+    #> 12         0
+    #> 13         0
+
+As you can see Sanders changes chambers between the 109th and 110th congresses. Furthermore, the number of votes they cast will vary accross
+
+Extended Examples
+=================
 
 This section details three different possible uses of the `Rvoteview` package, showing users from beginning to end how to conduct their own ideal point estimation and use `Rvoteview` in more traditional regression analysis.
 
@@ -591,62 +789,62 @@ res
 ```
 
     #>                                                                                                                                                                                      description
-    #> 1                                                                                              Conference Report to Accompany H.R. 2647; National Defense Authorization Act for Fiscal Year 2010
-    #> 2                                         Motion to Invoke Cloture on the Motion to Concur in the House Amendment to the Senate Amendment to H.R. 2965; Don't Ask, Don't Tell Repeal Act of 2010
-    #> 3                                                               Brownback Amdt. No. 1610; To clarify that the amendment shall not be construed or applied to infringe on First Amendment rights.
-    #> 4                                                    Upon Reconsideration, Motion to Invoke Cloture on the Motion to Proceed to S. 3454; National Defense Authorization Act for Fiscal Year 2011
-    #> 5  Motion to Waive All Applicable Budgetary Discipline Re: Bennett Amdt. No. 3568; To protect the democratic process and the right of the people of the District of Columbia to define marriage.
-    #> 6                                                                                                                        Hatch Amdt. No. 1611; To prevent duplication in the Federal government.
-    #> 7                                                                         Motion to Concur in the House Amendment to the Senate Amendment to H.R. 2965; Don't Ask, Don't Tell Repeal Act of 2010
-    #> 8                                                                          Motion to Invoke Cloture on the Motion to Proceed to S. 3454; National Defense Authorization Act for Fiscal Year 2011
+    #> 1                                             Providing for consideration of H.R. 1913, to provide Federal assistance to States, local jurisdictions, and Indian tribes to prosecute hate crimes
+    #> 2                                             Providing for consideration of H.R. 1913, to provide Federal assistance to States, local jurisdictions, and Indian tribes to prosecute hate crimes
+    #> 3                                                                                                                                               Local Law Enforcement Hate Crimes Prevention Act
+    #> 4                                                                                                                                               Local Law Enforcement Hate Crimes Prevention Act
+    #> 5                                                                                                                                                   Department of Defense Authorization, FY 2010
+    #> 6                                                                                                                                                   Department of Defense Authorization, FY 2010
+    #> 7                                                                                                                                                   Department of Defense Authorization, FY 2010
+    #> 8                                                                                                                               Providing for consideration of the Senate amendment to H.R. 2965
     #> 9                                                                                                                                                       Don<U+0092>t Ask, Don<U+0092>t Tell Repeal Act of 2010
-    #> 10                                                                                                                                                  Department of Defense Authorization, FY 2010
-    #> 11                                                                                                                                                  Department of Defense Authorization, FY 2010
-    #> 12                                            Providing for consideration of H.R. 1913, to provide Federal assistance to States, local jurisdictions, and Indian tribes to prosecute hate crimes
-    #> 13                                            Providing for consideration of H.R. 1913, to provide Federal assistance to States, local jurisdictions, and Indian tribes to prosecute hate crimes
-    #> 14                                                                                                                                                  Department of Defense Authorization, FY 2010
-    #> 15                                                                                                                                                                                              
-    #> 16                                                                                                                                              Local Law Enforcement Hate Crimes Prevention Act
-    #> 17                                                                                                                                              Local Law Enforcement Hate Crimes Prevention Act
-    #> 18                                                                                                                              Providing for consideration of the Senate amendment to H.R. 2965
+    #> 10                                                                                                                                                                                              
+    #> 11                                                                                             Conference Report to Accompany H.R. 2647; National Defense Authorization Act for Fiscal Year 2010
+    #> 12                                                              Brownback Amdt. No. 1610; To clarify that the amendment shall not be construed or applied to infringe on First Amendment rights.
+    #> 13                                                   Upon Reconsideration, Motion to Invoke Cloture on the Motion to Proceed to S. 3454; National Defense Authorization Act for Fiscal Year 2011
+    #> 14 Motion to Waive All Applicable Budgetary Discipline Re: Bennett Amdt. No. 3568; To protect the democratic process and the right of the people of the District of Columbia to define marriage.
+    #> 15                                                                                                                       Hatch Amdt. No. 1611; To prevent duplication in the Federal government.
+    #> 16                                        Motion to Invoke Cloture on the Motion to Concur in the House Amendment to the Senate Amendment to H.R. 2965; Don't Ask, Don't Tell Repeal Act of 2010
+    #> 17                                                                        Motion to Concur in the House Amendment to the Senate Amendment to H.R. 2965; Don't Ask, Don't Tell Repeal Act of 2010
+    #> 18                                                                         Motion to Invoke Cloture on the Motion to Proceed to S. 3454; National Defense Authorization Act for Fiscal Year 2011
     #>                                          shortdescription       date
-    #> 1                     DEFENSE AUTH AND HATE CRIMES (PASS) 2009-10-22
-    #> 2                       END DONT ASK DONT TELL -- CLOTURE 2010-12-18
-    #> 3                                             HATE CRIMES 2009-07-16
-    #> 4          DEFENSE AUTH & DON'T ASK DON'T TELL -- CLOTURE 2010-12-09
-    #> 5  HEALTH CARE OVERHAUL RECONCILIATION -- DC GAY MARRIAGE 2010-03-25
-    #> 6                                             HATE CRIMES 2009-07-16
-    #> 7                           END DONT ASK DONT TELL (PASS) 2010-12-18
-    #> 8            DEFENSE AUTH & DONT ASK DONT TELL -- CLOTURE 2010-09-21
+    #> 1                                      HATE CRIMES (PROC) 2009-04-29
+    #> 2                                     HATE CRIMES -- RULE 2009-04-29
+    #> 3                                 HATE CRIMES -- RECOMMIT 2009-04-29
+    #> 4                                      HATE CRIMES (PASS) 2009-04-29
+    #> 5                                      HATE CRIMES (PROC) 2009-10-06
+    #> 6    DEFENSE AUTH WITH HATE CRIMES ATTACHMENT -- RECOMMIT 2009-10-08
+    #> 7                DEFENSE AUTH WITH HATE CRIMES ATTACHMENT 2009-10-08
+    #> 8                          END DONT ASK DONT TELL -- RULE 2010-12-15
     #> 9                           END DONT ASK DONT TELL (PASS) 2010-12-15
-    #> 10               DEFENSE AUTH WITH HATE CRIMES ATTACHMENT 2009-10-08
-    #> 11   DEFENSE AUTH WITH HATE CRIMES ATTACHMENT -- RECOMMIT 2009-10-08
-    #> 12                                     HATE CRIMES (PROC) 2009-04-29
-    #> 13                                    HATE CRIMES -- RULE 2009-04-29
-    #> 14                                     HATE CRIMES (PROC) 2009-10-06
-    #> 15        DEFENSE AUTH -- END DON'T ASK DON'T TELL POLICY 2010-05-27
-    #> 16                                     HATE CRIMES (PASS) 2009-04-29
-    #> 17                                HATE CRIMES -- RECOMMIT 2009-04-29
-    #> 18                         END DONT ASK DONT TELL -- RULE 2010-12-15
+    #> 10        DEFENSE AUTH -- END DON'T ASK DON'T TELL POLICY 2010-05-27
+    #> 11                    DEFENSE AUTH AND HATE CRIMES (PASS) 2009-10-22
+    #> 12                                            HATE CRIMES 2009-07-16
+    #> 13         DEFENSE AUTH & DON'T ASK DON'T TELL -- CLOTURE 2010-12-09
+    #> 14 HEALTH CARE OVERHAUL RECONCILIATION -- DC GAY MARRIAGE 2010-03-25
+    #> 15                                            HATE CRIMES 2009-07-16
+    #> 16                      END DONT ASK DONT TELL -- CLOTURE 2010-12-18
+    #> 17                          END DONT ASK DONT TELL (PASS) 2010-12-18
+    #> 18           DEFENSE AUTH & DONT ASK DONT TELL -- CLOTURE 2010-09-21
     #>          bill chamber congress rollnumber yea nay  support       id
-    #> 1   H.R. 2647  Senate      111        327  68  29 70.10309 S1110327
-    #> 2   H.R. 2965  Senate      111        676  63  33 65.62500 S1110676
-    #> 3     S. 1390  Senate      111        232  78  13 85.71429 S1110232
-    #> 4     S. 3454  Senate      111        667  57  40 58.76289 S1110667
-    #> 5   H.R. 4872  Senate      111        486  36  59 37.89474 S1110486
-    #> 6     S. 1390  Senate      111        231  29  62 31.86813 S1110231
-    #> 7   H.R. 2965  Senate      111        678  66  31 68.04124 S1110678
-    #> 8     S. 3454  Senate      111        635  56  43 56.56566 S1110635
+    #> 1   H RES 372   House      111        218 234 181 56.38554 H1110218
+    #> 2   H RES 372   House      111        219 234 190 55.18868 H1110219
+    #> 3    H R 1913   House      111        221 185 241 43.42723 H1110221
+    #> 4    H R 1913   House      111        222 249 175 58.72642 H1110222
+    #> 5    H R 2647   House      111        752 178 234 43.20388 H1110752
+    #> 6    H R 2647   House      111        767 208 216 49.05660 H1110767
+    #> 7    H R 2647   House      111        768 281 146 65.80796 H1110768
+    #> 8  H RES 1764   House      111       1618 232 180 56.31068 H1111618
     #> 9    H R 2965   House      111       1621 251 175 58.92019 H1111621
-    #> 10   H R 2647   House      111        768 281 146 65.80796 H1110768
-    #> 11   H R 2647   House      111        767 208 216 49.05660 H1110767
-    #> 12  H RES 372   House      111        218 234 181 56.38554 H1110218
-    #> 13  H RES 372   House      111        219 234 190 55.18868 H1110219
-    #> 14   H R 2647   House      111        752 178 234 43.20388 H1110752
-    #> 15   H R 5136   House      111       1302 230 194 54.24528 H1111302
-    #> 16   H R 1913   House      111        222 249 175 58.72642 H1110222
-    #> 17   H R 1913   House      111        221 185 241 43.42723 H1110221
-    #> 18 H RES 1764   House      111       1618 232 180 56.31068 H1111618
+    #> 10   H R 5136   House      111       1302 230 194 54.24528 H1111302
+    #> 11  H.R. 2647  Senate      111        327  68  29 70.10309 S1110327
+    #> 12    S. 1390  Senate      111        232  78  13 85.71429 S1110232
+    #> 13    S. 3454  Senate      111        667  57  40 58.76289 S1110667
+    #> 14  H.R. 4872  Senate      111        486  36  59 37.89474 S1110486
+    #> 15    S. 1390  Senate      111        231  29  62 31.86813 S1110231
+    #> 16  H.R. 2965  Senate      111        676  63  33 65.62500 S1110676
+    #> 17  H.R. 2965  Senate      111        678  66  31 68.04124 S1110678
+    #> 18    S. 3454  Senate      111        635  56  43 56.56566 S1110635
 
 ``` r
 res2 <- voteview_search("gay lesbian congress:111")
@@ -684,20 +882,20 @@ dadtLong <- melt_rollcall(dadt,
 head(dadtLong)
 ```
 
-    #>           id vote    vname chamber       date                    name
-    #> 1 MH02605111    1 H1110222   House 2009-04-29 Dingell, John David Jr.
-    #> 2 MH15627111    6 H1110222   House 2009-04-29          Stearns, Cliff
-    #> 3 MH10713111    1 H1110222   House 2009-04-29      Conyers, John, Jr.
-    #> 4 MH20340111    9 H1110222   House 2009-04-29      Butterfield, G. K.
-    #> 5 MH15628111    6 H1110222   House 2009-04-29         Tanner, John S.
-    #> 6 MH12036111    1 H1110222   House 2009-04-29          Obey, David R.
-    #>   state party   nom1   nom2
-    #> 1    23   100 -0.448  0.321
-    #> 2    43   200  0.558 -0.060
-    #> 3    23   100 -0.666 -0.475
-    #> 4    47   100 -0.417  0.301
-    #> 5    54   100 -0.183  0.641
-    #> 6    25   100 -0.454 -0.049
+    #>           id    vname vote chamber       date                    name
+    #> 1 MH02605111 H1110222    1   House 2009-04-29 Dingell, John David Jr.
+    #> 2 MH15627111 H1110222    6   House 2009-04-29          Stearns, Cliff
+    #> 3 MH10713111 H1110222    1   House 2009-04-29      Conyers, John, Jr.
+    #> 4 MH20340111 H1110222    9   House 2009-04-29      Butterfield, G. K.
+    #> 5 MH15628111 H1110222    6   House 2009-04-29         Tanner, John S.
+    #> 6 MH12036111 H1110222    1   House 2009-04-29          Obey, David R.
+    #>   party state   nom1   nom2
+    #> 1   100    23 -0.449  0.325
+    #> 2   200    43  0.556 -0.055
+    #> 3   100    23 -0.665 -0.472
+    #> 4   100    47 -0.416  0.308
+    #> 5   100    54 -0.183  0.646
+    #> 6   100    25 -0.453 -0.046
 
 Included in the package is a dataframe that links the numeric ICPSR codes to state names and state mail codes. You can load the data by calling `data(states)`. We use this to merge in the proper state names that will be matched to the Lax and Phillips (2009) dataset. Obama appears three times in this dataset and will be dropped in this merge.
 
@@ -720,20 +918,20 @@ df <- merge(dadtLong, lpOpinion,
 head(df)
 ```
 
-    #>   stateName state         id vote    vname chamber       date
-    #> 1   alabama    41 MH20301111    6 H1110222   House 2009-04-29
-    #> 2   alabama    41 MH20901111    6 H1110222   House 2009-04-29
-    #> 3   alabama    41 MH29701111    6 H1110222   House 2009-04-29
-    #> 4   alabama    41 MS49700111    6 S1110678  Senate 2010-12-18
-    #> 5   alabama    41 MS94659111    6 S1110678  Senate 2010-12-18
-    #> 6   alabama    41 MH29701111    6 H1111621   House 2010-12-15
+    #>   stateName state         id    vname vote chamber       date
+    #> 1   alabama    41 MH20301111 H1110222    6   House 2009-04-29
+    #> 2   alabama    41 MH20901111 H1110222    6   House 2009-04-29
+    #> 3   alabama    41 MH29701111 H1110222    6   House 2009-04-29
+    #> 4   alabama    41 MS49700111 S1110678    6  Senate 2010-12-18
+    #> 5   alabama    41 MS94659111 S1110678    6  Senate 2010-12-18
+    #> 6   alabama    41 MH29701111 H1111621    6   House 2010-12-15
     #>                    name party   nom1  nom2 secondParentAdoption hateCrimes
-    #> 1       Rogers, Mike D.   200  0.334 0.482                   29         61
-    #> 2      Griffith, Parker   100 -0.046 0.554                   29         61
-    #> 3   Aderholt, Robert B.   200  0.359 0.649                   29         61
-    #> 4        Sessions, Jeff   200  0.558 0.149                   29         61
-    #> 5 Shelby, Richard Craig   200  0.441 0.562                   29         61
-    #> 6   Aderholt, Robert B.   200  0.359 0.649                   29         61
+    #> 1       Rogers, Mike D.   200  0.333 0.499                   29         61
+    #> 2      Griffith, Parker   100 -0.047 0.566                   29         61
+    #> 3   Aderholt, Robert B.   200  0.357 0.661                   29         61
+    #> 4        Sessions, Jeff   200  0.557 0.152                   29         61
+    #> 5 Shelby, Richard Craig   200  0.440 0.564                   29         61
+    #> 6   Aderholt, Robert B.   200  0.357 0.661                   29         61
     #>   healthBenefits housing jobs marriage sodomy civilUnions meanOpinion
     #> 1             54      68   53       23     28          34          44
     #> 2             54      68   53       23     28          34          44
@@ -833,23 +1031,23 @@ summary(lm(voteYes ~ meanOpinion*republican + nom1 + nom2,
     #> 
     #> Residuals:
     #>      Min       1Q   Median       3Q      Max 
-    #> -0.79264 -0.10698 -0.01282  0.07572  0.96182 
+    #> -0.79139 -0.10691 -0.01203  0.07518  0.95173 
     #> 
     #> Coefficients:
     #>                         Estimate Std. Error t value Pr(>|t|)    
-    #> (Intercept)             0.616029   0.104545   5.892 5.30e-09 ***
-    #> meanOpinion             0.003671   0.001802   2.038   0.0419 *  
-    #> republican             -0.694767   0.143694  -4.835 1.55e-06 ***
-    #> nom1                   -0.350535   0.055877  -6.273 5.39e-10 ***
-    #> nom2                   -0.269910   0.029344  -9.198  < 2e-16 ***
-    #> meanOpinion:republican  0.002760   0.002485   1.110   0.2671    
+    #> (Intercept)             0.615898   0.104563   5.890 5.37e-09 ***
+    #> meanOpinion             0.003708   0.001800   2.059   0.0397 *  
+    #> republican             -0.695002   0.143692  -4.837 1.54e-06 ***
+    #> nom1                   -0.350772   0.056017  -6.262 5.78e-10 ***
+    #> nom2                   -0.268832   0.029222  -9.200  < 2e-16 ***
+    #> meanOpinion:republican  0.002774   0.002486   1.116   0.2647    
     #> ---
     #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     #> 
     #> Residual standard error: 0.2333 on 939 degrees of freedom
     #>   (23 observations deleted due to missingness)
     #> Multiple R-squared:  0.7753, Adjusted R-squared:  0.7741 
-    #> F-statistic: 648.1 on 5 and 939 DF,  p-value: < 2.2e-16
+    #> F-statistic:   648 on 5 and 939 DF,  p-value: < 2.2e-16
 
 ``` r
 ## Now let's look just at repealing don't ask don't tell and add chamber fixed effects
@@ -864,24 +1062,24 @@ summary(lm(voteYes ~ meanOpinion*republican + nom1 + nom2 + chamber,
     #> 
     #> Residuals:
     #>      Min       1Q   Median       3Q      Max 
-    #> -0.79669 -0.10023 -0.00990  0.07345  0.91363 
+    #> -0.79563 -0.10060 -0.01037  0.07455  0.90369 
     #> 
     #> Coefficients:
     #>                         Estimate Std. Error t value Pr(>|t|)    
-    #> (Intercept)             0.750381   0.140026   5.359 1.27e-07 ***
-    #> meanOpinion             0.002029   0.002405   0.844  0.39925    
-    #> republican             -0.969660   0.189075  -5.128 4.15e-07 ***
-    #> nom1                   -0.227909   0.073925  -3.083  0.00216 ** 
-    #> nom2                   -0.285644   0.038865  -7.350 7.87e-13 ***
-    #> chamberSenate           0.061405   0.026637   2.305  0.02155 *  
-    #> meanOpinion:republican  0.005780   0.003278   1.764  0.07841 .  
+    #> (Intercept)             0.750767   0.140117   5.358 1.27e-07 ***
+    #> meanOpinion             0.002061   0.002404   0.857  0.39166    
+    #> republican             -0.969065   0.189075  -5.125 4.21e-07 ***
+    #> nom1                   -0.228159   0.074111  -3.079  0.00219 ** 
+    #> nom2                   -0.284631   0.038774  -7.341 8.36e-13 ***
+    #> chamberSenate           0.059463   0.026709   2.226  0.02642 *  
+    #> meanOpinion:republican  0.005785   0.003278   1.765  0.07823 .  
     #> ---
     #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     #> 
     #> Residual standard error: 0.2275 on 514 degrees of freedom
     #>   (13 observations deleted due to missingness)
     #> Multiple R-squared:  0.7864, Adjusted R-squared:  0.7839 
-    #> F-statistic: 315.4 on 6 and 514 DF,  p-value: < 2.2e-16
+    #> F-statistic: 315.3 on 6 and 514 DF,  p-value: < 2.2e-16
 
 Even when controlling for ideology and party, it seems that legislators, and especially Republican legislators, are more likely to vote for pro-gay rights bills when their state has a high average level of pro-gay rights sentiment.
 
