@@ -478,7 +478,7 @@ sanders[, names(sanders) != "bio"]
     #> 12         0
     #> 13         0
 
-As you can see Sanders changes chambers between the 109th and 110th congresses. Furthermore, the number of votes they cast will vary accross
+As you can see Sanders changes chambers between the 109th and 110th congresses and a few other fields differ as well. Nonetheless, most is repeated.
 
 Extended Examples
 =================
