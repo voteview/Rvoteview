@@ -168,8 +168,8 @@ voteview_search <- function(q = NULL,
   }
   
   theurl <- "https://voteview.polisci.ucla.edu/api/search"
-  resp <- POST(theurl, body = list(q = query_string))
-  
+
+  resp <- POST(theurl, body = list(q = stri_escape_unicode(query_string)))
   # If the return is not JSON, print out result to see error
   if (substr(content(resp, as = "text", encoding = "UTF-8"), 1, 1) != "{") {
     stop(content(resp, as = "text", encoding = "UTF-8"))
@@ -286,14 +286,15 @@ member_search <- function(name = NULL,
   # todo: should we consider similar search syntax to voteview_search?
   
   theurl <- "https://voteview.polisci.ucla.edu/api/getmembers"
-  resp <- POST(theurl, body = list(name = name,
-                                   icpsr = icpsr,
-                                   state = state,
-                                   congress = congress,
-                                   cqlabel = cqlabel,
-                                   chamber = chamber,
-                                   api = "R",
-                                   distinct = distinct))
+  resp <- POST(theurl, body = lapply(list(name = name,
+                                          icpsr = icpsr,
+                                          state = state,
+                                          congress = congress,
+                                          cqlabel = cqlabel,
+                                          chamber = chamber,
+                                          api = "R",
+                                          distinct = distinct),
+                                     stri_escape_unicode))
 
   res <- fromJSON(content(resp,
                           as = "text",

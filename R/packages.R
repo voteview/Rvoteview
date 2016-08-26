@@ -2,6 +2,7 @@
 ## NAMESPACE and imported
 
 #' @import pscl
+#' @import stringi
 #' @import jsonlite
 #' @import httr
 #' @import fastmatch
