@@ -177,21 +177,23 @@ voteview_search <- function(q = NULL,
   
   suppressWarnings(resjson <- fromJSON(content(resp,
                                                as = "text",
-                                               encoding = "UTF-8")))
+                                               encoding = "UTF-8"),
+                                       flatten = T))
   
   message(sprintf("Query '%s' returned %i rollcalls...\n", query_string, resjson$recordcount))
   
   if(!is.null(resjson$errormessage)) warning(resjson$errormessage)
   if(resjson$recordcount == 0) stop("No rollcalls found")
+
+  res <- resjson$rollcalls
+  orderCols <- c("description", "shortdescription", "date",
+                 "bill", "chamber", "congress",  "rollnumber",
+                 "yea", "nay", "support", "id")
+  dropCols <- c("result")
   
-  resdf <- jlist2df(resjson$rollcalls,
-                    ordercols = c("description", "shortdescription", "date",
-                                  "bill", "chamber", "congress",  "rollnumber",
-                                  "yea", "nay", "support", "id"))
+  attr(res, "qstring") <- query_string
   
-  attr(resdf, "qstring") <- query_string
-  
-  return( resdf )
+  return( cleanDf(res, orderCols, dropCols) )
 }
 
 #' Query the Voteview Database for Members
@@ -295,18 +297,32 @@ member_search <- function(name = NULL,
 
   res <- fromJSON(content(resp,
                           as = "text",
-                          encoding = "UTF-8"))$results
+                          encoding = "UTF-8"),
+                  flatten = T)$results
   
-  ordercols <- c("id", "icpsr", "bioName", "fname", "partyname", "cqlabel")
+  orderCols <- c("id", "icpsr", "bioName", "fname", "partyname", "cqlabel")
   
-  return(jlist2df(res,
-                  ordercols))
+  if(length(res) == 0)
+    stop("No results found.")
+  
+  return( cleanDf(res, orderCols) )
 }
 
+# Helper function to order and drop fields
+# Note that dropcols drops all columns that start with those characters
+cleanDf <- function(df, orderCols = NULL, dropCols = NULL) {
+  if(!is.null(dropCols)) {
+    df <- df[, -grep(paste0("^[", paste0(dropCols, collapse = "|"), "]"), names(df))]
+  }
+
+  df[, c(intersect(orderCols, names(df)), setdiff(names(df), orderCols))]
+}
+
+
 # Helper function that transforms a vector of lists into a dataframe
-#' Transform vector of lists to data frame
+#' Transform vector of lists to data frame (DEPRECATED)
 #' 
-#' This is a helper function to transform the vector of lists that were
+#' This function has been deprecated in favor of using fromJSON in jsonlite. This is a helper function to transform the vector of lists that were
 #' constructed by \code{voteview_search} and \code{member_search} in to a data frame.
 #' This function should probably not be called
 #' by itself. See \code{voteview_search} and \code{member_search} for more information.
@@ -322,6 +338,7 @@ member_search <- function(name = NULL,
 #' @export
 #' 
 jlist2df <- function(rcs, ordercols = NULL) {
+  
   res <- list()
   # drop lists from return for now
   notlists <- sapply(rcs[[1]], function(x) class(x) != "list")
@@ -339,6 +356,8 @@ jlist2df <- function(rcs, ordercols = NULL) {
       }
     }
   }
+  
+  
   
   # reorder columns explicitly
   res <- as.data.frame(res, stringsAsFactors = FALSE)

@@ -2,7 +2,7 @@
 % Please edit documentation in R/search.R
 \name{jlist2df}
 \alias{jlist2df}
-\title{Transform vector of lists to data frame}
+\title{Transform vector of lists to data frame (DEPRECATED)}
 \usage{
 jlist2df(rcs, ordercols = NULL)
 }
@@ -15,7 +15,7 @@ function that called it.}
 to read.}
 }
 \description{
-This is a helper function to transform the vector of lists that were
+This function has been deprecated in favor of using fromJSON in jsonlite. This is a helper function to transform the vector of lists that were
 constructed by \code{voteview_search} and \code{member_search} in to a data frame.
 This function should probably not be called
 by itself. See \code{voteview_search} and \code{member_search} for more information.

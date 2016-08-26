@@ -2,7 +2,7 @@
 ## NAMESPACE and imported
 
 #' @import pscl
-#' @import rjson
+#' @import jsonlite
 #' @import httr
 #' @import fastmatch
 NULL

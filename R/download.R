@@ -180,14 +180,14 @@ build_votelist <- function(votelist, ids, perrequest) {
       
       # If there are rollcalls to add, add them. This chunk prevents errors
       # when votes$rollcalls doesn't work because votes are all errors
-      if(length(votes$rollcalls)) {
-        for(j in 1:length(votes$rollcalls)) {
-          votelist[[place + j]] <- votes$rollcalls[[j]]
+      if(nrow(votes$rollcalls)) {
+        for(j in 1:nrow(votes$rollcalls)) {
+          votelist[[place + j]] <- votes$rollcalls[j, ]
         }
       }
       
       # Change where you are in the outcome list
-      place <- place + length(votes$rollcalls)
+      place <- place + nrow(votes$rollcalls)
       if (!is.null(votes$errormessage)) {
         warning(votes$errormessage, call. = FALSE)
       }
@@ -226,13 +226,11 @@ votelist2voteview <- function(dat) {
   }
   
   if(!length(votelist)) stop("Votelist is empty.")
-  
   ## Get unique list of members
   ## 'unlist' because if voters are not all the same, then sapply returns list
   ## 'c' in case voters ARE all the same, then sapply returns array
-  allmembers <- c(unlist(sapply( votelist, function(vote) sapply(vote$votes, function(member) member$id)), F, F))
+  allmembers <- c(unlist(sapply( votelist, function(vote) vote$votes[[1]]$id), F, F))
   members <- unique(allmembers)
-  
   ## Data to keep from return
   ## todo: check if these fields are consistent, what if first return has missing
   ## data. Maybe best fixed server side, as in always return most number of fields.
@@ -276,8 +274,9 @@ votelist2voteview <- function(dat) {
 
   votelegis <- 1
   for (i in 1:length(votelist)) {
-    for (member in votelist[[i]]$votes) {
-      vname <- votelist[[i]]$id
+    vname <- votelist[[i]]$id
+    for (x in 1:nrow(votelist[[i]]$votes[[1]])) {
+      member <- votelist[[i]]$votes[[1]][x, ]
       ## Find member from roll call in output data
       memberpos <- fmatch(member$id, members)
       ## If the legislator icpsr is not entered yet, enter it to the long legis matrix
