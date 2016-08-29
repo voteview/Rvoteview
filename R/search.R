@@ -179,13 +179,14 @@ voteview_search <- function(q = NULL,
                                                as = "text",
                                                encoding = "UTF-8"),
                                        flatten = T))
-  
+
   message(sprintf("Query '%s' returned %i rollcalls...\n", query_string, resjson$recordcount))
   
   if(!is.null(resjson$errormessage)) warning(resjson$errormessage)
   if(resjson$recordcount == 0) stop("No rollcalls found")
 
   res <- resjson$rollcalls
+
   orderCols <- c("description", "shortdescription", "date",
                  "bill", "chamber", "congress",  "rollnumber",
                  "yea", "nay", "support", "id")
@@ -313,7 +314,7 @@ member_search <- function(name = NULL,
 # Note that dropcols drops all columns that start with those characters
 cleanDf <- function(df, orderCols = NULL, dropCols = NULL) {
   if(!is.null(dropCols)) {
-    df <- df[, -grep(paste0("^[", paste0(dropCols, collapse = "|"), "]"), names(df))]
+    df <- df[, -grep(paste0("^(", paste0(dropCols, collapse = "|"), ")"), names(df))]
   }
 
   df[, c(intersect(orderCols, names(df)), setdiff(names(df), orderCols))]
