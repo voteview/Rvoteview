@@ -1,5 +1,6 @@
 ## This file contains helper functions for Rvoteview
 ## Functions:
+##            baseurl
 ##            trim
 ##            Mode
 
@@ -10,4 +11,9 @@ trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 Mode <- function(x) {
   ux <- unique(x)
   ux[which.max(tabulate(match(x, ux)))]
+}
+
+# Internal function that returns the URL of the current server
+baseurl <- function() {
+  return("http://128.97.229.160")
 }

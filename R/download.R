@@ -206,7 +206,7 @@ build_votelist <- function(votelist, ids, perrequest) {
 #' @export
 #' 
 voteview_getvote <- function(ids) {
-  theurl <- "https://voteview.polisci.ucla.edu/api/download?rollcall_id="
+  theurl <- paste0(baseurl(), "/api/download?rollcall_id=")
   resp <- GET(paste0(theurl, paste0(ids, collapse = ","), "&apitype=R"), timeout(5))
 }
 
@@ -420,8 +420,8 @@ voteview2rollcall <- function(data, keeplong = T) {
     votes.long.names <- c(votes.long.order, setdiff(colnames(data$votelong), votes.long.order))
     legis.data.order <- c("icpsr", "name", "party", "state", "cqlabel", "ambiguity")
     legis.data.names <- c(legis.data.order, setdiff(colnames(legis.data), legis.data.order))
-    vote.data.order <- c("vname", "rollnumber", "chamber", "date", "congress", "code.Issue",
-                         "code.Peltzman", "code.Clausen", "description", "yea", "nay",
+    vote.data.order <- c("vname", "rollnumber", "chamber", "date", "congress", "codes.Issue",
+                         "codes.Peltzman", "codes.Clausen", "description", "yea", "nay",
                          "nomslope", "nomintercept")
     vote.data.names <- c(vote.data.order, setdiff(colnames(data$rollcalls), vote.data.order))
   })

@@ -125,7 +125,7 @@ res <- voteview_search(q = qString,
                        enddate = "2003-12-31")
 ```
 
-The fields that can be searched with text are `codes`, `code.Clausen`, `code.Peltzman`, `code.Issue`, `description`, `shortdescription`, `bill`, and `alltext`. The fields that can be searched by number are `congress`, `yea`, `nay`, and `support`. Searching by individual legislator will be implemented soon.
+The fields that can be searched with text are `codes`, `codes.Clausen`, `codes.Peltzman`, `codes.Issue`, `description`, `shortdescription`, `bill`, and `alltext`. The fields that can be searched by number are `congress`, `yea`, `nay`, and `support`. Searching by individual legislator will be implemented soon.
 
 # Downloading roll call data with `voteview_download`
 
@@ -259,7 +259,7 @@ library(ggplot2)   # Load this first so that Rvoteview can use %+%
 library(Rvoteview)
 
 ## Search database for votes that meet our criteria
-res <- voteview_search("code.Clausen:Foreign and Defense Policy support:[15 to 85]",
+res <- voteview_search("codes.Clausen:Foreign and Defense Policy support:[15 to 85]",
                        startdate = "2008-01-01")
 ```
 
@@ -465,7 +465,7 @@ Let's see what bills there were in the 111th congress that had to do with homose
 
 ```{r}
 ## Two separate searches because fields cannot be joined with an OR
-res <- voteview_search("code.Issue:Homosexuality congress:111")
+res <- voteview_search("codes.Issue:Homosexuality congress:111")
 res
 
 res2 <- voteview_search("gay lesbian congress:111")
