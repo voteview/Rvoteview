@@ -191,7 +191,7 @@ voteview_search <- function(q = NULL,
   orderCols <- c("id", "congress", "chamber", "rollnumber", "date", "bill",
                  "yea_count", "nay_count", "support", "description",
                  "shortdescription")
-  dropCols <- c("result")
+  dropCols <- c("result", "vote_counts", "vote_document_text", "vote_desc", "vote_question")
   
   attr(res, "qstring") <- query_string
   

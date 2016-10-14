@@ -176,7 +176,9 @@ build_votelist <- function(votelist, ids, perrequest) {
                   unretrievedids = c(unretrievedids,
                                      unlist(idchunks[i:length(idchunks)],
                                             use.names = F))))
-    } else { # Not an error
+    } else { # Not an error in R
+      
+      if (!is.null(votes$errormessage)) stop(votes$errormessage)
       
       # If there are rollcalls to add, add them. This chunk prevents errors
       # when votes$rollcalls doesn't work because votes are all errors
@@ -215,7 +217,7 @@ voteview_getvote <- function(ids) {
 #' @export
 #' 
 votelist2voteview <- function(dat) {
-  
+
   ## Warn user about failed downloads
   if(is.null(dat$unretrievedids)) {
     votelist <- dat$votelist
@@ -274,7 +276,6 @@ votelist2voteview <- function(dat) {
 
   votelegis <- 1
   for (i in 1:length(votelist)) {
-    vname <- votelist[[i]]$id
     for (x in 1:nrow(votelist[[i]]$votes[[1]])) {
       member <- votelist[[i]]$votes[[1]][x, ]
       ## Find member from roll call in output data
@@ -292,8 +293,8 @@ votelist2voteview <- function(dat) {
                                       ## If vote is NA, replace it with 0 for not in legislature
                                       ## only occurs when there is no record for legislator-vote
                                       ## meaning it was a congress the legislator was not in
-                                      ifelse(is.na(member$vote), 0 , member$vote),
-                                      vname)
+                                      ifelse(is.na(member$cast_code), 0 , member$cast_code),
+                                      votelist[[i]]$id)
 
       votelegis <- votelegis + 1
     }
@@ -371,7 +372,7 @@ voteview2rollcall <- function(data, keeplong = T) {
   ## Replace missing with not in legislature value
   votemat[is.na(votemat)] <- 0
   
-  legiscols <-  c("name", "state", "cqlabel", "party")
+  legiscols <-  c("name", "state_abbrev", "cqlabel", "party_code")
   legis.data <- matrix(NA,
                        nrow = length(uniqueicpsr),
                        ncol = length(legiscols) + 1,
@@ -406,7 +407,7 @@ voteview2rollcall <- function(data, keeplong = T) {
           2,
           as.numeric)
   data$votelong$vote <- as.numeric(data$votelong$vote)
-  data$legislong[, c("nom2", "nom1")] <- apply(data$legislong[, c("nom2", "nom1")],
+  data$legislong[, c("dim1", "dim2")] <- apply(data$legislong[, c("dim1", "dim2")],
                                          2,
                                          as.numeric)
 
@@ -414,14 +415,14 @@ voteview2rollcall <- function(data, keeplong = T) {
   ## by using setdiff)
   ## Try to reorder, if some fields explicitly stated aren't returned, then this will be skipped
   try({
-    legis.long.order <- c("id", "icpsr", "name", "party", "state", "cqlabel", "nom1", "nom2")
+    legis.long.order <- c("id", "icpsr", "name", "party_code", "state_abbrev", "cqlabel", "dim1", "dim2")
     legis.long.names <- c(legis.long.order, setdiff(colnames(data$legislong), legis.long.order))
     votes.long.order <- c("id", "icpsr", "vname", "vote")
     votes.long.names <- c(votes.long.order, setdiff(colnames(data$votelong), votes.long.order))
-    legis.data.order <- c("icpsr", "name", "party", "state", "cqlabel", "ambiguity")
+    legis.data.order <- c("icpsr", "name", "party_code", "state_abbrev", "cqlabel", "ambiguity")
     legis.data.names <- c(legis.data.order, setdiff(colnames(legis.data), legis.data.order))
-    vote.data.order <- c("vname", "rollnumber", "chamber", "date", "congress", "codes.Issue",
-                         "codes.Peltzman", "codes.Clausen", "description", "yea", "nay",
+    vote.data.order <- c("vname", "rollnumber", "chamber", "date", "congress", "code.Issue",
+                         "code.Peltzman", "code.Clausen", "description", "yea", "nay",
                          "nomslope", "nomintercept")
     vote.data.names <- c(vote.data.order, setdiff(colnames(data$rollcalls), vote.data.order))
   })
