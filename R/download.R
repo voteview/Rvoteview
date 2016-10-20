@@ -300,15 +300,15 @@ votelist2voteview <- function(dat) {
     }
     
     ## Some votes (like unanimous votes) will not have cut lines
-    if(is.null(votelist[[i]]$nominate$slope)) nominate <- c(NA, NA)
-    else nominate <- unlist(votelist[[i]]$nominate, F, F)
+    if(is.null(votelist[[i]]$nominate$nomslope)) nominate <- c(NA, NA)
+    else nominate <- round(unlist(votelist[[i]]$nominate[c("nomslope", "nomintercept")], F, F), 3)
     
     # Add rollcall data
     data$rollcalls[i, ] <- c(unlist(votelist[[i]])[rollcalldatanames],
                              nominate)
     setTxtProgressBar(pb, i)
   }
-  
+
   data$votelong <- data.frame(data$votelong[1:(votelegis - 1), ], stringsAsFactors = F)
   data$legislong <- data.frame(data$legislong,
                                id = members, stringsAsFactors = F)
@@ -372,14 +372,12 @@ voteview2rollcall <- function(data, keeplong = T) {
   ## Replace missing with not in legislature value
   votemat[is.na(votemat)] <- 0
   
-  legiscols <-  c("name", "state_abbrev", "cqlabel", "party_code")
+  legiscols <-  c("name", "state_abbrev", "party_code", "dim1", "dim2")
   legis.data <- matrix(NA,
                        nrow = length(uniqueicpsr),
                        ncol = length(legiscols) + 1,
                        dimnames = list(NULL,
                                        c(legiscols, "ambiguity")))
-  
-  
   
   message(sprintf("Building legis.data matrix"))
   pb <- txtProgressBar(min = 0, max = nrow(legis.data), style = 3)
@@ -401,30 +399,29 @@ voteview2rollcall <- function(data, keeplong = T) {
   names(data$rollcalls)[names(data$rollcalls) == "id"] <- "vname"
   
   ## Change class of some variables
-  legis.data$ambiguity <- as.numeric(legis.data$ambiguity)
+  legis.data[, c("ambiguity", "dim1", "dim2")]<- apply(legis.data[, c("ambiguity", "dim1", "dim2")],
+                                                       2,
+                                                       as.numeric)
   data$rollcalls[, c("congress", "yea", "nay", "nomslope", "nomintercept")] <-
     apply(data$rollcalls[, c("congress", "yea", "nay", "nomslope", "nomintercept")],
           2,
           as.numeric)
   data$votelong$vote <- as.numeric(data$votelong$vote)
-  data$legislong[, c("dim1", "dim2")] <- apply(data$legislong[, c("dim1", "dim2")],
-                                         2,
-                                         as.numeric)
 
   ## Re-ordering some columns (explicit ordering, additional vars added to the end
   ## by using setdiff)
   ## Try to reorder, if some fields explicitly stated aren't returned, then this will be skipped
   try({
-    legis.long.order <- c("id", "icpsr", "name", "party_code", "state_abbrev", "cqlabel", "dim1", "dim2")
-    legis.long.names <- c(legis.long.order, setdiff(colnames(data$legislong), legis.long.order))
+    legis.long.order <- c("id", "icpsr", "name", "party_code", "state_abbrev", "cqlabel")
+    legis.long.names <- c(legis.long.order, setdiff(colnames(data$legislong), c(legis.long.order, "dim1", "dim2")))
     votes.long.order <- c("id", "icpsr", "vname", "vote")
     votes.long.names <- c(votes.long.order, setdiff(colnames(data$votelong), votes.long.order))
-    legis.data.order <- c("icpsr", "name", "party_code", "state_abbrev", "cqlabel", "ambiguity")
+    legis.data.order <- c("icpsr", "name", "party_code", "state_abbrev", "ambiguity", "dim1", "dim2")
     legis.data.names <- c(legis.data.order, setdiff(colnames(legis.data), legis.data.order))
-    vote.data.order <- c("vname", "rollnumber", "chamber", "date", "congress", "code.Issue",
-                         "code.Peltzman", "code.Clausen", "description", "yea", "nay",
+    vote.data.order <- c("vname", "rollnumber", "chamber", "date", "congress", "description", "question", "yea", "nay", "vote_result",
+                         "codes.Issue", "codes.Peltzman", "codes.Clausen",
                          "nomslope", "nomintercept")
-    vote.data.names <- c(vote.data.order, setdiff(colnames(data$rollcalls), vote.data.order))
+    vote.data.names <- c(intersect(vote.data.order, colnames(data$rollcalls)), setdiff(colnames(data$rollcalls), vote.data.order))
   })
   
   message(sprintf("Building rollcall object, may take some time..."))

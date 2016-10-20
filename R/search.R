@@ -194,9 +194,10 @@ voteview_search <- function(q = NULL,
                 "vote_title", "vote_question", "amendment_author")
   renameCols <- list(c("yea_count", "yea"), c("nay_count", "nay"),
                      c("percent_support", "support"))
+  res <- cleanDf(res, orderCols, dropCols, renameCols)
   attr(res, "qstring") <- query_string
   
-  return( cleanDf(res, orderCols, dropCols, renameCols) )
+  return( res )
 }
 
 #' Query the Voteview Database for Members
