@@ -176,7 +176,9 @@ build_votelist <- function(votelist, ids, perrequest) {
                   unretrievedids = c(unretrievedids,
                                      unlist(idchunks[i:length(idchunks)],
                                             use.names = F))))
-    } else { # Not an error
+    } else { # Not an error in R
+      
+      if (!is.null(votes$errormessage)) stop(votes$errormessage)
       
       # If there are rollcalls to add, add them. This chunk prevents errors
       # when votes$rollcalls doesn't work because votes are all errors
@@ -215,7 +217,7 @@ voteview_getvote <- function(ids) {
 #' @export
 #' 
 votelist2voteview <- function(dat) {
-  
+
   ## Warn user about failed downloads
   if(is.null(dat$unretrievedids)) {
     votelist <- dat$votelist
@@ -242,7 +244,7 @@ votelist2voteview <- function(dat) {
   rollcalldatanames <- names(unlist(votelist[[1]][firstlevelnames]))
   votelongdatanames <- c("id", "icpsr", "vote")
   legislongdatanames <- setdiff(names(votelist[[1]]$votes[[1]]),
-                                c("vote", "id"))
+                                c("cast_code", "id"))
   
   ## use IDs for votenames
   votenames <- c(unlist(sapply(votelist, function(vote) vote$id), F, F))
@@ -274,7 +276,6 @@ votelist2voteview <- function(dat) {
 
   votelegis <- 1
   for (i in 1:length(votelist)) {
-    vname <- votelist[[i]]$id
     for (x in 1:nrow(votelist[[i]]$votes[[1]])) {
       member <- votelist[[i]]$votes[[1]][x, ]
       ## Find member from roll call in output data
@@ -292,22 +293,22 @@ votelist2voteview <- function(dat) {
                                       ## If vote is NA, replace it with 0 for not in legislature
                                       ## only occurs when there is no record for legislator-vote
                                       ## meaning it was a congress the legislator was not in
-                                      ifelse(is.na(member$vote), 0 , member$vote),
-                                      vname)
+                                      ifelse(is.na(member$cast_code), 0 , member$cast_code),
+                                      votelist[[i]]$id)
 
       votelegis <- votelegis + 1
     }
     
     ## Some votes (like unanimous votes) will not have cut lines
-    if(is.null(votelist[[i]]$nominate$slope)) nominate <- c(NA, NA)
-    else nominate <- unlist(votelist[[i]]$nominate, F, F)
+    if(is.null(votelist[[i]]$nominate$nomslope)) nominate <- c(NA, NA)
+    else nominate <- round(unlist(votelist[[i]]$nominate[c("nomslope", "nomintercept")], F, F), 3)
     
     # Add rollcall data
     data$rollcalls[i, ] <- c(unlist(votelist[[i]])[rollcalldatanames],
                              nominate)
     setTxtProgressBar(pb, i)
   }
-  
+
   data$votelong <- data.frame(data$votelong[1:(votelegis - 1), ], stringsAsFactors = F)
   data$legislong <- data.frame(data$legislong,
                                id = members, stringsAsFactors = F)
@@ -371,18 +372,19 @@ voteview2rollcall <- function(data, keeplong = T) {
   ## Replace missing with not in legislature value
   votemat[is.na(votemat)] <- 0
   
-  legiscols <-  c("name", "state", "cqlabel", "party")
+  legiscols <-  c("name", "state_abbrev", "party_code", "dim1", "dim2")
   legis.data <- matrix(NA,
                        nrow = length(uniqueicpsr),
                        ncol = length(legiscols) + 1,
                        dimnames = list(NULL,
                                        c(legiscols, "ambiguity")))
   
-  
-  
   message(sprintf("Building legis.data matrix"))
   pb <- txtProgressBar(min = 0, max = nrow(legis.data), style = 3)
   
+  data$legislong[, c("dim1", "dim2")]<- apply(data$legislong[, c("dim1", "dim2")],
+                                               2,
+                                               as.numeric)
   ## Fill legislator data matrix
   for (i in 1:nrow(legis.data)) {
     memberrows <- fmatch(uniqueicpsr[i], data$legislong$icpsr)
@@ -406,24 +408,22 @@ voteview2rollcall <- function(data, keeplong = T) {
           2,
           as.numeric)
   data$votelong$vote <- as.numeric(data$votelong$vote)
-  data$legislong[, c("nom2", "nom1")] <- apply(data$legislong[, c("nom2", "nom1")],
-                                         2,
-                                         as.numeric)
+
 
   ## Re-ordering some columns (explicit ordering, additional vars added to the end
   ## by using setdiff)
   ## Try to reorder, if some fields explicitly stated aren't returned, then this will be skipped
   try({
-    legis.long.order <- c("id", "icpsr", "name", "party", "state", "cqlabel", "nom1", "nom2")
+    legis.long.order <- c("id", "icpsr", "name", "party_code", "state_abbrev", "cqlabel")
     legis.long.names <- c(legis.long.order, setdiff(colnames(data$legislong), legis.long.order))
     votes.long.order <- c("id", "icpsr", "vname", "vote")
     votes.long.names <- c(votes.long.order, setdiff(colnames(data$votelong), votes.long.order))
-    legis.data.order <- c("icpsr", "name", "party", "state", "cqlabel", "ambiguity")
+    legis.data.order <- c("icpsr", "name", "party_code", "state_abbrev", "ambiguity", "dim1", "dim2")
     legis.data.names <- c(legis.data.order, setdiff(colnames(legis.data), legis.data.order))
-    vote.data.order <- c("vname", "rollnumber", "chamber", "date", "congress", "codes.Issue",
-                         "codes.Peltzman", "codes.Clausen", "description", "yea", "nay",
+    vote.data.order <- c("vname", "rollnumber", "chamber", "date", "congress", "description", "question", "yea", "nay", "vote_result",
+                         "codes.Issue", "codes.Peltzman", "codes.Clausen",
                          "nomslope", "nomintercept")
-    vote.data.names <- c(vote.data.order, setdiff(colnames(data$rollcalls), vote.data.order))
+    vote.data.names <- c(intersect(vote.data.order, colnames(data$rollcalls)), setdiff(colnames(data$rollcalls), vote.data.order))
   })
   
   message(sprintf("Building rollcall object, may take some time..."))

@@ -111,10 +111,14 @@ voteview_search <- function(q = NULL,
       # Query text and arguments
       query_string <- sprintf("(%s)", q)
     }
+    
+    ## Escape unicde
+    query_string <- stri_escape_unicode(query_string)
+    
     ## Replace single quotes ' with double quotes for parser, try to avoid
-    ## apostrophes
-    query_string <- gsub("(?=[^:\\s])\\'", '\\"', query_string, perl=TRUE)
-    query_string <- gsub("\\'(?=[\\s$])", '\\"', query_string, perl=TRUE)
+    ## apostrophes and also replace the escape slashes that the stri_escape_unicode places around quotes
+    query_string <- gsub("(?=[^:\\s])\\\\\\'", '"', query_string, perl=TRUE)
+    query_string <- gsub("\\\\\\'(?=[\\s$])", '"', query_string, perl=TRUE)
   } else {
     query_string <- "()" # This ensures string does not start with boolean
   }
@@ -169,8 +173,7 @@ voteview_search <- function(q = NULL,
   }
   
   theurl <- paste0(baseurl(), "/api/search")
-
-  resp <- POST(theurl, body = list(q = stri_escape_unicode(query_string)))
+  resp <- POST(theurl, body = list(q = query_string, rapi = 1))
   # If the return is not JSON, print out result to see error
   if (substr(content(resp, as = "text", encoding = "UTF-8"), 1, 1) != "{") {
     stop(content(resp, as = "text", encoding = "UTF-8"))
@@ -182,20 +185,23 @@ voteview_search <- function(q = NULL,
                                        flatten = T))
 
   message(sprintf("Query '%s' returned %i rollcalls...\n", query_string, resjson$recordcount))
-  
+
   if(!is.null(resjson$errormessage)) warning(resjson$errormessage)
   if(resjson$recordcount == 0) stop("No rollcalls found")
 
   res <- resjson$rollcalls
 
   orderCols <- c("id", "congress", "chamber", "rollnumber", "date", "bill",
-                 "yea_count", "nay_count", "support", "description",
-                 "shortdescription")
-  dropCols <- c("result")
-  
+                 "yea_count", "nay_count", "percent_support", "vote_result", "description",
+                 "short_description", "question", "text")
+  dropCols <- c("result", "vote_counts", "vote_document_text", "vote_desc",
+                "vote_title", "vote_question", "amendment_author")
+  renameCols <- list(c("yea_count", "yea"), c("nay_count", "nay"),
+                     c("percent_support", "support"))
+  res <- cleanDf(res, orderCols, dropCols, renameCols)
   attr(res, "qstring") <- query_string
   
-  return( cleanDf(res, orderCols, dropCols) )
+  return( res )
 }
 
 #' Query the Voteview Database for Members
@@ -241,6 +247,7 @@ voteview_search <- function(q = NULL,
 member_search <- function(name = NULL,
                           icpsr = NULL,
                           state = NULL,
+                          party_code = NULL,
                           congress = NULL,
                           cqlabel = NULL,
                           chamber = NULL,
@@ -287,23 +294,24 @@ member_search <- function(name = NULL,
 
   # todo: should we consider similar search syntax to voteview_search?
   
-  theurl <- "https://voteview.polisci.ucla.edu/api/getmembers"
+  theurl <- paste0(baseurl(), "/api/getmembers")
   resp <- POST(theurl, body = lapply(list(name = name,
                                           icpsr = icpsr,
-                                          state = state,
+                                          state_abbrev = state,
+                                          party_code = ifelse(is.null(party_code), '', as.numeric(party_code)),
                                           congress = congress,
                                           cqlabel = cqlabel,
                                           chamber = chamber,
                                           api = "R",
                                           distinct = distinct),
-                                     stri_escape_unicode))
+                                     function(x) if(!is.null(x)) stri_escape_unicode(x)))
 
   res <- fromJSON(content(resp,
                           as = "text",
                           encoding = "UTF-8"),
                   flatten = T)$results
   
-  orderCols <- c("id", "icpsr", "bioName", "fname", "partyname", "cqlabel")
+  orderCols <- c("id", "icpsr", "bioname", "fname", "party_code", "cqlabel")
   
   if(length(res) == 0)
     stop("No results found.")
@@ -313,7 +321,7 @@ member_search <- function(name = NULL,
 
 # Helper function to order and drop fields
 # Note that dropcols drops all columns that start with those characters
-cleanDf <- function(df, orderCols = NULL, dropCols = NULL) {
+cleanDf <- function(df, orderCols = NULL, dropCols = NULL, renameCols = NULL) {
   if(!is.null(dropCols)) {
     dropIndex <- grep(paste0("^(", paste0(dropCols, collapse = "|"), ")"), names(df))
     if(length(dropIndex) != 0) {
@@ -321,7 +329,12 @@ cleanDf <- function(df, orderCols = NULL, dropCols = NULL) {
     }
   }
 
-  df[, c(intersect(orderCols, names(df)), setdiff(names(df), orderCols))]
+  dfReturn <- df[, c(intersect(orderCols, names(df)), setdiff(names(df), orderCols))]
+  for(n in renameCols){
+    names(dfReturn)[names(dfReturn)==n[1]] <- n[2]
+  }
+  
+  return(dfReturn)
 }
 
 

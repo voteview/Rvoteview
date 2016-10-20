@@ -50,7 +50,7 @@ The `q` argument should be treated similarly to a search box online. You can put
 ```{r search-ex1, eval=F}
 library(Rvoteview)
 res <- voteview_search("'terrorism'")
-## 165 found rollcalls
+## 37 found rollcalls
 res <- voteview_search("terrorism")
 ## 238 found rollcalls
 ```
@@ -59,7 +59,7 @@ You can also search for multiple words:
 
 ```{r search-ex2, eval=F}
 res <- voteview_search("terrorism iraq")
-## 546 found rollcalls
+## 619 found rollcalls
 ```
 
 Using the text index, the MongoDB that houses the rollcalls will search for the documents for either of these words and return the best matches. In effect, this will return documents that have *either* "terror" or "iraq" or various shortened versions of those words.
@@ -69,13 +69,13 @@ Using the text index, the MongoDB that houses the rollcalls will search for the 
 When using one of the simple queries above, the query parser automatically adds a field to the front of a query that does not specify which field to search. In order to specify a specific field, use the following `fieldname:query` syntax. To replicate the last example more explicitly, we use the following:
 ```{r search-ex2-alltext, eval=F}
 res <- voteview_search("alltext:terrorism iraq")
-## 546 found rollcalls
+## 619 found rollcalls
 ```
 
 Unfortunately, due to the way the text index works, to search for documents that have both "terror" *and* "iraq" will require some more work. One way to do this is to search a specific text field more than once, as queries across fields will be joined by AND by default:
 ```{r search-ex3, eval=F}
 res <- voteview_search("description:'terror' description:'iraq'")
-## 11 found rollcalls
+## 1 found rollcalls
 ```
 
 Unfortunately, the full text index cannot be accessed more than once at a time. That means that you cannot have two text fields that you search without quotes. Thus, `"description:iraq description:terror"` will not work and neither will `"alltext:iraq alltext:terror"`.
@@ -119,10 +119,10 @@ Numeric fields can be searched in a similar way, although users can also use squ
 
 For example, 
 ```{r adv-search-ex, eval=F}
-## Search for "war" AND ("iraq" or "afghanistan") in the description field in 2003
+## Search for "war" AND ("iraq" or "afghanistan") in the description field in 1991
 res <- voteview_search(q = qString,
-                       startdate = "2003-01-01",
-                       enddate = "2003-12-31")
+                       startdate = "1991-01-01",
+                       enddate = "1991-12-31")
 ```
 
 The fields that can be searched with text are `codes`, `codes.Clausen`, `codes.Peltzman`, `codes.Issue`, `description`, `shortdescription`, `bill`, and `alltext`. The fields that can be searched by number are `congress`, `yea`, `nay`, and `support`. Searching by individual legislator will be implemented soon.
@@ -251,7 +251,7 @@ This section details three different possible uses of the `Rvoteview` package, s
 
 ## Ideal point estimation
 
-Imagine that we want to estimate ideal points for all legislators voting on foreign policy and defense issues from 2008 until today. We will use all roll calls that fit the Clausen category "Foreign and Defense Policy" and are somewhat competitive, meaning between 15 and 85 percent of votes on the floor were yeas.
+Imagine that we want to estimate ideal points for all legislators voting on foreign policy during Obama's first term in office. We will use all roll calls that fit the Clausen category "Foreign and Defense Policy" and are somewhat competitive, meaning between 15 and 85 percent of votes on the floor were yeas.
 
 ```{r defense-search, results='hide'}
 ## Load packages
@@ -260,7 +260,7 @@ library(Rvoteview)
 
 ## Search database for votes that meet our criteria
 res <- voteview_search("codes.Clausen:Foreign and Defense Policy support:[15 to 85]",
-                       startdate = "2008-01-01")
+                       startdate = "2008-01-20", enddate = "2013-01-20")
 ```
 
 Large downloads can be quite slow for now, so be patient. We are working on improving speed. You can always download the full database yourself.
@@ -277,13 +277,13 @@ Now we use the `wnominate` package to run an ideal point estimation. Warning, th
 ```{r defense-ideal-wnominate, eval = F}
 library(wnominate)
 # Find extreme legislators for polarity argument
-cons1 <- rc$legis.long.dynamic[which.max(rc$legis.long.dynamic$nom1), "name"]
-cons2 <- rc$legis.long.dynamic[which.min(rc$legis.long.dynamic$nom2), "name"]
+cons1 <- rc$legis.long.dynamic[which.max(rc$legis.data$dim1), c("name", "icpsr")]
+cons2 <- rc$legis.long.dynamic[which.max(rc$legis.data$dim2), c("name", "icpsr")]
 defIdeal <- wnominate(rc,
-                      polarity = list("icpsr", c(29570, 20523)))
+                      polarity = list("icpsr", c(20753, 20523)))
 ```
 
-The `rollcall` objects we build can also be easily used in the `ideal` function in the `pscl` package.
+The `rollcall` objects we build can also be used in the `ideal` function in the `pscl` package.
 
 ```{r defense-ideal-show, eval = F}
 library(pscl)
@@ -312,8 +312,8 @@ idealdf <- cbind(rc$legis.data, defIdeal$xbar)
 ## Create text party name
 idealdf$partyName <- ifelse(idealdf$party == 200, "Republican",
                      ifelse(idealdf$party == 100, "Democrat", "Independent"))
-
-ggplot(idealdf, aes(x=D1, y=D2, color=partyName, label=cqlabel)) +
+rc$legis.data
+ggplot(idealdf, aes(x=D1, y=D2, color=partyName, label=state_abbrev)) +
   geom_text() +
   scale_color_manual("Party", values = c("Republican" = "red",
                                          "Democrat" = "blue",
@@ -321,7 +321,7 @@ ggplot(idealdf, aes(x=D1, y=D2, color=partyName, label=cqlabel)) +
   theme_bw()
 ```
 
-We see the usual split between Republicans and Democrats. Furthermore, we see that Bernie Sanders (Independent Senator from Vermont) and Rand Paul (Republican Senator from Kentucky) are very similar along the second dimension while they are very different along the first dimension.
+We see the usual split between Republicans and Democrats.
 
 ## Analyzing ideal points across reelection
 
@@ -475,16 +475,16 @@ res2
 To focus on actual bills that were of some consequence, let's take the House and Senate don't ask don't tell votes and the hate crimes bill from the House.
 
 ```{r, results='hide', message=F}
-dadt <- voteview_download(c("H1111621", "S1110678", "H1110222"))
+dadt <- voteview_download(c("RH1111621", "RS1110678", "RH1110222"))
 dadt$vote.data
 ```
 
-Now we want to turn this into a long dataframe, where each row is a legislator-vote. We could also then cast this using a standard cast function or the `reshape2` package to have each row be a legislator, or each row be a legislator-congress and so on. The longer format will serve our purposes for now. Note that `nom1` and `nom2` are the Common Space DW-Nominate positions on the first and second ideological dimensions. They are fixed over the legislator's tenure in office.
+Now we want to turn this into a long dataframe, where each row is a legislator-vote. We could also then cast this using a standard cast function or the `reshape2` package to have each row be a legislator, or each row be a legislator-congress and so on. The longer format will serve our purposes for now. Note that `dim1` and `dim2` are the Common Space DW-Nominate positions on the first and second ideological dimensions. They are fixed over the legislator's tenure in office.
 
 ```{r}
 ## Only retain certain columns with respect to the legislator and the vote
 dadtLong <- melt_rollcall(dadt,
-                          legiscols = c("name", "state","party", "nom1", "nom2"),
+                          legiscols = c("name", "state_abbrev","party_code", "dim1", "dim2"),
                           votecols = c("vname", "date", "chamber"))
 head(dadtLong)
 ```
@@ -493,8 +493,8 @@ Included in the package is a dataframe that links the numeric ICPSR codes to sta
 
 ```{r}
 data(states)
-dadtLong <- merge(dadtLong, states[, c("stateICPSR", "stateName")],
-                  by.x = "state", by.y = "stateICPSR")
+dadtLong <- merge(dadtLong, states[, c("stateMail", "stateName")],
+                  by.x = "state_abbrev", by.y = "stateMail")
 
 dadtLong$stateName <- tolower(dadtLong$stateName)
 ```
@@ -517,10 +517,10 @@ Now let's build a dichotomous variable that represents whether the legislator vo
 df$voteYes <- ifelse(df$vote == 1, 1, ifelse(df$vote == 6, 0, NA))
 
 ## Raw votes by party
-table(df$party, df$voteYes, useNA = "always")
+table(df$party_code, df$voteYes, useNA = "always")
 
 ## Recode party (add independent to democrats)
-df$republican <- ifelse(df$party == "200", 1, 0)
+df$republican <- ifelse(df$party_code == "200", 1, 0)
 ```
 
 Let's use `meanOpinion` from the Lax and Phillips (2009) data, which is the average of pro-gay public opinion sentiment on various dimensions. We will use it in a couple of analyses.
@@ -535,11 +535,11 @@ summary(lm(voteYes ~ meanOpinion*republican, data = df))
 ## Control for ideology
 ## Note that ideology here has been estimated using this vote and later votes,
 ## so interpret the results iwth some caution
-summary(lm(voteYes ~ meanOpinion*republican + nom1 + nom2,
+summary(lm(voteYes ~ meanOpinion*republican + dim1 + dim2,
            data = df))
 
 ## Now let's look just at repealing don't ask don't tell and add chamber fixed effects
-summary(lm(voteYes ~ meanOpinion*republican + nom1 + nom2 + chamber,
+summary(lm(voteYes ~ meanOpinion*republican + dim1 + dim2 + chamber,
            data = df[df$vname != "H1110222", ]))
 ```
 
