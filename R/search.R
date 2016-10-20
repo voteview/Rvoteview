@@ -113,8 +113,8 @@ voteview_search <- function(q = NULL,
     }
     ## Replace single quotes ' with double quotes for parser, try to avoid
     ## apostrophes
-    query_string <- gsub("(?=[^:\\s])\\'", '\\"', query_string, perl=TRUE)
-    query_string <- gsub("\\'(?=[\\s$])", '\\"', query_string, perl=TRUE)
+    query_string <- gsub("(?=[^:\\s])\\'", '"', query_string, perl=TRUE)
+    query_string <- gsub("\\'(?=[\\s$])", '"', query_string, perl=TRUE)
   } else {
     query_string <- "()" # This ensures string does not start with boolean
   }
@@ -169,8 +169,7 @@ voteview_search <- function(q = NULL,
   }
   
   theurl <- paste0(baseurl(), "/api/search")
-
-  resp <- POST(theurl, body = list(q = stri_escape_unicode(query_string)))
+  resp <- POST(theurl, body = list(q = query_string))
   # If the return is not JSON, print out result to see error
   if (substr(content(resp, as = "text", encoding = "UTF-8"), 1, 1) != "{") {
     stop(content(resp, as = "text", encoding = "UTF-8"))
@@ -182,7 +181,7 @@ voteview_search <- function(q = NULL,
                                        flatten = T))
 
   message(sprintf("Query '%s' returned %i rollcalls...\n", query_string, resjson$recordcount))
-  
+
   if(!is.null(resjson$errormessage)) warning(resjson$errormessage)
   if(resjson$recordcount == 0) stop("No rollcalls found")
 
