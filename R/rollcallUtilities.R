@@ -237,15 +237,17 @@ melt_rollcall <- function(rc,
   
   # Building new legis.long.dynamic and legis.data data frames if keeplong
   if(!is.null(rc1$legis.long.dynamic)) {
-    idsfound <- fmatch(rc2$legis.long.dynamic$id, rc1$legis.long.dynamic$id)
+    rc1.leg.full <- merge(rc1$legis.long.dynamic, rc1$legis.data[, c("icpsr", "dim1", "dim2")], by ='icpsr')
+    rc2.leg.full <- merge(rc2$legis.long.dynamic, rc2$legis.data[, c("icpsr", "dim1", "dim2")], by ='icpsr')
+    idsfound <- fmatch(rc2.leg.full$id, rc1.leg.full$id)
     
-    newlegis.long.dynamic <- rbind(rc1$legis.long.dynamic[-idsfound[!is.na(idsfound)], ],
-                                   rc2$legis.long.dynamic)
-    
+    # merge back in data that was deduplicated in to legis.data
+    newlegis.long.dynamic <- rbind(rc1.leg.full[-idsfound[!is.na(idsfound)], ],
+                                   rc2.leg.full)
     
     uniqueicpsr <- unique(newlegis.long.dynamic$icpsr)
     
-    legiscols <-  c("name", "state", "cqlabel", "party")
+    legiscols <-  c("name", "state_abbrev", "party_code", "dim1", "dim2")
     alllegis.data <- data.frame(matrix(NA,
                                        nrow = length(uniqueicpsr),
                                        ncol = length(legiscols) + 1,
@@ -257,7 +259,6 @@ melt_rollcall <- function(rc,
     # Fill 
     for (i in 1:nrow(alllegis.data)) {
       memberrows <- fmatch(uniqueicpsr[i], newlegis.long.dynamic$icpsr)
-      
       if (length(memberrows) == 1) {
         alllegis.data[i,] <- c(unlist(newlegis.long.dynamic[memberrows, legiscols], use.names = F), 0)
       } else {
@@ -297,7 +298,7 @@ melt_rollcall <- function(rc,
   } else {
     rcout$votes.long <- rbind(rc1$votes.long, rc2$votes.long[!fmatch(paste0(rc2$votes.long$vname, rc2$votes.long$id),
                                                                      paste0(rc1$votes.long$vname, rc1$votes.long$id)),])
-    rcout$legis.long.dynamic <- newlegis.long.dynamic
+    rcout$legis.long.dynamic <- newlegis.long.dynamic[, c(!(names(newlegis.long.dynamic) %in% c('dim1', 'dim2')))]
     return(rcout)
   }
 }

@@ -244,7 +244,7 @@ votelist2voteview <- function(dat) {
   rollcalldatanames <- names(unlist(votelist[[1]][firstlevelnames]))
   votelongdatanames <- c("id", "icpsr", "vote")
   legislongdatanames <- setdiff(names(votelist[[1]]$votes[[1]]),
-                                c("vote", "id"))
+                                c("cast_code", "id"))
   
   ## use IDs for votenames
   votenames <- c(unlist(sapply(votelist, function(vote) vote$id), F, F))
