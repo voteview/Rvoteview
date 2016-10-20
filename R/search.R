@@ -169,7 +169,7 @@ voteview_search <- function(q = NULL,
   }
   
   theurl <- paste0(baseurl(), "/api/search")
-  resp <- POST(theurl, body = list(q = query_string))
+  resp <- POST(theurl, body = list(q = query_string, rapi = 1))
   # If the return is not JSON, print out result to see error
   if (substr(content(resp, as = "text", encoding = "UTF-8"), 1, 1) != "{") {
     stop(content(resp, as = "text", encoding = "UTF-8"))
@@ -188,13 +188,15 @@ voteview_search <- function(q = NULL,
   res <- resjson$rollcalls
 
   orderCols <- c("id", "congress", "chamber", "rollnumber", "date", "bill",
-                 "yea_count", "nay_count", "support", "description",
-                 "shortdescription")
-  dropCols <- c("result", "vote_counts", "vote_document_text", "vote_desc", "vote_question")
-  
+                 "yea_count", "nay_count", "percent_support", "vote_result", "description",
+                 "short_description", "question", "text")
+  dropCols <- c("result", "vote_counts", "vote_document_text", "vote_desc",
+                "vote_title", "vote_question", "amendment_author")
+  renameCols <- list(c("yea_count", "yea"), c("nay_count", "nay"),
+                     c("percent_support", "support"))
   attr(res, "qstring") <- query_string
   
-  return( cleanDf(res, orderCols, dropCols) )
+  return( cleanDf(res, orderCols, dropCols, renameCols) )
 }
 
 #' Query the Voteview Database for Members
@@ -312,7 +314,7 @@ member_search <- function(name = NULL,
 
 # Helper function to order and drop fields
 # Note that dropcols drops all columns that start with those characters
-cleanDf <- function(df, orderCols = NULL, dropCols = NULL) {
+cleanDf <- function(df, orderCols = NULL, dropCols = NULL, renameCols = NULL) {
   if(!is.null(dropCols)) {
     dropIndex <- grep(paste0("^(", paste0(dropCols, collapse = "|"), ")"), names(df))
     if(length(dropIndex) != 0) {
@@ -320,7 +322,12 @@ cleanDf <- function(df, orderCols = NULL, dropCols = NULL) {
     }
   }
 
-  df[, c(intersect(orderCols, names(df)), setdiff(names(df), orderCols))]
+  dfReturn <- df[, c(intersect(orderCols, names(df)), setdiff(names(df), orderCols))]
+  for(n in renameCols){
+    names(dfReturn)[names(dfReturn)==n[1]] <- n[2]
+  }
+  
+  return(dfReturn)
 }
 
 
