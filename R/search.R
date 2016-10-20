@@ -111,10 +111,14 @@ voteview_search <- function(q = NULL,
       # Query text and arguments
       query_string <- sprintf("(%s)", q)
     }
+    
+    ## Escape unicde
+    query_string <- stri_escape_unicode(query_string)
+    
     ## Replace single quotes ' with double quotes for parser, try to avoid
-    ## apostrophes
-    query_string <- gsub("(?=[^:\\s])\\'", '"', query_string, perl=TRUE)
-    query_string <- gsub("\\'(?=[\\s$])", '"', query_string, perl=TRUE)
+    ## apostrophes and also replace the escape slashes that the stri_escape_unicode places around quotes
+    query_string <- gsub("(?=[^:\\s])\\\\\\'", '"', query_string, perl=TRUE)
+    query_string <- gsub("\\\\\\'(?=[\\s$])", '"', query_string, perl=TRUE)
   } else {
     query_string <- "()" # This ensures string does not start with boolean
   }
@@ -243,6 +247,7 @@ voteview_search <- function(q = NULL,
 member_search <- function(name = NULL,
                           icpsr = NULL,
                           state = NULL,
+                          party_code = NULL,
                           congress = NULL,
                           cqlabel = NULL,
                           chamber = NULL,
@@ -289,23 +294,24 @@ member_search <- function(name = NULL,
 
   # todo: should we consider similar search syntax to voteview_search?
   
-  theurl <- "https://voteview.polisci.ucla.edu/api/getmembers"
+  theurl <- paste0(baseurl(), "/api/getmembers")
   resp <- POST(theurl, body = lapply(list(name = name,
                                           icpsr = icpsr,
-                                          state = state,
+                                          state_abbrev = state,
+                                          party_code = ifelse(is.null(party_code), '', as.numeric(party_code)),
                                           congress = congress,
                                           cqlabel = cqlabel,
                                           chamber = chamber,
                                           api = "R",
                                           distinct = distinct),
-                                     stri_escape_unicode))
+                                     function(x) if(!is.null(x)) stri_escape_unicode(x)))
 
   res <- fromJSON(content(resp,
                           as = "text",
                           encoding = "UTF-8"),
                   flatten = T)$results
   
-  orderCols <- c("id", "icpsr", "bioName", "fname", "partyname", "cqlabel")
+  orderCols <- c("id", "icpsr", "bioname", "fname", "party_code", "cqlabel")
   
   if(length(res) == 0)
     stop("No results found.")

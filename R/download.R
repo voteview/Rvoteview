@@ -382,6 +382,9 @@ voteview2rollcall <- function(data, keeplong = T) {
   message(sprintf("Building legis.data matrix"))
   pb <- txtProgressBar(min = 0, max = nrow(legis.data), style = 3)
   
+  data$legislong[, c("dim1", "dim2")]<- apply(data$legislong[, c("dim1", "dim2")],
+                                               2,
+                                               as.numeric)
   ## Fill legislator data matrix
   for (i in 1:nrow(legis.data)) {
     memberrows <- fmatch(uniqueicpsr[i], data$legislong$icpsr)
@@ -399,21 +402,20 @@ voteview2rollcall <- function(data, keeplong = T) {
   names(data$rollcalls)[names(data$rollcalls) == "id"] <- "vname"
   
   ## Change class of some variables
-  legis.data[, c("ambiguity", "dim1", "dim2")]<- apply(legis.data[, c("ambiguity", "dim1", "dim2")],
-                                                       2,
-                                                       as.numeric)
+  legis.data$ambiguity <- as.numeric(legis.data$ambiguity)
   data$rollcalls[, c("congress", "yea", "nay", "nomslope", "nomintercept")] <-
     apply(data$rollcalls[, c("congress", "yea", "nay", "nomslope", "nomintercept")],
           2,
           as.numeric)
   data$votelong$vote <- as.numeric(data$votelong$vote)
 
+
   ## Re-ordering some columns (explicit ordering, additional vars added to the end
   ## by using setdiff)
   ## Try to reorder, if some fields explicitly stated aren't returned, then this will be skipped
   try({
     legis.long.order <- c("id", "icpsr", "name", "party_code", "state_abbrev", "cqlabel")
-    legis.long.names <- c(legis.long.order, setdiff(colnames(data$legislong), c(legis.long.order, "dim1", "dim2")))
+    legis.long.names <- c(legis.long.order, setdiff(colnames(data$legislong), legis.long.order))
     votes.long.order <- c("id", "icpsr", "vname", "vote")
     votes.long.names <- c(votes.long.order, setdiff(colnames(data$votelong), votes.long.order))
     legis.data.order <- c("icpsr", "name", "party_code", "state_abbrev", "ambiguity", "dim1", "dim2")
