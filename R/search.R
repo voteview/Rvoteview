@@ -2,6 +2,7 @@
 ## Functions:
 ##            voteview_search
 ##            member_search
+##            cleanDf
 ##            jlist2df
 
 # Function to run a voteview query, returning a dataframe of matching votes and
@@ -60,7 +61,7 @@
 #' 
 #' Complete documentation for the query syntax can be found at \href{https://github.com/JeffreyBLewis/Rvoteview/wiki/Query-Documentation}{the GitHub Wiki here}. You can also see the vignette for other examples. In general, the following syntax is used, \code{field:specific phrase (field:other phrase OR field:second phrase)}. For example, if you wanted to find votes with "war" and either "iraq" or "afghanistan" in any text field, you could set the query to be \code{"alltext:war AND (alltext:iraq OR alltext:afghanistan)"}. Note that the \code{AND} in the above is redundant as fields are joined by \code{AND} by default. Numeric fields can be searched in a similar way, although users can also use square brackets and "to" for ranges of numbers. For example, the query for all votes about taxes in the 100th to 102nd congress could be expressed either using \code{"alltext:taxes congress:100 OR congress:101 OR congress:102"} or using \code{"alltext:taxes congress:[100 to 102]"}. Furthermore, users can specify exact phrases that they want to search like \code{"description:'estate tax'"}.
 #' 
-#' The fields that can be searched with text are \code{codes}, \code{code.Clausen}, \code{code.Peltzman}, \code{code.Issue}, \code{description}, \code{shortdescription}, \code{bill}, and \code{alltext}. The code and bill fields are searched exactly using regular expressions while in the other fields words are stemmed and searched anywhere in the field specified (unless the query is in quotes). The fields that can be searched numerically are \code{congress}, \code{yea}, \code{nay}, and \code{support}. Users can also search for stashed votes using the \code{saved} field. Searching by individual legislator will be implemented soon.
+#' The fields that can be searched with text are \code{codes}, \code{codes.Clausen}, \code{codes.Peltzman}, \code{codes.Issue}, \code{description}, \code{shortdescription}, \code{bill}, and \code{alltext}. The code and bill fields are searched exactly using regular expressions while in the other fields words are stemmed and searched anywhere in the field specified (unless the query is in quotes). The fields that can be searched numerically are \code{congress}, \code{yea}, \code{nay}, and \code{support}. Users can also search for stashed votes using the \code{saved} field. Searching by individual legislator will be implemented soon.
 #' 
 #' @seealso
 #' '\link{voteview_download}'.
@@ -167,7 +168,7 @@ voteview_search <- function(q = NULL,
     query_string <- sprintf("%s AND (chamber:%s)", query_string, tolower(chamber))
   }
   
-  theurl <- "https://voteview.polisci.ucla.edu/api/search"
+  theurl <- paste0(baseurl(), "/api/search")
 
   resp <- POST(theurl, body = list(q = stri_escape_unicode(query_string)))
   # If the return is not JSON, print out result to see error
@@ -187,9 +188,9 @@ voteview_search <- function(q = NULL,
 
   res <- resjson$rollcalls
 
-  orderCols <- c("description", "shortdescription", "date",
-                 "bill", "chamber", "congress",  "rollnumber",
-                 "yea", "nay", "support", "id")
+  orderCols <- c("id", "congress", "chamber", "rollnumber", "date", "bill",
+                 "yea_count", "nay_count", "support", "description",
+                 "shortdescription")
   dropCols <- c("result")
   
   attr(res, "qstring") <- query_string
@@ -314,7 +315,10 @@ member_search <- function(name = NULL,
 # Note that dropcols drops all columns that start with those characters
 cleanDf <- function(df, orderCols = NULL, dropCols = NULL) {
   if(!is.null(dropCols)) {
-    df <- df[, -grep(paste0("^(", paste0(dropCols, collapse = "|"), ")"), names(df))]
+    dropIndex <- grep(paste0("^(", paste0(dropCols, collapse = "|"), ")"), names(df))
+    if(length(dropIndex) != 0) {
+      df <- df[, -dropIndex]
+    }
   }
 
   df[, c(intersect(orderCols, names(df)), setdiff(names(df), orderCols))]
