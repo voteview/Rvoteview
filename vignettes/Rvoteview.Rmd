@@ -540,7 +540,7 @@ summary(lm(voteYes ~ meanOpinion*republican + dim1 + dim2,
 
 ## Now let's look just at repealing don't ask don't tell and add chamber fixed effects
 summary(lm(voteYes ~ meanOpinion*republican + dim1 + dim2 + chamber,
-           data = df[df$vname != "H1110222", ]))
+           data = df[df$vname != "RH1110222", ]))
 ```
 
 Even when controlling for ideology and party, it seems that legislators, and especially Republican legislators, are more likely to vote for pro-gay rights bills when their state has a high average level of pro-gay rights sentiment.

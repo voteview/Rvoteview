@@ -237,13 +237,12 @@ melt_rollcall <- function(rc,
   
   # Building new legis.long.dynamic and legis.data data frames if keeplong
   if(!is.null(rc1$legis.long.dynamic)) {
-    rc1.leg.full <- merge(rc1$legis.long.dynamic, rc1$legis.data[, c("icpsr", "dim1", "dim2")], by ='icpsr')
-    rc2.leg.full <- merge(rc2$legis.long.dynamic, rc2$legis.data[, c("icpsr", "dim1", "dim2")], by ='icpsr')
-    idsfound <- fmatch(rc2.leg.full$id, rc1.leg.full$id)
+
+    idsfound <- fmatch(rc2$legis.long.dynamic$id, rc1$legis.long.dynamic$id)
     
     # merge back in data that was deduplicated in to legis.data
-    newlegis.long.dynamic <- rbind(rc1.leg.full[-idsfound[!is.na(idsfound)], ],
-                                   rc2.leg.full)
+    newlegis.long.dynamic <- rbind(rc1$legis.long.dynamic[-idsfound[!is.na(idsfound)], ],
+                                   rc2$legis.long.dynamic)
     
     uniqueicpsr <- unique(newlegis.long.dynamic$icpsr)
     
