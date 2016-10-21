@@ -96,15 +96,16 @@ voteview_search <- function(q = NULL,
                             chamber = NULL,
                             congress = NULL,
                             maxsupport = NULL,
-                            minsupport = NULL) {
+                            minsupport = NULL,
+                            keyvote = NULL) {
   
   # Input validation
-  if (is.null(c(q, startdate, enddate, congress, chamber, maxsupport, minsupport))) 
+  if (is.null(c(q, startdate, enddate, congress, chamber, maxsupport, minsupport, keyvote))) 
     stop("Must specify at least one argument")
   
   # Start query
   if (!is.null(q)) {
-    if (is.null(c(startdate, enddate, congress, chamber, maxsupport, minsupport))) {
+    if (is.null(c(startdate, enddate, congress, chamber, maxsupport, minsupport, keyvote))) {
       # Query text and no arguments
       query_string <- q
     } else {
@@ -121,6 +122,15 @@ voteview_search <- function(q = NULL,
     query_string <- gsub("\\\\\\'(?=[\\s$])", '"', query_string, perl=TRUE)
   } else {
     query_string <- "()" # This ensures string does not start with boolean
+  }
+  
+  # Check keyvote is well formatted
+  if (!is.null(c(keyvote))) {
+    if (keyvote == TRUE) {
+      query_string <- sprintf("%s AND (keyvote:%s)", query_string, "1")
+    } else if (as.character(keyvote) %in% c("1", "CQ")) {
+      query_string <- sprintf("%s AND (keyvote:%s)", query_string, as.character(keyvote))
+    }
   }
   
   # Check date is well formatted (2014, "2014-01", "2014-01-30")

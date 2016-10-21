@@ -291,6 +291,7 @@ defIdeal <- ideal(rc,
                   d = 2)
 ```
 ```{r defense-ideal, cache=T, message = F, results='hide', echo = F}
+library(pscl)
 defIdeal <- ideal(rc,
                  d = 2,
                  maxiter = 5000,
