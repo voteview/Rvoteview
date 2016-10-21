@@ -25,32 +25,36 @@
 #' search to. The default NULL value returns results from all congresses.
 #' @param chamber A string in \code{c("House", "Senate")}. The default
 #' NULL value returns results from both chambers of congress.
-#' @param minsupport A number specifying the minimum 
-#' support allowed for returned votes.
 #' @param maxsupport Support is the share of Yea votes 
 #' over total Yea and Nay votes. \code{maxsupport} is a number specifying the 
 #' maximum support allowed for returned votes.
-#' @return A data.frame with the following columns: 
+#' @param minsupport A number specifying the minimum 
+#' support allowed for returned votes.
+#' @param keyvote A string or boolean indicating the type of key vote to search
+#' for (e.g. 'CQ") or whether to search for any key vote (e.g. T).
+#' @return A data.frame with the following columns, if the fields are available in the database: 
 #' \itemize{
-#' \item{\code{description} }{Official description of the bill.}
-#' \item{\code{shortdescription} }{A short description of the bill.}
+#' \item{\code{id} }{Unique identifier for the roll call.}
+#' \item{\code{congress} }{The congress the roll call was held in.}
+#' \item{\code{chamber} }{The chamber the roll call was held in. Either "House"
+#' or "Senate"} 
+#' \item{\code{rollnumber} }{The roll call number of the vote.}
 #' \item{\code{date} }{The date the roll call was held, in string "yyyy-mm-dd"
 #' format.}
 #' \item{\code{bill} }{Bill name abbreviation.}
-#' \item{\code{chamber} }{The chamber the roll call was held in. Either "House"
-#' or "Senate"} 
-#' \item{\code{congress} }{The congress the roll call was held in.}
-#' \item{\code{rollnumber} }{The roll call number of the vote.}
 #' \item{\code{yea} }{The total number of 'Yea' votes.}
 #' \item{\code{nay} }{The total number of 'Nay' votes.}
 #' \item{\code{support} }{Percent of 'Yea' votes out of all 'Yea' or 'Nay' 
 #' votes (excludes absent).}
-#' \item{\code{id} }{Unique identifier for the roll call that allows
+#' \item{\code{vote_result} }{The official result of the vote, if available.}
+#' \item{\code{description} }{Official description of the bill.}
+#' \item{\code{short_description} }{A short description of the bill.}
+#' \item{\code{question} }{The question for the roll call (e.g. passage, cloture, amendment)}
+#' \item{\code{text}}{A short summary of the bill that may go beyond \code{description}.}
+#' \item{\code{key_flags}}{The list of organizations that label this roll call a key vote. NULL if not a key vote.}
 #' \item Other columns that depend on the query. For example \code{score} is the
 #' value assigned to a roll call when searching using key words. Higher scores
 #' mean better matches for the key words used in the search.
-#' \code{voteview} to query the individual congress people's votes and other
-#' details.}
 #' 
 #' Also returned as the "qstring" attribute of the data.frame is the exact
 #' query string used in the search that can be copied in to the web interface
@@ -59,7 +63,7 @@
 #' @details
 #' This function requires at least one argument. The user can use the \code{q} field either to search across all text fields or to pass a more complicated advanced query. This is essentially like a "search box" where the user can just put in some key words, specific phrases in quotes, or can use notation like "support:[10 to 90]" along with boolean logic to build complicated queries.
 #' 
-#' Complete documentation for the query syntax can be found at \href{https://github.com/JeffreyBLewis/Rvoteview/wiki/Query-Documentation}{the GitHub Wiki here}. You can also see the vignette for other examples. In general, the following syntax is used, \code{field:specific phrase (field:other phrase OR field:second phrase)}. For example, if you wanted to find votes with "war" and either "iraq" or "afghanistan" in any text field, you could set the query to be \code{"alltext:war AND (alltext:iraq OR alltext:afghanistan)"}. Note that the \code{AND} in the above is redundant as fields are joined by \code{AND} by default. Numeric fields can be searched in a similar way, although users can also use square brackets and "to" for ranges of numbers. For example, the query for all votes about taxes in the 100th to 102nd congress could be expressed either using \code{"alltext:taxes congress:100 OR congress:101 OR congress:102"} or using \code{"alltext:taxes congress:[100 to 102]"}. Furthermore, users can specify exact phrases that they want to search like \code{"description:'estate tax'"}.
+#' Complete documentation for the query syntax can be found at \href{https://github.com/JeffreyBLewis/Rvoteview/wiki/Query-Documentation}{the GitHub Wiki here}. You can also see \href{https://github.com/JeffreyBLewis/Rvoteview/tree/master/vignettes}{the vignette} for other examples. In general, the following syntax is used, \code{field:specific phrase (field:other phrase OR field:second phrase)}. For example, if you wanted to find votes with "war" and either "iraq" or "afghanistan" in any text field, you could set the query to be \code{"alltext:war AND (alltext:iraq OR alltext:afghanistan)"}. Note that the \code{AND} in the above is redundant as fields are joined by \code{AND} by default. Numeric fields can be searched in a similar way, although users can also use square brackets and "to" for ranges of numbers. For example, the query for all votes about taxes in the 100th to 102nd congress could be expressed either using \code{"alltext:taxes congress:100 OR congress:101 OR congress:102"} or using \code{"alltext:taxes congress:[100 to 102]"}. Furthermore, users can specify exact phrases that they want to search like \code{"description:'estate tax'"}.
 #' 
 #' The fields that can be searched with text are \code{codes}, \code{codes.Clausen}, \code{codes.Peltzman}, \code{codes.Issue}, \code{description}, \code{shortdescription}, \code{bill}, and \code{alltext}. The code and bill fields are searched exactly using regular expressions while in the other fields words are stemmed and searched anywhere in the field specified (unless the query is in quotes). The fields that can be searched numerically are \code{congress}, \code{yea}, \code{nay}, and \code{support}. Users can also search for stashed votes using the \code{saved} field. Searching by individual legislator will be implemented soon.
 #' 
@@ -93,18 +97,19 @@
 voteview_search <- function(q = NULL,
                             startdate = NULL,
                             enddate = NULL,
-                            chamber = NULL,
                             congress = NULL,
+                            chamber = NULL,
                             maxsupport = NULL,
-                            minsupport = NULL) {
+                            minsupport = NULL,
+                            keyvote = NULL) {
   
   # Input validation
-  if (is.null(c(q, startdate, enddate, congress, chamber, maxsupport, minsupport))) 
+  if (is.null(c(q, startdate, enddate, congress, chamber, maxsupport, minsupport, keyvote))) 
     stop("Must specify at least one argument")
   
   # Start query
   if (!is.null(q)) {
-    if (is.null(c(startdate, enddate, congress, chamber, maxsupport, minsupport))) {
+    if (is.null(c(startdate, enddate, congress, chamber, maxsupport, minsupport, keyvote))) {
       # Query text and no arguments
       query_string <- q
     } else {
@@ -121,6 +126,15 @@ voteview_search <- function(q = NULL,
     query_string <- gsub("\\\\\\'(?=[\\s$])", '"', query_string, perl=TRUE)
   } else {
     query_string <- "()" # This ensures string does not start with boolean
+  }
+  
+  # Check keyvote is well formatted
+  if (!is.null(c(keyvote))) {
+    if (keyvote == TRUE) {
+      query_string <- sprintf("%s AND (keyvote:%s)", query_string, "1")
+    } else if (as.character(keyvote) %in% c("1", "CQ")) {
+      query_string <- sprintf("%s AND (keyvote:%s)", query_string, as.character(keyvote))
+    }
   }
   
   # Check date is well formatted (2014, "2014-01", "2014-01-30")
@@ -218,7 +232,6 @@ voteview_search <- function(q = NULL,
 #' or the full state name.
 #' @param congress A numeric vector of the congresses to constrain the 
 #' search to.
-#' @param cqlabel A string with the cqlabel "(PA-1)".
 #' @param chamber A string that is either "House" or "Senate".
 #' @param distinct Either a 0 or a 1. A 0 Returns all records that match your query
 #' while a 1 only returns the first record that has a specific icpsr number. Note
@@ -249,16 +262,15 @@ member_search <- function(name = NULL,
                           state = NULL,
                           party_code = NULL,
                           congress = NULL,
-                          cqlabel = NULL,
                           chamber = NULL,
                           distinct = 0) {
   
   ## Input validation
-  if(is.null(c(name, icpsr, state, congress, cqlabel))) {
-    stop("Must specify at least one of (name, icpsr, state, congress, cqlabel).")
+  if(is.null(c(name, icpsr, state, party_code, congress))) {
+    stop("Must specify at least one of (name, icpsr, state, party_code, congress).")
   }
   
-  if(any(sapply(c(name, icpsr, state, cqlabel, chamber), length) > 1)) {
+  if(any(sapply(c(name, icpsr, state, party_code, chamber), length) > 1)) {
     stop("All arguments besides congress and distinct only take strings, not vectors of length >= 2.")
   }
   
@@ -300,7 +312,6 @@ member_search <- function(name = NULL,
                                           state_abbrev = state,
                                           party_code = ifelse(is.null(party_code), '', as.numeric(party_code)),
                                           congress = congress,
-                                          cqlabel = cqlabel,
                                           chamber = chamber,
                                           api = "R",
                                           distinct = distinct),

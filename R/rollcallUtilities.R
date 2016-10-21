@@ -20,11 +20,11 @@
 #' to TRUE.
 #' @return A data.frame with the following columns:
 #' \itemize{
-#' \item{\code{legisid} }{Legislator names from rollcall object}
-#' \item{\code{voteid} }{Vote names from rollcall object}
-#' \item{\code{legiscols} }{All columns selected from \code{legis.data}}
-#' \item{\code{votecols} }{All columns selected from \code{vote.data}}
+#' \item{\code{id} }{Legislator ids from rollcall object}
+#' \item{\code{vname} }{Vote names from rollcall object}
 #' \item{\code{vote} }{Numeric vote for legislator-rollcall pair}
+#' \item{\code{votecols} }{All columns selected from \code{vote.data}}
+#' \item{\code{legiscols} }{All columns selected from \code{legis.data}}
 #' }
 #' @details 
 #' This function works for any \code{rollcall} object that meets the following
@@ -237,13 +237,12 @@ melt_rollcall <- function(rc,
   
   # Building new legis.long.dynamic and legis.data data frames if keeplong
   if(!is.null(rc1$legis.long.dynamic)) {
-    rc1.leg.full <- merge(rc1$legis.long.dynamic, rc1$legis.data[, c("icpsr", "dim1", "dim2")], by ='icpsr')
-    rc2.leg.full <- merge(rc2$legis.long.dynamic, rc2$legis.data[, c("icpsr", "dim1", "dim2")], by ='icpsr')
-    idsfound <- fmatch(rc2.leg.full$id, rc1.leg.full$id)
+
+    idsfound <- fmatch(rc2$legis.long.dynamic$id, rc1$legis.long.dynamic$id)
     
     # merge back in data that was deduplicated in to legis.data
-    newlegis.long.dynamic <- rbind(rc1.leg.full[-idsfound[!is.na(idsfound)], ],
-                                   rc2.leg.full)
+    newlegis.long.dynamic <- rbind(rc1$legis.long.dynamic[-idsfound[!is.na(idsfound)], ],
+                                   rc2$legis.long.dynamic)
     
     uniqueicpsr <- unique(newlegis.long.dynamic$icpsr)
     

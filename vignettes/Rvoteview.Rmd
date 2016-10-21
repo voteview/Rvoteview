@@ -291,6 +291,7 @@ defIdeal <- ideal(rc,
                   d = 2)
 ```
 ```{r defense-ideal, cache=T, message = F, results='hide', echo = F}
+library(pscl)
 defIdeal <- ideal(rc,
                  d = 2,
                  maxiter = 5000,
@@ -493,10 +494,10 @@ Included in the package is a dataframe that links the numeric ICPSR codes to sta
 
 ```{r}
 data(states)
-dadtLong <- merge(dadtLong, states[, c("stateMail", "stateName")],
-                  by.x = "state_abbrev", by.y = "stateMail")
+dadtLong <- merge(dadtLong, states[, c("state_abbrev", "state_name")],
+                  by = "state_abbrev")
 
-dadtLong$stateName <- tolower(dadtLong$stateName)
+dadtLong$state_name <- tolower(dadtLong$state_name)
 ```
 
 Now we use the Lax and Phillips (2009) data, which we make available in the package as well under `lpOpinion`.
@@ -506,7 +507,7 @@ data(lpOpinion)
 lpOpinion$state <- tolower(lpOpinion$state)
 
 df <- merge(dadtLong, lpOpinion,
-            by.x = "stateName", by.y = "state")
+            by.x = "state_name", by.y = "state")
 head(df)
 ```
 
@@ -540,7 +541,7 @@ summary(lm(voteYes ~ meanOpinion*republican + dim1 + dim2,
 
 ## Now let's look just at repealing don't ask don't tell and add chamber fixed effects
 summary(lm(voteYes ~ meanOpinion*republican + dim1 + dim2 + chamber,
-           data = df[df$vname != "H1110222", ]))
+           data = df[df$vname != "RH1110222", ]))
 ```
 
 Even when controlling for ideology and party, it seems that legislators, and especially Republican legislators, are more likely to vote for pro-gay rights bills when their state has a high average level of pro-gay rights sentiment.

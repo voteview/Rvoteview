@@ -35,18 +35,17 @@
 #' 
 #' If \code{keeplong = TRUE}, then the \code{rollcall} object will have two 
 #' additional data frames. The \code{votes.long} data frame consists of four 
-#' columns, \code{id}, \code{icpsr}, \code{vote}, and \code{vname}, which are
-#' a unique id, that legislator's icpsr number, how they voted, and
-#' which roll call that vote belongs to. Thus this is a data frame of unique
-#' id-rollcalls. Note that icpsr numbers are constant across party
-#' changes and across congresses, while \code{id} will always be consistent with
-#' party and congress. This is important because we can then map votes to the
+#' columns, \code{id}, \code{icpsr}, \code{vname}, and \code{vote}, which are
+#' a unique id for the legislator-congress, that legislator's icpsr number, 
+#' which roll call that vote belongs to, and that vote itself. Thus this is a data frame of unique
+#' id-rollcalls. Note that icpsr numbers can be constant across party
+#' changes and across chambers and congresses, while \code{id} will change with changes in chamber, congress, or party.
+#' This is important because we can then map votes to the
 #' second additional data frame, \code{legis.long.dynamic}. This data frame
 #' consists of data for unique members as identified by \code{id}, and not 
 #' \code{icpsr} number. Thus this provides unique covariates by legislator-party-congress. This enables us
-#' to also store their congress-specific NOMINATE score. We retain this data frame
-#' because the default \code{legis.data} data frame is only unique to icpsr number,
-#' which may not have a unique party and is constant across congresss. 
+#' to also store their district number for that congress as well as their name and party_code by congress, should those change over time.
+#' We retain this data frame because the default \code{legis.data} data frame is only unique to icpsr number, which can refer to the same person but in different chambers, congresses, districts, and more.
 #' 
 #' To that end, there is a column \code{ambiguity} in the \code{legis.data} data
 #' frame that denotes whether there is some ambiguity in the legislator's record.
