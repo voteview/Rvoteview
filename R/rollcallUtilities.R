@@ -20,11 +20,11 @@
 #' to TRUE.
 #' @return A data.frame with the following columns:
 #' \itemize{
-#' \item{\code{legisid} }{Legislator names from rollcall object}
-#' \item{\code{voteid} }{Vote names from rollcall object}
-#' \item{\code{legiscols} }{All columns selected from \code{legis.data}}
-#' \item{\code{votecols} }{All columns selected from \code{vote.data}}
+#' \item{\code{id} }{Legislator ids from rollcall object}
+#' \item{\code{vname} }{Vote names from rollcall object}
 #' \item{\code{vote} }{Numeric vote for legislator-rollcall pair}
+#' \item{\code{votecols} }{All columns selected from \code{vote.data}}
+#' \item{\code{legiscols} }{All columns selected from \code{legis.data}}
 #' }
 #' @details 
 #' This function works for any \code{rollcall} object that meets the following

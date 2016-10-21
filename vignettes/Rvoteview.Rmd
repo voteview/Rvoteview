@@ -494,10 +494,10 @@ Included in the package is a dataframe that links the numeric ICPSR codes to sta
 
 ```{r}
 data(states)
-dadtLong <- merge(dadtLong, states[, c("stateMail", "stateName")],
-                  by.x = "state_abbrev", by.y = "stateMail")
+dadtLong <- merge(dadtLong, states[, c("state_abbrev", "state_name")],
+                  by = "state_abbrev")
 
-dadtLong$stateName <- tolower(dadtLong$stateName)
+dadtLong$state_name <- tolower(dadtLong$state_name)
 ```
 
 Now we use the Lax and Phillips (2009) data, which we make available in the package as well under `lpOpinion`.
@@ -507,7 +507,7 @@ data(lpOpinion)
 lpOpinion$state <- tolower(lpOpinion$state)
 
 df <- merge(dadtLong, lpOpinion,
-            by.x = "stateName", by.y = "state")
+            by.x = "state_name", by.y = "state")
 head(df)
 ```
 

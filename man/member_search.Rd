@@ -4,8 +4,8 @@
 \alias{member_search}
 \title{Query the Voteview Database for Members}
 \usage{
-member_search(name = NULL, icpsr = NULL, state = NULL, congress = NULL,
-  cqlabel = NULL, chamber = NULL, distinct = 0)
+member_search(name = NULL, icpsr = NULL, state = NULL,
+  party_code = NULL, congress = NULL, chamber = NULL, distinct = 0)
 }
 \arguments{
 \item{name}{A string with the name of the member of congress that you would like to search.
@@ -20,8 +20,6 @@ or the full state name.}
 
 \item{congress}{A numeric vector of the congresses to constrain the 
 search to.}
-
-\item{cqlabel}{A string with the cqlabel "(PA-1)".}
 
 \item{chamber}{A string that is either "House" or "Senate".}
 

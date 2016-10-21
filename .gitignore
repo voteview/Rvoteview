@@ -1,2 +1,4 @@
 .Rhistory
 inst/doc
+vignettes/Rvoteview_cache
+.build.timestamp
