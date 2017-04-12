@@ -15,5 +15,6 @@ Mode <- function(x) {
 
 # Internal function that returns the URL of the current server
 baseurl <- function() {
+  #return("http://voteview.polisci.ucla.edu")
   return("http://128.97.229.160")
 }
