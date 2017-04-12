@@ -3,6 +3,7 @@
 export("%+%")
 export(build_votelist)
 export(complete_download)
+export(download_metadata)
 export(jlist2df)
 export(melt_rollcall)
 export(member_search)

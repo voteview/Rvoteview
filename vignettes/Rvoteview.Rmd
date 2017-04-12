@@ -1,4 +1,4 @@
----
+yea_count---
 title: "Using the Rvoteview API"
 date: "`r Sys.Date()`"
 output:
@@ -29,7 +29,7 @@ This package provides tools to query and download from the VoteView database. Th
     a. [Ideal point estimation](#ideal-point-estimation)
     b. [Analyzing ideal points across reelection](#analyzing-ideal-points-across-reelection)
     c. [Regression analysis of roll call behavior](#regression-analysis-of-roll-call-behavior)
-  
+
 # Installation
 
 To install this package, ensure you have `devtools` installed. If you do not, run `install.packages("devtools")` and then install from GitHub using
@@ -117,7 +117,7 @@ res <- voteview_search(q = qString)
 
 Numeric fields can be searched in a similar way, although users can also use square brackets and "to" for ranges of numbers. For example, the query for all votes about taxes in the 100th to 102nd congress could be expressed either using `"alltext:taxes congress:100 OR congress:101 OR congress:102"` or using `"alltext:taxes congress:[100 to 102]"`. Note that if you want to restrict search to certain dates, the `startdate` and `enddate` arguments in the function should be used.
 
-For example, 
+For example,
 ```{r adv-search-ex, eval=F}
 ## Search for "war" AND ("iraq" or "afghanistan") in the description field in 1991
 res <- voteview_search(q = qString,
@@ -318,7 +318,7 @@ ggplot(idealdf, aes(x=D1, y=D2, color=partyName, label=state_abbrev)) +
   geom_text() +
   scale_color_manual("Party", values = c("Republican" = "red",
                                          "Democrat" = "blue",
-                                         "Independent" = "darkgreen")) + 
+                                         "Independent" = "darkgreen")) +
   theme_bw()
 ```
 
@@ -454,7 +454,7 @@ ggplot(idealdf, aes(x=D1, y=D2, color=partyName, label=icpsr, shape = congress))
                                          "Democrat" = "lightblue",
                                          "Independent" = "darkgreen",
                                          "Reelected Republican" = "red",
-                                         "Reelected Democrat" = "blue")) + 
+                                         "Reelected Democrat" = "blue")) +
   theme_bw()
 ```
 
