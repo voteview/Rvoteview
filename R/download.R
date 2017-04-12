@@ -402,7 +402,6 @@ voteview2rollcall <- function(data, keeplong = T) {
   names(data$rollcalls)[names(data$rollcalls) == "id"] <- "vname"
 
   ## Change class of some variables
-  print(names(data$rollcalls))
   legis.data$ambiguity <- as.numeric(legis.data$ambiguity)
   data$rollcalls[, c("congress", "yea_count", "nay_count", "nomslope", "nomintercept")] <-
     apply(data$rollcalls[, c("congress", "yea_count", "nay_count", "nomslope", "nomintercept")],
