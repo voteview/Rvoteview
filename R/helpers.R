@@ -17,5 +17,5 @@ Mode <- function(x) {
 baseurl <- function() {
   #return("http://voteview.polisci.ucla.edu")
   #return("http://128.97.229.160")
-  return("http://voteview.com")
+  return("https://voteview.com")
 }
