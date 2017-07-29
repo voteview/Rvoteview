@@ -25,4 +25,3 @@ A data frame with all relevant metadata.
 Download the metadata found on the \href{https://voteview.polisci.ucla.edu/data}{VoteView Data page}
 for members, rollcalls, or parties.
 }
-

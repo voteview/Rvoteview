@@ -18,4 +18,3 @@ A dataset containing the estimated state-level support for gay rights policies u
 The numbers are the percent of state citizens estimated to answer affirmatively (as opposed to negatively or not responding) to pro-gay rights questions. See the appendix of the original paper for more details.
 }
 \keyword{datasets}
-

@@ -37,4 +37,3 @@ summary(rc2)
 rc <- rc1 \%+\% rc2
 
 }
-

@@ -64,4 +64,3 @@ rclong <- melt_rollcall(rc, votecols = c("chamber", "congress"))
 \seealso{
 '\link[pscl]{rollcall}'.
 }
-

@@ -9,4 +9,3 @@ voteview_getvote(ids)
 \description{
 Internal function to retrieve roll call json
 }
-

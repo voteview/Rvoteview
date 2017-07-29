@@ -9,4 +9,3 @@ voteview2rollcall(data, keeplong = T)
 \description{
 Internal function that transforms Voteview object to a rollcall object
 }
-

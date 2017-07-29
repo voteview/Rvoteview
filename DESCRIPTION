@@ -14,7 +14,8 @@ Description: Package provides functions to query Voteview database by search
 License: GPL (>= 3)
 Imports:
     pscl,
-    rjson,
+    jsonlite,
+    stringi,
     httr,
     fastmatch
 URL: https://github.com/JeffreyBLewis/Rvoteview, http://voteview.polisci.ucla.edu/, http://voteview.com/
@@ -22,6 +23,6 @@ Suggests:
     testthat,
     knitr,
     rmarkdown
-RoxygenNote: 5.0.1
+RoxygenNote: 6.0.1
 VignetteBuilder: knitr
 LazyData: true

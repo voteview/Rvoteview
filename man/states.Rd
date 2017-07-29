@@ -12,4 +12,3 @@ states
 Dataset containing the ICPSR state codes, mail codes, and the state names.
 }
 \keyword{datasets}
-

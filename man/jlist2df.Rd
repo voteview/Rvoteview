@@ -23,4 +23,3 @@ by itself. See \code{voteview_search} and \code{member_search} for more informat
 \seealso{
 '\link{voteview_search}', '\link{member_search}'.
 }
-

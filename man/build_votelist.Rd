@@ -9,4 +9,3 @@ build_votelist(votelist, ids, perrequest)
 \description{
 Internal function to get rollcalls and build voteview list
 }
-

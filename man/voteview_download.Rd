@@ -77,4 +77,3 @@ complete_rc <- complete_download(rc)
 \seealso{
 '\link[pscl]{rollcall}','\link{complete_download}','\link{voteview_search}'.
 }
-

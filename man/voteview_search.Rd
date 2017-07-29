@@ -105,4 +105,3 @@ res <- voteview_search("description:'war on terror' alltext:iraq")
 \seealso{
 '\link{voteview_download}'.
 }
-

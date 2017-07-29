@@ -53,4 +53,3 @@ res <- member_search("obama")
 \seealso{
 '\link{voteview_search}'.
 }
-

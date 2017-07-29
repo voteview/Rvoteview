@@ -9,4 +9,3 @@ votelist2voteview(dat)
 \description{
 Internal function to build a voteview object from downloaded votelist
 }
-
