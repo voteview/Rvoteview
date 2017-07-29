@@ -1,2 +1,6 @@
 ^README\.Rmd$       # An Rmarkdown file used to generate README.md
 ^data-raw$          # The raw data compilation
+^.*\.Rproj$
+^\.Rproj\.user$
+^appveyor\.yml$
+^\.travis\.yml$

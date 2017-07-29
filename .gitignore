@@ -2,3 +2,5 @@
 inst/doc
 vignettes/Rvoteview_cache
 .build.timestamp
+.Rproj.user
+Rvoteview.Rproj
