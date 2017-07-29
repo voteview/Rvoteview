@@ -118,7 +118,7 @@ voteview_search <- function(q = NULL,
     }
     
     ## Escape unicde
-    query_string <- stri_escape_unicode(query_string)
+    query_string <- stri_enc_toutf8(query_string)
     
     ## Replace single quotes ' with double quotes for parser, try to avoid
     ## apostrophes and also replace the escape slashes that the stri_escape_unicode places around quotes

@@ -38,7 +38,7 @@ res <- voteview_search("Iraq")
 names(res)
   
 ## I will drop description since it is a very long field
-head(res[, !(names(res) %in% c("description", "text"))])
+head(res[, -1])
 ```
 Using `res$id` we can get a `rollcall` object (from the [`pscl` package](https://cran.r-project.org/web/packages/pscl/index.html)) that contains the full set of votes and data for each roll call. 
 
@@ -77,10 +77,10 @@ You can also search by start and end date, congress, and chamber. Please see the
 ## Voteview search with options
 res <- voteview_search("Iraq", chamber = "House", congress = 110,
                        startdate = 2008, enddate = "2008-04-20")
-head(res[, !(names(res) %in% c("description", "text"))])
+head(res[, -1])
 
 res <- voteview_search("Iraq", congress = 109:112)
-head(res[, !(names(res) %in% c("description", "text"))])
+head(res[, -1])
 ```
 
 We can print out the exact query that the function builds using all of these arguments by retrieving the 'qstring' attribute of the returned data frame:
@@ -94,8 +94,8 @@ We can assemble and use these complex queries ourselves. Here's one example wher
 ```{r search-adv}
 ## Voteview search with options
 res <- voteview_search("(alltext:estate death tax congress:[100 to 114])")
-head(res[, !(names(res) %in% c("description", "text"))])
-tail(res[, !(names(res) %in% c("description", "text"))])
+head(res[, -1])
+tail(res[, -1])
 ```
 
 We can also search for all bills with the keywords "war" and "terror" on or after 2008.

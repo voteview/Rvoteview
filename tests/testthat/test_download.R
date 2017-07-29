@@ -1,5 +1,4 @@
 library(Rvoteview)
-library(rjson)
 context('Query voteview database with ids, download detailed data')
 
 # Following is written to file to improve speed
@@ -7,11 +6,11 @@ context('Query voteview database with ids, download detailed data')
 # save(res, file = "iraq_search.RData")
 
 test_that('download function opens connection', {
-  expect_error(voteview_getvote(id = "H1110298"), NA)
+  expect_error(voteview_getvote(id = "RH1110298"), NA)
 })
 
 test_that('download converts to voteview', {
-  rc <- voteview_download(ids = "H1110298")
+  rc <- voteview_download(ids = "RH1110298")
   expect_is(rc, 'rollcall')
   expect_equal(nrow(rc$votes), 434)
 })
