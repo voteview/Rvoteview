@@ -122,8 +122,8 @@ voteview_search <- function(q = NULL,
     
     ## Replace single quotes ' with double quotes for parser, try to avoid
     ## apostrophes and also replace the escape slashes that the stri_escape_unicode places around quotes
-    query_string <- gsub("(?=[^:\\s])\\\\\\'", '"', query_string, perl=TRUE)
-    query_string <- gsub("\\\\\\'(?=[\\s$])", '"', query_string, perl=TRUE)
+    query_string <- gsub("(?=[^:\\s])\\'", '"', query_string, perl=TRUE)
+    query_string <- gsub("\\'(?=[\\s$])", '"', query_string, perl=TRUE)
   } else {
     query_string <- "()" # This ensures string does not start with boolean
   }
@@ -201,21 +201,25 @@ voteview_search <- function(q = NULL,
   message(sprintf("Query '%s' returned %i rollcalls...\n", query_string, resjson$recordcount))
 
   if(!is.null(resjson$errormessage)) warning(resjson$errormessage)
-  if(resjson$recordcount == 0) stop("No rollcalls found")
+  if(resjson$recordcount == 0) {
+    warning("No rollcalls found")
+    return(NULL)
+  } else {
+    res <- resjson$rollcalls
+    
+    orderCols <- c("id", "congress", "chamber", "rollnumber", "date", "bill",
+                   "yea_count", "nay_count", "percent_support", "vote_result", "description",
+                   "short_description", "question", "text")
+    dropCols <- c("result", "vote_counts", "vote_document_text", "vote_desc",
+                  "vote_title", "vote_question", "amendment_author")
+    renameCols <- list(c("yea_count", "yea"), c("nay_count", "nay"),
+                       c("percent_support", "support"))
+    res <- cleanDf(res, orderCols, dropCols, renameCols)
+    attr(res, "qstring") <- query_string
+    
+    return( res )
+  }
 
-  res <- resjson$rollcalls
-
-  orderCols <- c("id", "congress", "chamber", "rollnumber", "date", "bill",
-                 "yea_count", "nay_count", "percent_support", "vote_result", "description",
-                 "short_description", "question", "text")
-  dropCols <- c("result", "vote_counts", "vote_document_text", "vote_desc",
-                "vote_title", "vote_question", "amendment_author")
-  renameCols <- list(c("yea_count", "yea"), c("nay_count", "nay"),
-                     c("percent_support", "support"))
-  res <- cleanDf(res, orderCols, dropCols, renameCols)
-  attr(res, "qstring") <- query_string
-  
-  return( res )
 }
 
 #' Query the Voteview Database for Members

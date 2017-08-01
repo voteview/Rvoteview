@@ -177,8 +177,6 @@ build_votelist <- function(votelist, ids, perrequest) {
                                             use.names = F))))
     } else { # Not an error in R
 
-      if (!is.null(votes$errormessage)) stop(votes$errormessage)
-
       # If there are rollcalls to add, add them. This chunk prevents errors
       # when votes$rollcalls doesn't work because votes are all errors
       if(nrow(votes$rollcalls)) {
@@ -472,7 +470,9 @@ voteview2rollcall <- function(data, keeplong = T) {
 #'
 #' ## Complete download. Wont work because 'fakeid' will always be invalid,
 #' ## however this is just to show usage
+#' \dontrun{
 #' complete_rc <- complete_download(rc)
+#' }
 #' @export
 #'
 complete_download <- function(rc) {

@@ -1,4 +1,4 @@
-yea_count---
+---
 title: "Using the Rvoteview API"
 date: "`r Sys.Date()`"
 output:
@@ -46,20 +46,17 @@ The first main function of this package is to allow users to search for roll cal
 
 ## Simple text queries
 
-The `q` argument should be treated similarly to a search box online. You can put in text search terms, specific fields with parameters, or it can be left blank if other arguments are used. The simple usage is to treat the `q` argument as a way to search all text fields. If you want to search a specific phrase, put the query in quotes. This will essentially look for that exact phrase in any of the text fields in the database. Alternatively, if you search without using quotes, the word will be lemmatized (shortened) and will search an index of the text fields. For example, we can search for "terrorism" exactly or loosely using the index:
+The `q` argument should be treated similarly to a search box online. You can put in text search terms, specific fields with parameters, or it can be left blank if other arguments are used. The simple usage is to treat the `q` argument as a way to search all text fields. If you want to search a specific phrase, put the query in quotes. This will essentially look for that exact phrase in many of the text fields in the database. Alternatively, if you search without using quotes, the word will be lemmatized (shortened) and will search an index of the text fields. For example, we can search for "terrorism" exactly or loosely using the index:
 ```{r search-ex1, eval=F}
 library(Rvoteview)
-res <- voteview_search("'terrorism'")
-## 37 found rollcalls
-res <- voteview_search("terrorism")
-## 238 found rollcalls
+res <- voteview_search("'terrorism'") # exact
+res <- voteview_search("terrorism")   # index based
 ```
 
 You can also search for multiple words:
 
 ```{r search-ex2, eval=F}
-res <- voteview_search("terrorism iraq")
-## 619 found rollcalls
+res <- voteview_search("terrorism iraq") # index based search
 ```
 
 Using the text index, the MongoDB that houses the rollcalls will search for the documents for either of these words and return the best matches. In effect, this will return documents that have *either* "terror" or "iraq" or various shortened versions of those words.
@@ -69,16 +66,12 @@ Using the text index, the MongoDB that houses the rollcalls will search for the 
 When using one of the simple queries above, the query parser automatically adds a field to the front of a query that does not specify which field to search. In order to specify a specific field, use the following `fieldname:query` syntax. To replicate the last example more explicitly, we use the following:
 ```{r search-ex2-alltext, eval=F}
 res <- voteview_search("alltext:terrorism iraq")
-## 619 found rollcalls
 ```
 
-Unfortunately, due to the way the text index works, to search for documents that have both "terror" *and* "iraq" will require some more work. One way to do this is to search a specific text field more than once, as queries across fields will be joined by AND by default:
+Unfortunately, due to the way the query parser works, you cannot search for two exact words at the moment or search in two different specific text fields. You can however look within a specific text field.
 ```{r search-ex3, eval=F}
-res <- voteview_search("description:'terror' description:'iraq'")
-## 1 found rollcalls
+res <- voteview_search("vote_desc:'iraq'")
 ```
-
-Unfortunately, the full text index cannot be accessed more than once at a time. That means that you cannot have two text fields that you search without quotes. Thus, `"description:iraq description:terror"` will not work and neither will `"alltext:iraq alltext:terror"`.
 
 ## Using additional arguments
 
@@ -109,31 +102,31 @@ attr(res, "qstring")
 
 As previewed before, users can use the `q` argument to specify complex queries by specifying which fields to search and how to combine fields using boolean logic. The [complete documentation can be found here](https://github.com/JeffreyBLewis/Rvoteview/wiki/Query-Documentation). In general, the following syntax is used, `field:specific phrase (field:other phrase OR field:second phrase)`.
 
-For example, if you wanted to find votes with "war" and either "iraq" or "afghanistan" in the description field, you could set the query to:
+For example, if you wanted to find votes where 'war' and 'iraq' were present but only up to 1993 and after 2000, you could write it like so:
 ```{r or-text}
-qString <- "description:'war' (description:'iraq' OR description:'afghanistan')"
+qString <- "alltext:war iraq (enddate:1993 OR startdate:2000)"
 res <- voteview_search(q = qString)
+
 ```
+
+Whenever in doubt, add parentheses to make the query clearer!
 
 Numeric fields can be searched in a similar way, although users can also use square brackets and "to" for ranges of numbers. For example, the query for all votes about taxes in the 100th to 102nd congress could be expressed either using `"alltext:taxes congress:100 OR congress:101 OR congress:102"` or using `"alltext:taxes congress:[100 to 102]"`. Note that if you want to restrict search to certain dates, the `startdate` and `enddate` arguments in the function should be used.
 
-For example,
-```{r adv-search-ex, eval=F}
-## Search for "war" AND ("iraq" or "afghanistan") in the description field in 1991
-res <- voteview_search(q = qString,
-                       startdate = "1991-01-01",
-                       enddate = "1991-12-31")
-```
+For example, here is a query that will get votes from the 100 to 102nd congress on tax where the percent of the rollcall votes in favor will be between 45 and 55 percent, inclusive.
 
-The fields that can be searched with text are `codes`, `codes.Clausen`, `codes.Peltzman`, `codes.Issue`, `description`, `shortdescription`, `bill`, and `alltext`. The fields that can be searched by number are `congress`, `yea`, `nay`, and `support`. Searching by individual legislator will be implemented soon.
+```{r or-text-2}
+qString <- "alltext:tax iraq (congress:[100 to 102] AND support:[45 to 55])"
+res <- voteview_search(q = qString)
+```
 
 # Downloading roll call data with `voteview_download`
 
 The second main function of this package is to allow users to download detailed roll call data into a modified `rollcall` object from the `pscl` package. The default usage is to pass `voteview_download` a vector of roll call id numbers that we return in the `voteview_search` function.
 
 ```{r simple-download, results='hide', cache=T, message=F, warning=F}
-## Search all votes with the exact phrase "estate tax"
-res <- voteview_search("'estate tax'")
+## Search all votes with the exact phrase "estate tax" in the 105th congress
+res <- voteview_search("'estate tax' congress:105")
 
 ## Download all estate tax votes
 rc <- voteview_download(res$id)
@@ -162,7 +155,7 @@ try({detach("package:ggplot2", unload=TRUE)}, silent = T)
 ```
 ```{r outerjoin, results='hide', message=F, warning=F}
 ## Search all votes with exact phrase "estate tax"
-res <- voteview_search("'estate tax'")
+res <- voteview_search("'estate tax' congress:105")
 
 ## Download first 10 votes
 rc1 <- voteview_download(res$id[1:10])
@@ -251,7 +244,7 @@ This section details three different possible uses of the `Rvoteview` package, s
 
 ## Ideal point estimation
 
-Imagine that we want to estimate ideal points for all legislators voting on foreign policy during Obama's first term in office. We will use all roll calls that fit the Clausen category "Foreign and Defense Policy" and are somewhat competitive, meaning between 15 and 85 percent of votes on the floor were yeas.
+Imagine that we want to estimate ideal points for all legislators voting on foreign policy during the first six months of Obama's presidency.. We will use all roll calls that fit the Clausen category "Foreign and Defense Policy" and are somewhat competitive, meaning between 15 and 85 percent of votes on the floor were yeas.
 
 ```{r defense-search, results='hide'}
 ## Load packages
@@ -260,10 +253,8 @@ library(Rvoteview)
 
 ## Search database for votes that meet our criteria
 res <- voteview_search("codes.Clausen:Foreign and Defense Policy support:[15 to 85]",
-                       startdate = "2008-01-20", enddate = "2013-01-20")
+                       startdate = "2009-01-20", enddate = "2009-07-20")
 ```
-
-Large downloads can be quite slow for now, so be patient. We are working on improving speed. You can always download the full database yourself.
 
 ```{r defense-download, cache = T, message = F, results = 'hide'}
 ## Download votes into rollcall object
@@ -273,14 +264,39 @@ rc <- voteview_download(res$id)
 summary(rc)
 ```
 
-Now we use the `wnominate` package to run an ideal point estimation. Warning, this is somewhat slow and is thus not run in the vignette.
-```{r defense-ideal-wnominate, eval = F}
+Now we use the `wnominate` package to run an ideal point estimation.
+```{r defense-ideal-wnominate}
 library(wnominate)
 # Find extreme legislators for polarity argument
 cons1 <- rc$legis.long.dynamic[which.max(rc$legis.data$dim1), c("name", "icpsr")]
 cons2 <- rc$legis.long.dynamic[which.max(rc$legis.data$dim2), c("name", "icpsr")]
 defIdeal <- wnominate(rc,
                       polarity = list("icpsr", c(20753, 20523)))
+```
+
+This ideal point estimation also returns the estimated points attached the all of the legislator and rollcall metadata already in the `rc` object! This can be useful in creating custom plots.
+
+```{r explore-ideal, cache=T, message = F, results='hide'}
+## Create text party name
+defIdeal$legislators$partyName <- ifelse(defIdeal$legislators$party == 200, "Republican",
+                                  ifelse(defIdeal$legislators$party == 100, "Democrat", "Independent"))
+
+ggplot(defIdeal$legislators,
+       aes(x=coord1D, y=coord2D, color=partyName, label=state_abbrev)) +
+  geom_text() +
+  scale_color_manual("Party", values = c("Republican" = "red",
+                                         "Democrat" = "blue",
+                                         "Independent" = "darkgreen")) +
+  theme_bw()
+```
+
+We see the usual split between Republicans and Democrats.
+
+We can also use the build in `plot` method from `wnominate to produce some great figures from our estimation.
+
+```{r}
+# Some great plots!
+plot(defIdeal)
 ```
 
 The `rollcall` objects we build can also be used in the `ideal` function in the `pscl` package.
@@ -299,163 +315,10 @@ defIdeal <- ideal(rc,
                  burnin = 1000)
 ```
 
-In this case we get a vector of ideal points along two dimensions. We can use the default `plot` method provided by `pscl` to get a quick look at the estimated points:
+We can also use the `pscl` plot method.
 
 ```{r plot-ideal}
 plot(defIdeal)
-```
-
-This ideal point estimation also returns estimated points in a matrix that has has the same row names as the `rc$legis.data` data frame, which are ICPSR numbers. They are also in the same order so it is easy to bring the ideal points to the rest of the data. Let's do that and create a custom plot.
-
-```{r explore-ideal, cache=T, message = F, results='hide'}
-## Add custom ideal points to legislator data
-idealdf <- cbind(rc$legis.data, defIdeal$xbar)
-## Create text party name
-idealdf$partyName <- ifelse(idealdf$party == 200, "Republican",
-                     ifelse(idealdf$party == 100, "Democrat", "Independent"))
-rc$legis.data
-ggplot(idealdf, aes(x=D1, y=D2, color=partyName, label=state_abbrev)) +
-  geom_text() +
-  scale_color_manual("Party", values = c("Republican" = "red",
-                                         "Democrat" = "blue",
-                                         "Independent" = "darkgreen")) +
-  theme_bw()
-```
-
-We see the usual split between Republicans and Democrats.
-
-## Analyzing ideal points across reelection
-
-One use of the package may be to estimate ideal points across congresses, holding fixed those who did not face reelection while allowing those reelected to move. First, let's get all of the roll calls from the 110th and 111th congresses.
-
-```{r search-senate110111, cache = T}
-## Find roll calls from 110 and 111th congresses
-senateRes <- voteview_search(chamber = "Senate",
-                             congress = c(110, 111))
-```
-
-In order to allow senators who were reelected to move across congresses, we have to construct a roll call object that treats those that were reelected as different legislators. We can use the internal functions of the package to help us with this.
-
-First, let's download two rollcall objects for each congress and add data on which Senators were reelected.
-
-```{r, results = 'hide'}
-## Download the rollcalls to separate objects
-senate110 <- voteview_download(senateRes$id[senateRes$congress == 110])
-senate111 <- voteview_download(senateRes$id[senateRes$congress == 111])
-
-## Add the congress to the legislator data frame
-senate110$legis.long.dynamic$congress <- 110
-senate111$legis.long.dynamic$congress <- 111
-
-## The icpsr numbers of the reelected senators
-reelected <- c("49700", "40301", "14101", "29512", "15021", "14230", "14852",
-               "14921", "49702", "49703", "14920", "14709", "14009", "29534",
-               "14203", "14914", "15424", "29142", "29566", "15425", "40304",
-               "40305", "14922", "40707", "49706")
-```
-
-Now, because we build rollcall objects using primarily a vote matrix, we want to create that matrix with a unique row for each congress for each Senator that was reelected. Therefore, reelected senators have two rows in the vote matrix while those that were not reelected only have one row. To do this, we first make it so that the rownames of the vote matrices in the 110 and 111th congresses are augmented by the congress number for reelected senators.
-
-```{r}
-## Giving them unique icpsr numbers with congress attached to them
-rownames(senate111$votes) <- ifelse(rownames(senate111$votes) %in% reelected,
-                                    paste0(rownames(senate111$votes), "_111"),
-                                    rownames(senate111$votes))
-rownames(senate110$votes) <- ifelse(rownames(senate110$votes) %in% reelected,
-                                    paste0(rownames(senate110$votes), "_110"),
-                                    rownames(senate110$votes))
-```
-
-Then we merge these vote matrices together, producing a matrix with reelected senators twice and other senators once:
-```{r}
-## Merging their votes together
-votedf <- merge(senate110$votes,
-                senate111$votes,
-                by = "row.names",
-                all = T)
-
-## The first column is the names and becomes the rownames for the vote matrix
-votemat <- as.matrix(votedf[, 2:ncol(votedf)])
-rownames(votemat) <- votedf[, 1]
-
-## next we add the same name augmentation to the legislator metadata
-senate110$legis.data$icpsr <- ifelse(senate110$legis.data$icpsr %in% reelected,
-                                    paste0(senate110$legis.data$icpsr, "_110"),
-                                    senate110$legis.data$icpsr)
-senate111$legis.data$icpsr <- ifelse(senate111$legis.data$icpsr %in% reelected,
-                                    paste0(senate111$legis.data$icpsr, "_111"),
-                                    senate111$legis.data$icpsr)
-
-## Merge in the legislators who weren't in the 110th or were reelected
-legis.data <- rbind(senate110$legis.data,
-                    senate111$legis.data[!(senate111$legis.data$icpsr %in% senate110$legis.data$icpsr), ])
-## Reorder using votematrix
-legis.data <- legis.data[match(rownames(votemat), legis.data$icps), ]
-
-## And finally we buid the new rollcall object
-rc <- pscl::rollcall(data = votemat,
-               yea = c(1, 2, 3),
-               nay = c(4, 5, 6),
-               missing = c(7, 8, 9),
-               notInLegis = c(0, NA),
-               legis.data = legis.data,
-               legis.names = rownames(votemat),
-               vote.names = colnames(votemat))
-```
-
-To see what we have built, let's see the vote matrix for three kinds of legislators:
-
-* Dick Durbin, a Senator reelected in 2008 (ICPSR: 14009)
-* Jon Kyl, who was in both congresses but not reelected in 2008 (ICPSR: 15429)
-* Al Franken, who was newly elected in 2008 (ICPSR: 40904)
-
-```{r}
-## 5 votes from 110th
-rc$votes[grepl("14009|15429|40904", rownames(rc$votes)), 1:5]
-## 5 votes from 111th
-rc$votes[grepl("14009|15429|40904", rownames(rc$votes)), (ncol(rc$votes)-4):ncol(rc$votes)]
-```
-
-As you can see, Al Franken is missing votes from the 110th, as is the reelected version of Dick Durbin. In the 111th votes, the old version of Dick Durbin, "14009_110", is missing votes. Now let's do some ideal point estimation:
-
-```{r, eval = F}
-id <- pscl::ideal(rc,
-                  d = 2)
-```
-```{r ideal-lgbt, echo = F, results = 'hide', warnings = F, cache = T}
-id <- pscl::ideal(rc,
-                  d = 2,
-                  maxiter = 5000,
-                  thin = 10,
-                  burnin = 1000)
-```
-
-Let's plot the output.
-
-```{r plot-ideal-lgbt}
-## Add custom ideal points to legislator data
-idealdf <- cbind(rc$legis.data, id$xbar)
-idealdf$reelected <- grepl("_", idealdf$icpsr)
-## Create text party name
-idealdf$partyName <- ifelse(idealdf$party == 200 & !idealdf$reelected, "Republican",
-                     ifelse(idealdf$party == 100 & !idealdf$reelected, "Democrat",
-                     ifelse(idealdf$party == 328 & !idealdf$reelected, "Independent",
-                     ifelse(idealdf$party == 200 & idealdf$reelected,
-                            "Reelected Republican",
-                            "Reelected Democrat"))))
-idealdf$congress <- ifelse(!idealdf$reelected,
-                           "Not Reelected",
-                           substr(idealdf$icpsr, nchar(idealdf$icpsr) - 2, nchar(idealdf$icpsr)))
-
-## Plot the ideal points
-ggplot(idealdf, aes(x=D1, y=D2, color=partyName, label=icpsr, shape = congress)) +
-  geom_point(size = 2) +
-  scale_color_manual("Party", values = c("Republican" = "pink",
-                                         "Democrat" = "lightblue",
-                                         "Independent" = "darkgreen",
-                                         "Reelected Republican" = "red",
-                                         "Reelected Democrat" = "blue")) +
-  theme_bw()
 ```
 
 ## Regression analysis of roll call behavior
@@ -468,9 +331,6 @@ Let's see what bills there were in the 111th congress that had to do with homose
 ## Two separate searches because fields cannot be joined with an OR
 res <- voteview_search("codes.Issue:Homosexuality congress:111")
 res
-
-res2 <- voteview_search("gay lesbian congress:111")
-res2
 ```
 
 To focus on actual bills that were of some consequence, let's take the House and Senate don't ask don't tell votes and the hate crimes bill from the House.
@@ -534,8 +394,8 @@ summary(lm(voteYes ~ meanOpinion, data = df))
 summary(lm(voteYes ~ meanOpinion*republican, data = df))
 
 ## Control for ideology
-## Note that ideology here has been estimated using this vote and later votes,
-## so interpret the results iwth some caution
+## Note that ideology here has been estimated using these and later votes,
+## so interpret the results with some caution
 summary(lm(voteYes ~ meanOpinion*republican + dim1 + dim2,
            data = df))
 
@@ -545,7 +405,3 @@ summary(lm(voteYes ~ meanOpinion*republican + dim1 + dim2 + chamber,
 ```
 
 Even when controlling for ideology and party, it seems that legislators, and especially Republican legislators, are more likely to vote for pro-gay rights bills when their state has a high average level of pro-gay rights sentiment.
-
-# Additional tools
-
-Also in the works is an API to query for members of congress and their data, rather than having to get it from roll call downloads.

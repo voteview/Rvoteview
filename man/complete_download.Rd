@@ -29,7 +29,9 @@ rc$unretrievedids
 
 ## Complete download. Wont work because 'fakeid' will always be invalid,
 ## however this is just to show usage
+\dontrun{
 complete_rc <- complete_download(rc)
+}
 }
 \seealso{
 '\link[pscl]{rollcall}','\link{complete_download}','\link{voteview_search}'.

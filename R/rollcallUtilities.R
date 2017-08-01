@@ -196,14 +196,14 @@ melt_rollcall <- function(rc,
 #' 
 #' @examples
 #' 
-#' ## Search for rollcalls about Rhodesia in 95th and 96th Congress
-#' res <- voteview_search("Rhodesia", congress = c(95, 96))
+#' ## Search for rollcalls about Rhodesia in the 96th Congress
+#' res <- voteview_search("Rhodesia", congress = c(96))
 #' 
 #' rc1 <- voteview_download(res$id)
 #' summary(rc1)
 #' 
-#' ## Search for rollcalls about Rhodesia in  90th and 92nd Congress
-#' res <- voteview_search("Rhodesia", congress = c(90, 92))
+#' ## Search for rollcalls about Rhodesia in the 90th Congress
+#' res <- voteview_search("Rhodesia", congress = c(90))
 #' 
 #' rc2 <- voteview_download(res$id)
 #' summary(rc2)

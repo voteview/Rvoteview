@@ -37,7 +37,7 @@ test_that('search function returns example dataframe with correct number of vote
 })
 
 test_that('unicode searches work', {
-  # does crazy unicode search, makes sure only error is that no rollcalls were found
-  expect_error(voteview_search('vuvz7zdué'), 'No rollcalls found')
-  expect_error(voteview_search('"vuvz7zdué"'), 'No rollcalls found')
+  # does crazy unicode search, makes sure only warning is that no rollcalls were found
+  expect_warning(voteview_search('vuvz7zdué'), 'No rollcalls found')
+  expect_warning(voteview_search('"vuvz7zdué"'), 'No rollcalls found')
 })

@@ -1,7 +1,5 @@
 ---
-output:
-  md_document:
-    variant: markdown_github
+output: github_document
 ---
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
@@ -14,21 +12,23 @@ knitr::opts_chunk$set(
 ```
 
 # Rvoteview
+[![Travis-CI Build Status](https://travis-ci.org/JeffreyBLewis/Rvoteview.svg?branch=master)](https://travis-ci.org/JeffreyBLewis/Rvoteview) [![AppVeyor Build status](https://ci.appveyor.com/api/projects/status/n13u8s0tnfsau1o6?svg=true)](https://ci.appveyor.com/project/lukesonnet/rvoteview)
 
 **WARNING: This package is under construction. Please be patient and feel free to contact [Luke Sonnet](mailto:luke.sonnet@gmail.com) with any questions.**
 
 This is a package that enables you to query the Voteview database for roll calls and work with data frames or a `pscl` `rollcall` object.
 
-To install this package, ensure you have `devtools` installed. If you do not, run `install.packages("devtools")` before doing the following:
-```R
+To install this package, run the following (note you have to have devtools installed first):
+```{r github-install, eval = F}
+# install.packages('devtools')
 devtools::install_github("JeffreyBLewis/Rvoteview")
 ```
 
-For more thorough documentation, see the help files for individual functions and the vignette [at this link here](https://github.com/JeffreyBLewis/Rvoteview/tree/master/vignettes). Lastly, there is complete documentation for the searches you can make [at the wiki here](https://github.com/JeffreyBLewis/Rvoteview/wiki/Query-Documentation).
+For more thorough documentation, see the help files for individual functions and the vignette [at this link here](https://github.com/JeffreyBLewis/Rvoteview/tree/master/vignettes).
 
 ## Quick Start: Using Rvoteview
 
-To use `Rvoteview`, you generally want to search the database to get a list of vote ids and then use those to return the individual votes. We query the database with a search term and some parameters to constrain the search. The default behavior is to search any words as key words, returning the roll calls that best match any key words you enter. Again, for full documentation for the search [see here](https://github.com/JeffreyBLewis/Rvoteview/wiki/Query-Documentation). There are further examples in the [vignette](https://github.com/JeffreyBLewis/Rvoteview/tree/master/vignettes).
+To use `Rvoteview`, you generally want to search the database to get a list of vote ids and then use those to return the individual votes. We query the database with a search term and some parameters to constrain the search. The default behavior is to search any words as key words, returning the roll calls that best match any key words you enter. Again, there are further examples in the [vignette](https://github.com/JeffreyBLewis/Rvoteview/tree/master/vignettes).
 
 So let's start with a search for roll calls with the key word "Iraq".
 ```{r search}
@@ -38,7 +38,7 @@ res <- voteview_search("Iraq")
 names(res)
   
 ## I will drop description since it is a very long field
-head(res[, -1])
+res[1:5, 1:5]
 ```
 Using `res$id` we can get a `rollcall` object (from the [`pscl` package](https://cran.r-project.org/web/packages/pscl/index.html)) that contains the full set of votes and data for each roll call. 
 
@@ -51,36 +51,19 @@ rc <- voteview_download(res$id[1:10])
 summary(rc)
 ```
 
-We have also begun extending the `pscl` `rollcall` object by allowing you to do a full outer join on two `rollcall` objects that were built using this package. For example:
-
-```{r download2, results='hide'}
-rc2 <- voteview_download(res$id[c(5, 100)])
-```
-```{r pscl-add}
-## Now we can merge this with 'rc'
-rcAll <- rc %+% rc2
-
-rc$m
-rc2$m
-rcAll$m # rc$m + rc2$m - 1 because of the one vote overlap
-```
-
 You also have lots of metadata on roll calls and legislators in various data frames. For example, we can see some legislator metadata:
 
 ```{r metadata}
-head(rcAll$legis.long.dynamic)
+rc$legis.long.dynamic[1:5, 1:5]
 ```
 
 You can also search by start and end date, congress, and chamber. Please see the help files for each function after you install the package to see a little more about how they work.
 
 ```{r search-options}
 ## Voteview search with options
-res <- voteview_search("Iraq", chamber = "House", congress = 110,
-                       startdate = 2008, enddate = "2008-04-20")
-head(res[, -1])
-
-res <- voteview_search("Iraq", congress = 109:112)
-head(res[, -1])
+res <- voteview_search("Iraq", chamber = "House", congress = 110:112,
+                       startdate = 2008, enddate = "2013-04-20")
+res[1:5, 1:5]
 ```
 
 We can print out the exact query that the function builds using all of these arguments by retrieving the 'qstring' attribute of the returned data frame:
@@ -94,16 +77,7 @@ We can assemble and use these complex queries ourselves. Here's one example wher
 ```{r search-adv}
 ## Voteview search with options
 res <- voteview_search("(alltext:estate death tax congress:[100 to 114])")
-head(res[, -1])
-tail(res[, -1])
-```
-
-We can also search for all bills with the keywords "war" and "terror" on or after 2008.
-
-```{r search-adv2}
-res <- voteview_search("(alltext:war terror startdate:2008-01-01)")
-head(res[, -1])
-tail(res[, -1])
+res[1:5, 1:5]
 ```
 
 You can also search for member data using the `member_search` function.
@@ -112,13 +86,5 @@ You can also search for member data using the `member_search` function.
 res <- member_search("Paul",
                      state = "KY")
 
-## Drop the bio field because it is quite long
-head(res[, names(res) != "bio"])
-
-res <- member_search("Paul",
-                     state = "KY",
-                     distinct = 1)
-
-## Drop the bio field because it is quite long
-head(res[, names(res) != "bio"])
+res[1:5, 1:5]
 ```
