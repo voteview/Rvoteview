@@ -227,9 +227,10 @@ melt_rollcall <- function(rc,
   newvotes.data <- merge(rc1$vote.data, rc2$vote.data, all = T)
   
   # Building the new vote matrix
+  newvotedatnames <- setdiff(colnames(rc2$votes),
+                             colnames(rc1$votes))
   old.votedat <- data.frame(rc1$votes, icpsr = rownames(rc1$votes), stringsAsFactors = F)
-  new.votedat <- data.frame(rc2$votes[, setdiff(colnames(rc2$votes),
-                                                colnames(rc1$votes))],
+  new.votedat <- data.frame(rc2$votes[, newvotedatnames, drop = F],
                             icpsr = rownames(rc2$votes),
                             stringsAsFactors = F)
   
@@ -239,13 +240,22 @@ melt_rollcall <- function(rc,
   if(!is.null(rc1$legis.long.dynamic)) {
 
     idsfound <- fmatch(rc2$legis.long.dynamic$id, rc1$legis.long.dynamic$id)
+
     
     # merge back in data that was deduplicated in to legis.data
-    newlegis.long.dynamic <- rbind(rc1$legis.long.dynamic[-idsfound[!is.na(idsfound)], ],
-                                   rc2$legis.long.dynamic)
+    if (any(!is.na(idsfound))) {
+      newlegis.long.dynamic <- rbind(rc1$legis.long.dynamic[-idsfound[!is.na(idsfound)], ],
+                                     rc2$legis.long.dynamic)
+    } else {
+      newlegis.long.dynamic <- rbind(rc1$legis.long.dynamic,
+                                     rc2$legis.long.dynamic)
+    }
+
+    
+    
     
     uniqueicpsr <- unique(newlegis.long.dynamic$icpsr)
-    
+
     legiscols <-  c("name", "state_abbrev", "party_code", "dim1", "dim2")
     alllegis.data <- data.frame(matrix(NA,
                                        nrow = length(uniqueicpsr),
@@ -277,6 +287,7 @@ melt_rollcall <- function(rc,
   
   # Clean up new votes matrix
   newvotemat <- as.matrix(newvotes[, colnames(newvotes) != "icpsr"])
+  
   newvotemat[is.na(newvotemat)] <-  rc1$codes$notInLegis 
   
   rcout <- rollcall(data = newvotemat,
