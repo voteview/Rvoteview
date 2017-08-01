@@ -1,5 +1,7 @@
 <!-- README.md is generated from README.Rmd. Please edit that file -->
-Rvoteview
+[![Build Status](https://travis-ci.org/JeffreyBLewis/Rvoteview.svg?branch=master)](https://travis-ci.org/JeffreyBLewis/Rvoteview)
+
+Rvoteview 
 =========
 
 **WARNING: This package is under construction. Please be patient and feel free to contact [Luke Sonnet](mailto:luke.sonnet@gmail.com) with any questions.**
