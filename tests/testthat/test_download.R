@@ -21,3 +21,26 @@ test_that('query works for many ids', {
   expect_equal(rc_big$m, 100)
 })
 
+test_that('download works with keep long = F', {
+  expect_error(rc2 <- voteview_download(ids = "RS0010030", keeplong = F), NA)
+})
+
+# To save time, use above rc to check helper functions
+test_that('melting rc works fine', {
+  expect_error(melt_rollcall(rc), NA)
+  expect_error(melt_rollcall(rc2), NA)
+})
+
+test_that('grapes operator works as expected', {
+  expect_error(rc %+% rc2, 'keeplong')
+  rc_nooverlap <- voteview_download(ids = 'RS0010030')
+  rc_overlap <- voteview_download(ids = c('RH1110298', 'RH1110298'))
+  rc2_overlap <- voteview_download(ids = c("RS0010030", "RS0010031"), keeplong = F)
+  rc2_nooverlap <- voteview_download(ids = c("RS0010031"), keeplong = F)
+  # with keep long
+  expect_error(rc %+% rc_nooverlap, NA)
+  expect_error(rc %+% rc_overlap, NA)
+  # without keep long, warn about overlap in ICPSR being ambiguous
+  expect_warning(rc2 %+% rc2_nooverlap, 'keeplong')
+  expect_warning(rc2 %+% rc2_overlap, 'keeplong')
+})
