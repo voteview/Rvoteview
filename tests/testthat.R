@@ -1,3 +1,4 @@
+ys.setenv("R_TESTS" = "")
 library(testthat)
 library(Rvoteview)
 
