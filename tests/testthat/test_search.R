@@ -1,5 +1,6 @@
 library(Rvoteview)
 context('Query voteview database with string, download vote metadata')
+Sys.unsetenv("R_TESTS")
 
 test_that('search function hits database', {
   expect_error(voteview_search('test'), NA)

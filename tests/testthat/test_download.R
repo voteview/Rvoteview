@@ -1,6 +1,6 @@
 library(Rvoteview)
 context('Query voteview database with ids, download detailed data')
-
+Sys.unsetenv("R_TESTS")
 # Following is written to file to improve speed
 # res <- voteview.search()
 # save(res, file = "iraq_search.RData")
