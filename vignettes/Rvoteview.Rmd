@@ -8,6 +8,8 @@ vignette: >
   %\VignetteIndexEntry{Using the Rvoteview API}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+  %\VignetteDepends{ggplot2}
+  %\VignetteDepends{wnominate}
 ---
 ```{r echo=F}
 knitr::opts_chunk$set(comment = "#>", fig.align='center',
@@ -26,9 +28,8 @@ This package provides tools to query and download from the VoteView database. Th
     c. [Completing interrupted downloads](#completing-interrupted-downloads)
     d. [Retrieving member data](#retrieving-member-data)
 5. [Extended Examples](#extended-examples)
-    a. [Ideal point estimation](#ideal-point-estimation)
-    b. [Analyzing ideal points across reelection](#analyzing-ideal-points-across-reelection)
-    c. [Regression analysis of roll call behavior](#regression-analysis-of-roll-call-behavior)
+    a. [Ideal point estimation](#ideal-point-estimation)]
+    b. [Regression analysis of roll call behavior](#regression-analysis-of-roll-call-behavior)
 
 # Installation
 

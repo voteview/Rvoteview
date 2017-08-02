@@ -4,3 +4,5 @@ ggplot2
 MASS
 lattice
 pscl
+testthat
+wnominate
