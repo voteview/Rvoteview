@@ -5,24 +5,30 @@ context('Query voteview database with ids, download detailed data')
 # res <- voteview.search()
 # save(res, file = "iraq_search.RData")
 
+rc <- voteview_download(ids = "RH1110298")
+res <- voteview_search("Iraq")
+rc2 <- voteview_download(ids = "RS0010030", keeplong = F)
+rc_nooverlap <- voteview_download(ids = 'RS0010030')
+rc_overlap <- voteview_download(ids = c('RH1110298', 'RH1110298'))
+rc2_overlap <- voteview_download(ids = c("RS0010030", "RS0010031"), keeplong = F)
+rc2_nooverlap <- voteview_download(ids = c("RS0010031"), keeplong = F)
+
 test_that('download function opens connection', {
   expect_error(voteview_getvote(id = "RH1110298"), NA)
 })
 
 test_that('download converts to voteview', {
-  rc <- voteview_download(ids = "RH1110298")
   expect_is(rc, 'rollcall')
   expect_equal(nrow(rc$votes), 434)
 })
 
 test_that('query works for many ids', {
-  res <- voteview_search("Iraq")
   expect_error(rc_big <- voteview_download(ids = res$id[1:100]), NA)
   expect_equal(rc_big$m, 100)
 })
 
 test_that('download works with keep long = F', {
-  expect_error(rc2 <- voteview_download(ids = "RS0010030", keeplong = F), NA)
+  expect_error(voteview_download(ids = "RS0010030", keeplong = F), NA)
 })
 
 # To save time, use above rc to check helper functions
@@ -33,10 +39,6 @@ test_that('melting rc works fine', {
 
 test_that('grapes operator works as expected', {
   expect_error(rc %+% rc2, 'keeplong')
-  rc_nooverlap <- voteview_download(ids = 'RS0010030')
-  rc_overlap <- voteview_download(ids = c('RH1110298', 'RH1110298'))
-  rc2_overlap <- voteview_download(ids = c("RS0010030", "RS0010031"), keeplong = F)
-  rc2_nooverlap <- voteview_download(ids = c("RS0010031"), keeplong = F)
   # with keep long
   expect_error(rc %+% rc_nooverlap, NA)
   expect_error(rc %+% rc_overlap, NA)

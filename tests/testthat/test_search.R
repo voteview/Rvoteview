@@ -1,6 +1,9 @@
 library(Rvoteview)
 context('Query voteview database with string, download vote metadata')
 
+df <- voteview_search('rhodesia', enddate = 1975)
+df_sub <- voteview_search('rhodesia', enddate = 1980)
+
 test_that('search function hits database', {
   expect_error(voteview_search('test'), NA)
 })
@@ -24,9 +27,6 @@ test_that('search function options query leela correctly', {
 })
 
 test_that('search function returns example dataframe with correct number of votes', {
-  df <- voteview_search('rhodesia', enddate = 1975)
-  df_sub <- voteview_search('rhodesia', enddate = 1980)
-  
   expect_is(df, 'data.frame')
   expect_is(df_sub, 'data.frame')
   expect_equal(nrow(df), 8)
