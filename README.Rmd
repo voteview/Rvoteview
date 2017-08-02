@@ -14,7 +14,7 @@ knitr::opts_chunk$set(
 # Rvoteview
 [![Travis-CI Build Status](https://travis-ci.org/JeffreyBLewis/Rvoteview.svg?branch=master)](https://travis-ci.org/JeffreyBLewis/Rvoteview) [![AppVeyor Build status](https://ci.appveyor.com/api/projects/status/n13u8s0tnfsau1o6?svg=true)](https://ci.appveyor.com/project/lukesonnet/rvoteview)
 
-**WARNING: This package is under construction. Please be patient and feel free to contact [Luke Sonnet](mailto:luke.sonnet@gmail.com) with any questions.**
+**WARNING: This package is under construction. Please be patient and leave issues here on Github or contact [Luke Sonnet](mailto:luke.sonnet@gmail.com) with any questions.**
 
 This is a package that enables you to query the Voteview database for roll calls and work with data frames or a `pscl` `rollcall` object.
 
