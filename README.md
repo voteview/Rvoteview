@@ -1,9 +1,8 @@
-
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 Rvoteview
 =========
 
-[![Travis-CI Build Status](https://travis-ci.org/JeffreyBLewis/Rvoteview.svg?branch=master)](https://travis-ci.org/JeffreyBLewis/Rvoteview) [![AppVeyor Build status](https://ci.appveyor.com/api/projects/status/n13u8s0tnfsau1o6?svg=true)](https://ci.appveyor.com/project/lukesonnet/rvoteview)
+[![Travis-CI Build Status](https://travis-ci.org/voteview/Rvoteview.svg?branch=master)](https://travis-ci.org/voteview/Rvoteview) [![AppVeyor Build status](https://ci.appveyor.com/api/projects/status/n13u8s0tnfsau1o6?svg=true)](https://ci.appveyor.com/project/lukesonnet/rvoteview)
 
 **WARNING: This package is under construction. Please be patient and leave issues here on Github or contact [Luke Sonnet](mailto:luke.sonnet@gmail.com) with any questions.**
 
@@ -13,15 +12,15 @@ To install this package, run the following (note you have to have devtools insta
 
 ``` r
 # install.packages('devtools')
-devtools::install_github("JeffreyBLewis/Rvoteview")
+devtools::install_github("voteview/Rvoteview")
 ```
 
-For more thorough documentation, see the help files for individual functions and the vignette [at this link here](https://github.com/JeffreyBLewis/Rvoteview/tree/master/vignettes).
+For more thorough documentation, see the help files for individual functions and the vignette [at this link here](https://github.com/voteview/Rvoteview/tree/master/vignettes).
 
 Quick Start: Using Rvoteview
 ----------------------------
 
-To use `Rvoteview`, you generally want to search the database to get a list of vote ids and then use those to return the individual votes. We query the database with a search term and some parameters to constrain the search. The default behavior is to search any words as key words, returning the roll calls that best match any key words you enter. Again, there are further examples in the [vignette](https://github.com/JeffreyBLewis/Rvoteview/tree/master/vignettes).
+To use `Rvoteview`, you generally want to search the database to get a list of vote ids and then use those to return the individual votes. We query the database with a search term and some parameters to constrain the search. The default behavior is to search any words as key words, returning the roll calls that best match any key words you enter. Again, there are further examples in the [vignette](https://github.com/voteview/Rvoteview/tree/master/vignettes).
 
 So let's start with a search for roll calls with the key word "Iraq".
 
@@ -29,7 +28,9 @@ So let's start with a search for roll calls with the key word "Iraq".
 library(Rvoteview)
   
 res <- voteview_search("Iraq")
-#> Query 'Iraq' returned 344 rollcalls...
+#> Warning in strptime(x, fmt, tz = "GMT"): unknown timezone 'default/America/
+#> Los_Angeles'
+#> Query 'Iraq' returned 345 rollcalls...
 names(res)
 #>  [1] "id"                "congress"          "chamber"          
 #>  [4] "rollnumber"        "date"              "yea"              
@@ -108,23 +109,27 @@ You can also search by start and end date, congress, and chamber. Please see the
 
 ``` r
 ## Voteview search with options
-res <- voteview_search("Iraq", chamber = "House", congress = 110:112,
-                       startdate = 2008, enddate = "2013-04-20")
-#> Query '(Iraq) AND (startdate:2008) AND (enddate:2013-04-20) AND (congress:110 111 112) AND (chamber:house)' returned 12 rollcalls...
+res <- voteview_search(
+  "Iraq", 
+  chamber = "House",
+  congress = 110:112,
+  enddate = "2013-04-20"
+  )
+#> Query '(Iraq) AND (enddate:2013-04-20) AND (congress:110 111 112) AND (chamber:house)' returned 49 rollcalls...
 res[1:5, 1:5]
 #>          id congress chamber rollnumber       date
-#> 1 RH1111048      111   House       1048 2010-02-24
-#> 2 RH1101263      110   House       1263 2008-02-28
-#> 3 RH1110298      111   House        298 2009-06-03
-#> 4 RH1101504      110   House       1504 2008-05-15
-#> 5 RH1110264      111   House        264 2009-05-14
+#> 1 RH1100711      110   House        711 2007-07-25
+#> 2 RH1100418      110   House        418 2007-05-24
+#> 3 RH1100419      110   House        419 2007-05-24
+#> 4 RH1111048      111   House       1048 2010-02-24
+#> 5 RH1100920      110   House        920 2007-10-02
 ```
 
 We can print out the exact query that the function builds using all of these arguments by retrieving the 'qstring' attribute of the returned data frame:
 
 ``` r
 attr(res, "qstring")
-#> [1] "(Iraq) AND (startdate:2008) AND (enddate:2013-04-20) AND (congress:110 111 112) AND (chamber:house)"
+#> [1] "(Iraq) AND (enddate:2013-04-20) AND (congress:110 111 112) AND (chamber:house)"
 ```
 
 We can assemble and use these complex queries ourselves. Here's one example where we look for all roll calls with the key words "estate", "death", or "tax" and was held in the 100th to the 114th Congress.
@@ -145,8 +150,7 @@ res[1:5, 1:5]
 You can also search for member data using the `member_search` function.
 
 ``` r
-res <- member_search("Paul",
-                     state = "KY")
+res <- member_search("Paul", state = "KY")
 
 res[1:5, 1:5]
 #>           id icpsr                   bioname party_code cqlabel
