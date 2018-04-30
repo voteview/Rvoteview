@@ -497,7 +497,7 @@ complete_download <- function(rc) {
 #' Download the metadata found on the \href{https://voteview.polisci.ucla.edu/data}{VoteView Data page}
 #' for members, rollcalls, or parties.
 #'
-#' @param type A string that is either 'member', 'rollcall', or 'party'.
+#' @param type A string that is either 'members', 'rollcalls', or 'parties'.
 #' @param chamber A string that defines the chamber for which data should be
 #' returned, either 'both', 'house', or 'senate'. Defaults to 'both' and is
 #' ignored if the \code{type} is 'party'.
@@ -507,21 +507,21 @@ complete_download <- function(rc) {
 #' @return A data frame with all relevant metadata.
 #'
 #' @export
-download_metadata <- function(type,
-                              chamber = 'both',
-                              congress = 'all',
+download_metadata <- function(type = c("rollcalls", "members", "parties"),
+                              chamber = c("both", "senate", "house"),
+                              congress = "all",
                               usetemp = TRUE) {
 
   dd_api_url <- paste0(baseurl(), "/api/downloaddata")
 
-  if (type == 'party' & congress != 'all')
-    stop('congress must be "all" if type is "party"')
-
+  type <- match.arg(type)
+  chamber <- match.arg(chamber)
+  
   file_ret <- fromJSON(content(
     POST(url = dd_api_url,
                    body = list(datType = 'csv',
                                type = type,
-                               chamber = ifelse(type == 'party',
+                               chamber = ifelse(type == 'parties',
                                                 '',
                                                 chamber),
                                congress = ifelse(congress == 'all',

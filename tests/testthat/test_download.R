@@ -46,3 +46,45 @@ test_that('grapes operator works as expected', {
   expect_warning(rc2 %+% rc2_nooverlap, 'keeplong')
   expect_warning(rc2 %+% rc2_overlap, 'keeplong')
 })
+
+test_that('download metadata works', {
+  d <- download_metadata("rollcalls", congress = 1, usetemp = FALSE)
+  expect_true(!all(is.na(d$yea_count)))
+  d <- download_metadata("members", congress = 110, chamber = "both", usetemp = FALSE)
+  expect_true(
+    length(setdiff(c("house", "senate"), tolower(d$chamber))) == 0
+  )
+  
+  expect_error(
+    download_metadata("rollcallf", usetemp = FALSE),
+    "rollcalls"
+  )
+  
+  expect_error(
+    d <- download_metadata("parties", congress = 1, chamber = "senate", usetemp = FALSE),
+    NA
+  )
+  expect_error(
+    d <- download_metadata("parties", congress = "all", chamber = "senate", usetemp = FALSE),
+    NA
+  )
+  expect_error(
+    d <- download_metadata("parties", usetemp = FALSE),
+    NA
+  )
+  
+  expect_error(
+    d <- download_metadata("members", congress = 1, chamber = "senate", usetemp = FALSE),
+    NA
+  )
+  expect_error(
+    d <- download_metadata("members", congress = "all", chamber = "senate", usetemp = FALSE),
+    NA
+  )
+  
+  expect_error(
+    d <- download_metadata("rollcalls", congress = 30, chamber = "house", usetemp = FALSE),
+    NA
+  )
+  
+})

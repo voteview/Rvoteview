@@ -5,11 +5,12 @@
 \title{Download the metadata found on the \href{https://voteview.polisci.ucla.edu/data}{VoteView Data page}
 for members, rollcalls, or parties.}
 \usage{
-download_metadata(type, chamber = "both", congress = "all",
+download_metadata(type = c("rollcalls", "members", "parties"),
+  chamber = c("both", "senate", "house"), congress = "all",
   usetemp = TRUE)
 }
 \arguments{
-\item{type}{A string that is either 'member', 'rollcall', or 'party'.}
+\item{type}{A string that is either 'members', 'rollcalls', or 'parties'.}
 
 \item{chamber}{A string that defines the chamber for which data should be
 returned, either 'both', 'house', or 'senate'. Defaults to 'both' and is
