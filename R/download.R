@@ -273,17 +273,18 @@ votelist2voteview <- function(dat) {
   ## legislator or vote. Shouldn't be necessary with high data integrity.
 
   votelegis <- 1
-  for (i in 1:length(votelist)) {
-    for (x in 1:nrow(votelist[[i]]$votes[[1]])) {
-      member <- votelist[[i]]$votes[[1]][x, ]
+  for (i in seq_along(votelist)) {
+    ## Replace fields missing in DB with NA
+    vote_dat <- votelist[[i]]$votes[[1]]
+    missing_cols <- setdiff(legislongdatanames, colnames(vote_dat))
+    vote_dat[missing_cols] <- NA
+    for (x in seq_len(nrow(vote_dat))) {
+      member <- vote_dat[x, legislongdatanames]
       ## Find member from roll call in output data
-      memberpos <- fmatch(member$id, members)
+      memberpos <- fmatch(vote_dat$id[x], members)
       ## If the legislator icpsr is not entered yet, enter it to the long legis matrix
       if (is.na(data$legislong[memberpos, "icpsr"])) {
-        ldat <- member[legislongdatanames]
-        ## Replace fields missing in DB with NA
-        ldat[sapply(ldat, is.null)] <- NA
-        data$legislong[memberpos, ] <- unlist(ldat, F, F)
+        data$legislong[memberpos, ] <- unlist(member, F, F)
       }
 
       data$votelong[votelegis, ] <- c(member$id,
