@@ -279,12 +279,12 @@ votelist2voteview <- function(dat) {
     missing_cols <- setdiff(legislongdatanames, colnames(vote_dat))
     vote_dat[missing_cols] <- NA
     for (x in seq_len(nrow(vote_dat))) {
-      member <- vote_dat[x, legislongdatanames]
+      member <- vote_dat[x, ]
       ## Find member from roll call in output data
       memberpos <- fmatch(vote_dat$id[x], members)
       ## If the legislator icpsr is not entered yet, enter it to the long legis matrix
       if (is.na(data$legislong[memberpos, "icpsr"])) {
-        data$legislong[memberpos, ] <- unlist(member, F, F)
+        data$legislong[memberpos, ] <- unlist(member[legislongdatanames], F, F)
       }
 
       data$votelong[votelegis, ] <- c(member$id,
