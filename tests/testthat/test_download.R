@@ -13,6 +13,12 @@ rc_overlap <- voteview_download(ids = c('RH1110298', 'RH1110298'))
 rc2_overlap <- voteview_download(ids = c("RS0010030", "RS0010031"), keeplong = F)
 rc2_nooverlap <- voteview_download(ids = c("RS0010031"), keeplong = F)
 
+test_that('download long votes is correctly formatted', {
+  expect_true(all(rc2_overlap$votes.long[["vote"]] %in% 1:9))
+  expect_true(all(!is.na(as.numeric(rc2_overlap$votes.long[["icpsr"]]))))
+  expect_true(all(substr(rc2_overlap$votes.long[["vname"]], 1, 1) == "R"))
+})
+
 test_that('download function opens connection', {
   expect_error(voteview_getvote(id = "RH1110298"), NA)
 })
